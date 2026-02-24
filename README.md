@@ -137,13 +137,6 @@ All in `config.py`. Override via environment variables:
 
 `load_dotenv()` runs once in `config.py` — don't add it elsewhere.
 
-## Conventions
-
-- Media tables use plain dicts for inserts — `uuid7()` auto-generates the primary key. Agent/chat tables use Pydantic models from `models.py`.
-- Schema changes → edit `setup_pixeltable.py` and re-run.
-- Frontend `toDataUrl()` wraps raw base64 from Pixeltable's `b64_encode()` into `data:image/…` URLs.
-- Named exports only; no default exports.
-
 ## Learn More
 
 [Pixeltable Docs](https://docs.pixeltable.com/) · [GitHub](https://github.com/pixeltable/pixeltable) · [Cookbooks](https://docs.pixeltable.com/howto/cookbooks)
