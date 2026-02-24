@@ -1,0 +1,12 @@
+pixeltable
+fastapi
+uvicorn[standard]
+python-dotenv
+python-multipart
+anthropic
+sentence-transformers
+openai
+Pillow
+duckduckgo-search
+transformers
+torch

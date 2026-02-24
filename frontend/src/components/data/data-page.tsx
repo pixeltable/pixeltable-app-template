@@ -1,0 +1,369 @@
+import { useState, useEffect, useCallback, useRef } from 'react'
+import {
+  Upload, FileText, ImageIcon, Video, Trash2, ChevronDown, ChevronUp,
+  ScanSearch, Loader2,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import * as api from '@/lib/api'
+import type {
+  FileItem, ChunkItem, FrameItem, DetectionItem,
+} from '@/types'
+import { cn } from '@/lib/utils'
+
+type MediaTab = 'documents' | 'images' | 'videos'
+
+export function DataPage() {
+  const [tab, setTab] = useState<MediaTab>('documents')
+  const [files, setFiles] = useState<{
+    documents: FileItem[]
+    images: FileItem[]
+    videos: FileItem[]
+  }>({ documents: [], images: [], videos: [] })
+  const [isUploading, setIsUploading] = useState(false)
+  const [expandedUuid, setExpandedUuid] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const loadFiles = useCallback(async () => {
+    try {
+      const data = await api.getFiles()
+      setFiles(data)
+    } catch { /* empty */ }
+  }, [])
+
+  useEffect(() => { loadFiles() }, [loadFiles])
+
+  const handleUpload = async (fileList: FileList | null) => {
+    if (!fileList?.length) return
+    setIsUploading(true)
+    try {
+      for (const file of Array.from(fileList)) {
+        await api.uploadFile(file)
+      }
+      await loadFiles()
+    } catch (err) {
+      console.error('Upload failed:', err)
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleDelete = async (uuid: string, type: string) => {
+    try {
+      await api.deleteFile(uuid, type)
+      await loadFiles()
+      if (expandedUuid === uuid) setExpandedUuid(null)
+    } catch { /* empty */ }
+  }
+
+  const currentFiles = files[tab]
+  const typeForDelete = tab === 'documents' ? 'document' : tab === 'images' ? 'image' : 'video'
+
+  const counts = {
+    documents: files.documents.length,
+    images: files.images.length,
+    videos: files.videos.length,
+  }
+
+  return (
+    <div className="flex flex-col h-full overflow-y-auto">
+      {/* Upload zone */}
+      <div
+        className="m-4 mb-2 border-2 border-dashed rounded-lg p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
+        onDragOver={e => { e.preventDefault(); e.stopPropagation() }}
+        onDrop={e => { e.preventDefault(); e.stopPropagation(); handleUpload(e.dataTransfer.files) }}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={e => handleUpload(e.target.files)}
+        />
+        {isUploading ? (
+          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            Uploading...
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-1 text-muted-foreground">
+            <Upload className="h-6 w-6" />
+            <span className="text-sm">Drop files here or click to upload</span>
+            <span className="text-xs">Documents, images, or videos</span>
+          </div>
+        )}
+      </div>
+
+      {/* Type tabs */}
+      <div className="flex items-center gap-1 px-4 py-2">
+        {([
+          { key: 'documents' as const, label: 'Documents', icon: FileText },
+          { key: 'images' as const, label: 'Images', icon: ImageIcon },
+          { key: 'videos' as const, label: 'Videos', icon: Video },
+        ]).map(({ key, label, icon: Icon }) => (
+          <button
+            key={key}
+            onClick={() => { setTab(key); setExpandedUuid(null) }}
+            className={cn(
+              'flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer',
+              tab === key
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-accent',
+            )}
+          >
+            <Icon className="h-4 w-4" />
+            {label}
+            {counts[key] > 0 && (
+              <span className={cn(
+                'ml-1 text-xs rounded-full px-1.5 py-0.5',
+                tab === key ? 'bg-primary-foreground/20' : 'bg-muted',
+              )}>
+                {counts[key]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* File list */}
+      <div className="flex-1 px-4 pb-4">
+        {currentFiles.length === 0 ? (
+          <div className="text-center text-muted-foreground text-sm py-12">
+            No {tab} uploaded yet
+          </div>
+        ) : tab === 'images' ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+            {currentFiles.map(f => (
+              <ImageCard
+                key={f.uuid}
+                file={f}
+                isExpanded={expandedUuid === f.uuid}
+                onToggle={() => setExpandedUuid(expandedUuid === f.uuid ? null : f.uuid)}
+                onDelete={() => handleDelete(f.uuid, 'image')}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {currentFiles.map(f => (
+              <FileRow
+                key={f.uuid}
+                file={f}
+                type={typeForDelete}
+                isExpanded={expandedUuid === f.uuid}
+                onToggle={() => setExpandedUuid(expandedUuid === f.uuid ? null : f.uuid)}
+                onDelete={() => handleDelete(f.uuid, typeForDelete)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Pipeline info */}
+      <div className="border-t px-4 py-2 text-xs text-muted-foreground flex items-center gap-4">
+        <span>Pixeltable tables: app.documents, app.images, app.videos</span>
+        <span>Views: app.chunks, app.video_frames, app.video_sentences</span>
+        <span>Total files: {counts.documents + counts.images + counts.videos}</span>
+      </div>
+    </div>
+  )
+}
+
+// ── File row (documents & videos) ────────────────────────────────────────────
+
+function FileRow({ file, type, isExpanded, onToggle, onDelete }: {
+  file: FileItem
+  type: string
+  isExpanded: boolean
+  onToggle: () => void
+  onDelete: () => void
+}) {
+  return (
+    <div className="border rounded-lg">
+      <div
+        className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={onToggle}
+      >
+        {isExpanded ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+        {type === 'document' ? <FileText className="h-4 w-4 shrink-0 text-blue-500" /> : <Video className="h-4 w-4 shrink-0 text-purple-500" />}
+        <span className="text-sm truncate flex-1">{file.name}</span>
+        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={e => { e.stopPropagation(); onDelete() }}>
+          <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+        </Button>
+      </div>
+      {isExpanded && (
+        <div className="border-t px-4 py-3">
+          {type === 'document' ? (
+            <DocumentDetail uuid={file.uuid} />
+          ) : (
+            <VideoDetail uuid={file.uuid} />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Document detail (chunks) ─────────────────────────────────────────────────
+
+function DocumentDetail({ uuid }: { uuid: string }) {
+  const [chunks, setChunks] = useState<ChunkItem[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    setIsLoading(true)
+    api.getChunks(uuid)
+      .then(data => setChunks(data.chunks))
+      .catch(() => {})
+      .finally(() => setIsLoading(false))
+  }, [uuid])
+
+  if (isLoading) return <div className="text-sm text-muted-foreground">Loading chunks...</div>
+  if (!chunks.length) return <div className="text-sm text-muted-foreground">No chunks extracted yet</div>
+
+  return (
+    <div className="space-y-2">
+      <div className="text-xs font-medium text-muted-foreground">
+        {chunks.length} chunks from DocumentSplitter
+      </div>
+      <div className="max-h-64 overflow-y-auto space-y-2">
+        {chunks.map((c, i) => (
+          <div key={i} className="text-xs bg-muted rounded p-2">
+            {c.page != null && <Badge variant="blue" className="mr-1">p.{c.page}</Badge>}
+            {c.text}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Image card ───────────────────────────────────────────────────────────────
+
+function ImageCard({ file, isExpanded, onToggle, onDelete }: {
+  file: FileItem
+  isExpanded: boolean
+  onToggle: () => void
+  onDelete: () => void
+}) {
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <div className="relative group cursor-pointer" onClick={onToggle}>
+        {file.thumbnail ? (
+          <img src={file.thumbnail} alt={file.name} className="w-full aspect-square object-cover" />
+        ) : (
+          <div className="w-full aspect-square bg-muted flex items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+          </div>
+        )}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 opacity-0 group-hover:opacity-100 text-white bg-black/40"
+            onClick={e => { e.stopPropagation(); onDelete() }}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+      <div className="px-2 py-1 text-xs truncate text-muted-foreground">{file.name}</div>
+      {isExpanded && <ImageDetail uuid={file.uuid} />}
+    </div>
+  )
+}
+
+// ── Image detail (detection) ─────────────────────────────────────────────────
+
+function ImageDetail({ uuid }: { uuid: string }) {
+  const [detections, setDetections] = useState<DetectionItem[] | null>(null)
+  const [dims, setDims] = useState({ w: 0, h: 0 })
+  const [isRunning, setIsRunning] = useState(false)
+
+  const runDetection = async () => {
+    setIsRunning(true)
+    try {
+      const res = await api.detectObjects({ uuid, source: 'image' })
+      setDetections(res.detections)
+      setDims({ w: res.image_width, h: res.image_height })
+    } catch { /* empty */ }
+    setIsRunning(false)
+  }
+
+  return (
+    <div className="border-t px-2 py-2 space-y-2">
+      <Button size="sm" variant="outline" onClick={runDetection} disabled={isRunning} className="w-full text-xs">
+        {isRunning ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ScanSearch className="h-3 w-3 mr-1" />}
+        Run Detection (DETR)
+      </Button>
+      {detections && (
+        <div className="text-xs space-y-1">
+          <span className="text-muted-foreground">{detections.length} objects found ({dims.w}x{dims.h})</span>
+          {detections.map((d, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Badge variant="orange">{d.label}</Badge>
+              <span className="text-muted-foreground">{(d.score * 100).toFixed(0)}%</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Video detail (frames + transcription) ────────────────────────────────────
+
+function VideoDetail({ uuid }: { uuid: string }) {
+  const [frames, setFrames] = useState<FrameItem[]>([])
+  const [transcription, setTranscription] = useState<string>('')
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    setIsLoading(true)
+    Promise.all([
+      api.getFrames(uuid).catch(() => ({ frames: [] })),
+      api.getTranscription(uuid).catch(() => ({ full_text: '' })),
+    ]).then(([f, t]) => {
+      setFrames('frames' in f ? f.frames : [])
+      setTranscription('full_text' in t ? t.full_text : '')
+    }).finally(() => setIsLoading(false))
+  }, [uuid])
+
+  if (isLoading) return <div className="text-sm text-muted-foreground">Loading video data...</div>
+
+  return (
+    <div className="space-y-3">
+      {frames.length > 0 && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground mb-1">
+            Keyframes ({frames.length}) — from FrameIterator
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {frames.map((f, i) => (
+              <img
+                key={i}
+                src={f.frame}
+                alt={`Frame ${i}`}
+                className="h-20 rounded border shrink-0"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+      {transcription && (
+        <div>
+          <div className="text-xs font-medium text-muted-foreground mb-1">
+            Transcription — Whisper + StringSplitter
+          </div>
+          <div className="text-xs bg-muted rounded p-2 max-h-32 overflow-y-auto">
+            {transcription}
+          </div>
+        </div>
+      )}
+      {!frames.length && !transcription && (
+        <div className="text-sm text-muted-foreground">Processing... check back shortly</div>
+      )}
+    </div>
+  )
+}
