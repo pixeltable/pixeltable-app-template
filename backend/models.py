@@ -23,34 +23,3 @@ class ChatHistoryRow(BaseModel):
     conversation_id: str
     timestamp: datetime
     user_id: str
-
-
-class DocumentRow(BaseModel):
-    """Row model for the app.documents table."""
-    document: str
-    uuid: str
-    timestamp: datetime
-    user_id: str
-
-
-class ImageRow(BaseModel):
-    """Row model for the app.images table."""
-    image: str
-    uuid: str
-    timestamp: datetime
-    user_id: str
-
-
-class VideoRow(BaseModel):
-    """Row model for the app.videos table."""
-    video: str
-    uuid: str
-    timestamp: datetime
-    user_id: str
-
-
-MEDIA_ROW_MODELS = {
-    "document": DocumentRow,
-    "image": ImageRow,
-    "video": VideoRow,
-}

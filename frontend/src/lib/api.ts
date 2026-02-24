@@ -4,7 +4,6 @@ import type {
   ChunksResponse,
   FramesResponse,
   TranscriptionResponse,
-  DetectionResponse,
   SearchResponse,
   Conversation,
   ChatMessage,
@@ -57,18 +56,6 @@ export async function getTranscription(uuid: string): Promise<TranscriptionRespo
   return request<TranscriptionResponse>(`${BASE}/data/transcription/${uuid}`)
 }
 
-export async function detectObjects(params: {
-  uuid: string
-  source?: string
-  frame_idx?: number | null
-  threshold?: number
-}): Promise<DetectionResponse> {
-  return request<DetectionResponse>(`${BASE}/data/detect`, {
-    method: 'POST',
-    body: JSON.stringify(params),
-  })
-}
-
 // ── Search ───────────────────────────────────────────────────────────────────
 
 export async function search(params: {
@@ -109,10 +96,4 @@ export async function deleteConversation(id: string) {
     `${BASE}/agent/conversations/${encodeURIComponent(id)}`,
     { method: 'DELETE' },
   )
-}
-
-// ── Health ───────────────────────────────────────────────────────────────────
-
-export async function healthCheck(): Promise<{ status: string }> {
-  return request<{ status: string }>(`${BASE}/health`)
 }

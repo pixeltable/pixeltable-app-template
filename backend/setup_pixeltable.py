@@ -5,12 +5,11 @@ Run once to initialize the database schema:
 
 WARNING: This drops and recreates the 'app' namespace on every run.
 """
-from dotenv import load_dotenv
-
 import config
 import pixeltable as pxt
 
 from pixeltable.functions import image as pxt_image
+from pixeltable.functions.uuid import uuid7
 from pixeltable.functions.video import extract_audio
 from pixeltable.functions.anthropic import invoke_tools, messages
 from pixeltable.functions.huggingface import sentence_transformer, clip
@@ -25,8 +24,6 @@ from pixeltable.iterators import (
 
 import functions
 
-load_dotenv()
-
 pxt.drop_dir(config.APP_NAMESPACE, force=True)
 pxt.create_dir(config.APP_NAMESPACE, if_exists="ignore")
 
@@ -36,10 +33,11 @@ documents = pxt.create_table(
     f"{config.APP_NAMESPACE}.documents",
     {
         "document": pxt.Document,
-        "uuid": pxt.String,
+        "uuid": uuid7(),
         "timestamp": pxt.Timestamp,
         "user_id": pxt.String,
     },
+    primary_key=["uuid"],
     if_exists="ignore",
 )
 
@@ -62,12 +60,7 @@ chunks.add_embedding_index(
     if_exists="ignore",
 )
 
-documents.add_computed_column(
-    document_text=functions.extract_document_text(documents.document),
-    if_exists="ignore",
-)
-
-print("  Documents: table + chunks view + embedding index + text extraction")
+print("  Documents: table + chunks view + embedding index")
 
 
 @pxt.query
@@ -94,15 +87,16 @@ images = pxt.create_table(
     f"{config.APP_NAMESPACE}.images",
     {
         "image": pxt.Image,
-        "uuid": pxt.String,
+        "uuid": uuid7(),
         "timestamp": pxt.Timestamp,
         "user_id": pxt.String,
     },
+    primary_key=["uuid"],
     if_exists="ignore",
 )
 
 images.add_computed_column(
-    thumbnail=pxt_image.b64_encode(pxt_image.resize(images.image, size=(96, 96))),
+    thumbnail=pxt_image.b64_encode(pxt_image.thumbnail(images.image, size=(320, 320))),
     if_exists="ignore",
 )
 
@@ -123,7 +117,7 @@ def search_images(query_text: str, user_id: str):
         .order_by(sim, asc=False)
         .select(
             encoded_image=pxt_image.b64_encode(
-                pxt_image.resize(images.image, size=(224, 224)), "png"
+                pxt_image.thumbnail(images.image, size=(224, 224)), "png"
             ),
             sim=sim,
         )
@@ -137,10 +131,11 @@ videos = pxt.create_table(
     f"{config.APP_NAMESPACE}.videos",
     {
         "video": pxt.Video,
-        "uuid": pxt.String,
+        "uuid": uuid7(),
         "timestamp": pxt.Timestamp,
         "user_id": pxt.String,
     },
+    primary_key=["uuid"],
     if_exists="ignore",
 )
 
@@ -154,7 +149,7 @@ video_frames = pxt.create_view(
 
 video_frames.add_computed_column(
     frame_thumbnail=pxt_image.b64_encode(
-        pxt_image.resize(video_frames.frame, size=(192, 192))
+        pxt_image.thumbnail(video_frames.frame, size=(320, 320))
     ),
     if_exists="ignore",
 )
@@ -198,7 +193,7 @@ video_audio_chunks = pxt.create_view(
 
 video_audio_chunks.add_computed_column(
     transcription=openai.transcriptions(
-        audio=video_audio_chunks.audio, model=config.WHISPER_MODEL_ID
+        audio=video_audio_chunks.audio_chunk, model=config.WHISPER_MODEL_ID
     ),
     if_exists="replace",
 )
@@ -221,6 +216,7 @@ print("  Videos: audio extraction -> Whisper transcription -> sentence embedding
 
 @pxt.query
 def search_video_transcripts(query_text: str):
+    """Search video transcripts by semantic similarity."""
     sim = video_sentences.text.similarity(query_text)
     return (
         video_sentences.where(

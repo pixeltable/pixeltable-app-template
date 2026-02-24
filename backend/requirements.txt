@@ -4,9 +4,8 @@ uvicorn[standard]
 python-dotenv
 python-multipart
 anthropic
-sentence-transformers
 openai
-Pillow
+sentence-transformers
 duckduckgo-search
-transformers
-torch
+spacy
+tiktoken

@@ -1,17 +1,15 @@
-"""Data pipeline endpoints: upload, list, detail, frames, transcription, detection."""
+"""Data pipeline endpoints: upload, list, delete, chunks, frames, transcription."""
 import logging
 import os
 import shutil
-import uuid as uuid_lib
 from datetime import datetime
 from pathlib import Path
+from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, UploadFile, File
-from pydantic import BaseModel
 import pixeltable as pxt
 
 import config
-from models import MEDIA_ROW_MODELS
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/data", tags=["data"])
@@ -41,7 +39,7 @@ TABLE_PATHS = {
 
 # ── Upload ────────────────────────────────────────────────────────────────────
 
-@router.post("/upload")
+@router.post("/upload", status_code=201)
 def upload_file(file: UploadFile = File(...)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename")
@@ -50,26 +48,33 @@ def upload_file(file: UploadFile = File(...)):
     if ext not in config.ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f"Unsupported file type: .{ext}")
 
-    file_uuid = str(uuid_lib.uuid4())[:8]
-    safe_name = f"{file_uuid}_{file.filename}"
+    ts = int(datetime.now().timestamp() * 1000)
+    safe_name = f"{ts}_{file.filename}"
     file_path = UPLOAD_DIR / safe_name
 
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
     media_type = _classify_file(file.filename)
-    table_path = TABLE_PATHS[media_type]
-    table = pxt.get_table(table_path)
+    table = pxt.get_table(TABLE_PATHS[media_type])
 
-    row_model = MEDIA_ROW_MODELS[media_type]
-    col_name = media_type if media_type != "document" else "document"
-    row = row_model(**{
-        col_name: str(file_path),
-        "uuid": file_uuid,
-        "timestamp": datetime.now(),
+    current_ts = datetime.now()
+    table.insert([{
+        media_type: str(file_path),
+        "timestamp": current_ts,
         "user_id": config.DEFAULT_USER_ID,
-    })
-    table.insert([row])
+    }])
+
+    # Retrieve the auto-generated uuid7() primary key
+    rows = list(
+        table.where(
+            (table.user_id == config.DEFAULT_USER_ID) & (table.timestamp == current_ts)
+        )
+        .select(table.uuid)
+        .limit(1)
+        .collect()
+    )
+    file_uuid = str(rows[0]["uuid"]) if rows else "unknown"
 
     return {
         "message": f"Uploaded {media_type}",
@@ -95,6 +100,7 @@ def list_files():
             .collect()
         )
         for d in result["documents"]:
+            d["uuid"] = str(d.get("uuid", ""))
             d["name"] = os.path.basename(str(d.get("name", "")))
             if isinstance(d.get("timestamp"), datetime):
                 d["timestamp"] = d["timestamp"].isoformat()
@@ -115,7 +121,9 @@ def list_files():
             .collect()
         )
         for d in result["images"]:
-            d["name"] = os.path.basename(str(d.get("name", "")))
+            raw = d.get("name")
+            d["uuid"] = str(d.get("uuid", ""))
+            d["name"] = os.path.basename(getattr(raw, "filename", "") or "")
             if isinstance(d.get("timestamp"), datetime):
                 d["timestamp"] = d["timestamp"].isoformat()
     except Exception as e:
@@ -130,6 +138,7 @@ def list_files():
             .collect()
         )
         for d in result["videos"]:
+            d["uuid"] = str(d.get("uuid", ""))
             d["name"] = os.path.basename(str(d.get("name", "")))
             if isinstance(d.get("timestamp"), datetime):
                 d["timestamp"] = d["timestamp"].isoformat()
@@ -148,7 +157,7 @@ def delete_file(file_uuid: str, file_type: str):
 
     table = pxt.get_table(TABLE_PATHS[file_type])
     status = table.delete(
-        where=(table.uuid == file_uuid) & (table.user_id == config.DEFAULT_USER_ID)
+        where=(table.uuid == UUID(file_uuid)) & (table.user_id == config.DEFAULT_USER_ID)
     )
     return {"message": "Deleted", "num_deleted": status.num_rows}
 
@@ -160,7 +169,7 @@ def get_chunks(file_uuid: str):
     try:
         chunks = pxt.get_table(f"{config.APP_NAMESPACE}.chunks")
         rows = list(
-            chunks.where(chunks.uuid == file_uuid)
+            chunks.where(chunks.uuid == UUID(file_uuid))
             .select(text=chunks.text, title=chunks.title, heading=chunks.heading, page=chunks.page)
             .collect()
         )
@@ -176,14 +185,17 @@ def get_frames(file_uuid: str, limit: int = 12):
     try:
         frames_view = pxt.get_table(f"{config.APP_NAMESPACE}.video_frames")
         rows = list(
-            frames_view.where(frames_view.uuid == file_uuid)
+            frames_view.where(frames_view.uuid == UUID(file_uuid))
             .select(frame=frames_view.frame_thumbnail, pos=frames_view.pos)
             .limit(limit)
             .collect()
         )
         return {
             "uuid": file_uuid,
-            "frames": [{"frame": r["frame"], "position": r["pos"]} for r in rows],
+            "frames": [
+                {"frame": r["frame"], "position": r["pos"]}
+                for r in rows
+            ],
             "total": len(rows),
         }
     except Exception as e:
@@ -197,108 +209,22 @@ def get_transcription(file_uuid: str):
     try:
         sentences_view = pxt.get_table(f"{config.APP_NAMESPACE}.video_sentences")
         rows = list(
-            sentences_view.where(sentences_view.uuid == file_uuid)
+            sentences_view.where(sentences_view.uuid == UUID(file_uuid))
             .select(text=sentences_view.text)
             .collect()
         )
-        texts = [r["text"] for r in rows if r.get("text")]
+        # Deduplicate while preserving order
+        seen: set[str] = set()
+        texts: list[str] = []
+        for r in rows:
+            t = r.get("text", "")
+            if t and t not in seen:
+                seen.add(t)
+                texts.append(t)
         return {
             "uuid": file_uuid,
             "sentences": texts,
             "full_text": " ".join(texts),
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ── On-demand detection (DETR) ────────────────────────────────────────────────
-
-_model_cache: dict = {}
-
-
-class DetectRequest(BaseModel):
-    uuid: str
-    source: str = "image"
-    frame_idx: int | None = None
-    threshold: float = 0.7
-
-
-@router.post("/detect")
-def detect_objects(body: DetectRequest):
-    try:
-        from transformers import DetrImageProcessor, DetrForObjectDetection
-        from PIL import Image
-        import torch
-
-        model_key = "detr-resnet-50"
-        if model_key not in _model_cache:
-            processor = DetrImageProcessor.from_pretrained(
-                "facebook/detr-resnet-50", revision="no_timm"
-            )
-            model = DetrForObjectDetection.from_pretrained(
-                "facebook/detr-resnet-50", revision="no_timm"
-            )
-            _model_cache[model_key] = (processor, model)
-
-        processor, model = _model_cache[model_key]
-
-        if body.source == "image":
-            table = pxt.get_table(TABLE_PATHS["image"])
-            rows = list(
-                table.where(table.uuid == body.uuid)
-                .select(table.image)
-                .collect()
-            )
-            if not rows:
-                raise HTTPException(status_code=404, detail="Image not found")
-            img = rows[0]["image"]
-        else:
-            frames_view = pxt.get_table(f"{config.APP_NAMESPACE}.video_frames")
-            rows = list(
-                frames_view.where(frames_view.uuid == body.uuid)
-                .select(frames_view.frame)
-                .collect()
-            )
-            if not rows:
-                raise HTTPException(status_code=404, detail="No frames found")
-            idx = body.frame_idx or 0
-            if idx >= len(rows):
-                idx = len(rows) - 1
-            img = rows[idx]["frame"]
-
-        if not isinstance(img, Image.Image):
-            img = Image.open(str(img)).convert("RGB")
-
-        inputs = processor(images=img, return_tensors="pt")
-        with torch.no_grad():
-            outputs = model(**inputs)
-
-        target_sizes = torch.tensor([img.size[::-1]])
-        results = processor.post_process_object_detection(
-            outputs, target_sizes=target_sizes, threshold=body.threshold
-        )[0]
-
-        detections = []
-        for score, label, box in zip(
-            results["scores"], results["labels"], results["boxes"]
-        ):
-            x1, y1, x2, y2 = box.tolist()
-            detections.append({
-                "label": model.config.id2label[label.item()],
-                "score": round(score.item(), 3),
-                "box": {"x1": x1, "y1": y1, "x2": x2, "y2": y2},
-            })
-
-        return {
-            "type": "detection",
-            "model": model_key,
-            "image_width": img.width,
-            "image_height": img.height,
-            "count": len(detections),
-            "detections": detections,
-        }
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Detection error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

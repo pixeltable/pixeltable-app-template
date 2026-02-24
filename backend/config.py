@@ -1,5 +1,9 @@
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
+
 APP_NAMESPACE = "app"
 
 # LLM & Model IDs
@@ -24,11 +28,8 @@ DEFAULT_TEMPERATURE: float = 0.7
 
 # File upload
 UPLOAD_FOLDER = "data"
-MAX_UPLOAD_SIZE_MB = 100
 ALLOWED_EXTENSIONS = {
-    "pdf", "txt", "md", "html", "xml",
-    "doc", "docx", "ppt", "pptx", "xls", "xlsx",
-    "csv", "rtf",
+    "pdf", "txt", "md",
     "jpg", "jpeg", "png", "gif", "webp",
     "mp4", "mov", "avi",
 }

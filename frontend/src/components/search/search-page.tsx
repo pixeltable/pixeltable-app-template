@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import * as api from '@/lib/api'
 import type { SearchResult } from '@/types'
-import { cn } from '@/lib/utils'
+import { cn, toDataUrl } from '@/lib/utils'
 
 const TYPE_CONFIG = {
   document: { label: 'Document', icon: FileText, badge: 'blue' as const, color: 'text-blue-500' },
@@ -163,11 +163,11 @@ function ResultCard({ result, rank }: { result: SearchResult; rank: number }) {
             <span className="text-xs text-muted-foreground">
               {(result.similarity * 100).toFixed(0)}% match
             </span>
-            {result.metadata?.source && (
+            {result.metadata?.source ? (
               <span className="text-xs text-muted-foreground truncate">
                 {String(result.metadata.source)}
               </span>
-            )}
+            ) : null}
           </div>
 
           {result.text && (
@@ -176,7 +176,7 @@ function ResultCard({ result, rank }: { result: SearchResult; rank: number }) {
 
           {result.thumbnail && (
             <img
-              src={result.thumbnail}
+              src={toDataUrl(result.thumbnail)}
               alt="Result thumbnail"
               className="mt-1 h-24 rounded border"
             />

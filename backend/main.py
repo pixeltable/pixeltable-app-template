@@ -1,17 +1,14 @@
 import logging
-import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 
 import pixeltable as pxt
 
 from routers import data, search, agent
-
-load_dotenv(override=True)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -61,17 +58,19 @@ def health():
 
 # Serve frontend static build (production)
 STATIC_DIR = Path(__file__).resolve().parent / "static"
-if STATIC_DIR.is_dir():
-    from fastapi.responses import FileResponse
 
-    @app.get("/{full_path:path}")
-    async def spa_fallback(full_path: str):
-        file_path = STATIC_DIR / full_path
-        if file_path.is_file():
-            return FileResponse(file_path)
-        return FileResponse(STATIC_DIR / "index.html")
 
-    logger.info(f"Serving frontend from {STATIC_DIR}")
+@app.get("/{full_path:path}")
+async def spa_fallback(full_path: str):
+    if not STATIC_DIR.is_dir():
+        return JSONResponse(
+            {"detail": "Frontend not built. Run: cd frontend && npm run build"},
+            status_code=404,
+        )
+    file_path = STATIC_DIR / full_path
+    if file_path.is_file():
+        return FileResponse(file_path)
+    return FileResponse(STATIC_DIR / "index.html")
 
 
 if __name__ == "__main__":

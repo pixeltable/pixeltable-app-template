@@ -1,15 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Upload, FileText, ImageIcon, Video, Trash2, ChevronDown, ChevronUp,
-  ScanSearch, Loader2,
+  Loader2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import * as api from '@/lib/api'
-import type {
-  FileItem, ChunkItem, FrameItem, DetectionItem,
-} from '@/types'
-import { cn } from '@/lib/utils'
+import type { FileItem, ChunkItem, FrameItem } from '@/types'
+import { cn, toDataUrl } from '@/lib/utils'
 
 type MediaTab = 'documents' | 'images' | 'videos'
 
@@ -133,13 +131,11 @@ export function DataPage() {
             No {tab} uploaded yet
           </div>
         ) : tab === 'images' ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
             {currentFiles.map(f => (
               <ImageCard
                 key={f.uuid}
                 file={f}
-                isExpanded={expandedUuid === f.uuid}
-                onToggle={() => setExpandedUuid(expandedUuid === f.uuid ? null : f.uuid)}
                 onDelete={() => handleDelete(f.uuid, 'image')}
               />
             ))}
@@ -241,17 +237,15 @@ function DocumentDetail({ uuid }: { uuid: string }) {
 
 // ── Image card ───────────────────────────────────────────────────────────────
 
-function ImageCard({ file, isExpanded, onToggle, onDelete }: {
+function ImageCard({ file, onDelete }: {
   file: FileItem
-  isExpanded: boolean
-  onToggle: () => void
   onDelete: () => void
 }) {
   return (
     <div className="border rounded-lg overflow-hidden">
-      <div className="relative group cursor-pointer" onClick={onToggle}>
+      <div className="relative group">
         {file.thumbnail ? (
-          <img src={file.thumbnail} alt={file.name} className="w-full aspect-square object-cover" />
+          <img src={toDataUrl(file.thumbnail)} alt={file.name} className="w-full aspect-square object-cover" />
         ) : (
           <div className="w-full aspect-square bg-muted flex items-center justify-center">
             <ImageIcon className="h-8 w-8 text-muted-foreground" />
@@ -262,52 +256,13 @@ function ImageCard({ file, isExpanded, onToggle, onDelete }: {
             variant="ghost"
             size="icon"
             className="h-7 w-7 opacity-0 group-hover:opacity-100 text-white bg-black/40"
-            onClick={e => { e.stopPropagation(); onDelete() }}
+            onClick={onDelete}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
-      <div className="px-2 py-1 text-xs truncate text-muted-foreground">{file.name}</div>
-      {isExpanded && <ImageDetail uuid={file.uuid} />}
-    </div>
-  )
-}
-
-// ── Image detail (detection) ─────────────────────────────────────────────────
-
-function ImageDetail({ uuid }: { uuid: string }) {
-  const [detections, setDetections] = useState<DetectionItem[] | null>(null)
-  const [dims, setDims] = useState({ w: 0, h: 0 })
-  const [isRunning, setIsRunning] = useState(false)
-
-  const runDetection = async () => {
-    setIsRunning(true)
-    try {
-      const res = await api.detectObjects({ uuid, source: 'image' })
-      setDetections(res.detections)
-      setDims({ w: res.image_width, h: res.image_height })
-    } catch { /* empty */ }
-    setIsRunning(false)
-  }
-
-  return (
-    <div className="border-t px-2 py-2 space-y-2">
-      <Button size="sm" variant="outline" onClick={runDetection} disabled={isRunning} className="w-full text-xs">
-        {isRunning ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <ScanSearch className="h-3 w-3 mr-1" />}
-        Run Detection (DETR)
-      </Button>
-      {detections && (
-        <div className="text-xs space-y-1">
-          <span className="text-muted-foreground">{detections.length} objects found ({dims.w}x{dims.h})</span>
-          {detections.map((d, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <Badge variant="orange">{d.label}</Badge>
-              <span className="text-muted-foreground">{(d.score * 100).toFixed(0)}%</span>
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="px-2 py-1.5 text-xs truncate text-muted-foreground">{file.name}</div>
     </div>
   )
 }
@@ -339,13 +294,13 @@ function VideoDetail({ uuid }: { uuid: string }) {
           <div className="text-xs font-medium text-muted-foreground mb-1">
             Keyframes ({frames.length}) — from FrameIterator
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1">
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
             {frames.map((f, i) => (
               <img
                 key={i}
-                src={f.frame}
+                src={toDataUrl(f.frame)}
                 alt={`Frame ${i}`}
-                className="h-20 rounded border shrink-0"
+                className="w-full aspect-video object-cover rounded border"
               />
             ))}
           </div>

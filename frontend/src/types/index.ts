@@ -68,28 +68,6 @@ export interface TranscriptionResponse {
   full_text: string
 }
 
-export interface BoundingBox {
-  x1: number
-  y1: number
-  x2: number
-  y2: number
-}
-
-export interface DetectionItem {
-  label: string
-  score: number
-  box: BoundingBox
-}
-
-export interface DetectionResponse {
-  type: string
-  model: string
-  image_width: number
-  image_height: number
-  count: number
-  detections: DetectionItem[]
-}
-
 export interface SearchResult {
   type: 'document' | 'image' | 'video_frame' | 'transcript'
   uuid: string

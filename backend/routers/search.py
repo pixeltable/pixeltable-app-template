@@ -1,12 +1,10 @@
 """Cross-modal similarity search across all media types."""
 import logging
 import os
-from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import pixeltable as pxt
-from pixeltable.functions import image as pxt_image
 
 import config
 
@@ -46,7 +44,7 @@ def search(body: SearchRequest):
             for r in rows:
                 results.append({
                     "type": "document",
-                    "uuid": r.get("uuid", ""),
+                    "uuid": str(r.get("uuid", "")),
                     "similarity": round(r.get("sim", 0), 3),
                     "text": r.get("text", ""),
                     "metadata": {
@@ -76,11 +74,13 @@ def search(body: SearchRequest):
             for r in rows:
                 results.append({
                     "type": "image",
-                    "uuid": r.get("uuid", ""),
+                    "uuid": str(r.get("uuid", "")),
                     "similarity": round(r.get("sim", 0), 3),
                     "thumbnail": r.get("thumbnail"),
                     "metadata": {
-                        "source": os.path.basename(str(r.get("name", ""))),
+                        "source": os.path.basename(
+                            getattr(r.get("name"), "filename", "") or ""
+                        ),
                     },
                 })
         except Exception as e:
@@ -105,7 +105,7 @@ def search(body: SearchRequest):
             for r in rows:
                 results.append({
                     "type": "video_frame",
-                    "uuid": r.get("uuid", ""),
+                    "uuid": str(r.get("uuid", "")),
                     "similarity": round(r.get("sim", 0), 3),
                     "thumbnail": r.get("thumbnail"),
                     "metadata": {
@@ -130,15 +130,20 @@ def search(body: SearchRequest):
                     sim=sim,
                     source=sents.video,
                 )
-                .limit(body.limit)
+                .limit(body.limit * 3)  # fetch extra to allow dedup
                 .collect()
             )
+            seen_texts: set[str] = set()
             for r in rows:
+                text = r.get("text", "")
+                if text in seen_texts:
+                    continue
+                seen_texts.add(text)
                 results.append({
                     "type": "transcript",
-                    "uuid": r.get("uuid", ""),
+                    "uuid": str(r.get("uuid", "")),
                     "similarity": round(r.get("sim", 0), 3),
-                    "text": r.get("text", ""),
+                    "text": text,
                     "metadata": {
                         "source": os.path.basename(str(r.get("source", ""))),
                     },

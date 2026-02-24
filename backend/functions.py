@@ -38,39 +38,6 @@ def web_search(keywords: str, max_results: int = 5) -> str:
 
 
 @pxt.udf
-def extract_document_text(doc: pxt.Document) -> Optional[str]:
-    """Extract full text from a document file, truncated for downstream use."""
-    import pathlib
-
-    try:
-        path = pathlib.Path(doc)
-        ext = path.suffix.lower()
-        text = ""
-
-        if ext == ".pdf":
-            import pdfplumber
-
-            with pdfplumber.open(str(path)) as pdf:
-                pages = [page.extract_text() or "" for page in pdf.pages]
-                text = "\n".join(pages)
-        elif ext in (".txt", ".md", ".html", ".xml", ".rtf", ".csv"):
-            text = path.read_text(errors="ignore")
-        else:
-            text = path.read_text(errors="ignore")
-
-        if not text or not text.strip():
-            return None
-
-        max_chars = 15_000
-        if len(text) > max_chars:
-            text = text[:max_chars] + "\n...[truncated]"
-
-        return text.strip()
-    except Exception as e:
-        return f"[Error extracting text: {str(e)}]"
-
-
-@pxt.udf
 def assemble_context(
     question: str,
     tool_outputs: Optional[List[Dict[str, Any]]],

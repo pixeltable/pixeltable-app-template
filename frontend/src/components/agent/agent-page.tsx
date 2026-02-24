@@ -218,10 +218,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   return (
     <div className={cn('flex items-start gap-3', isUser && 'flex-row-reverse')}>
       <div
-        className={cn(
-          'h-7 w-7 rounded-full flex items-center justify-center shrink-0',
-          isUser ? 'bg-primary/10' : 'bg-primary/10',
-        )}
+        className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0"
       >
         {isUser ? (
           <User className="h-4 w-4 text-primary" />
