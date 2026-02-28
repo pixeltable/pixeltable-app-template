@@ -1,6 +1,6 @@
 """User-Defined Functions (UDFs) for the Pixeltable App Template."""
 import os
-from typing import Optional, Dict, Any, List, Union
+from typing import Any
 
 import pixeltable as pxt
 
@@ -40,9 +40,9 @@ def web_search(keywords: str, max_results: int = 5) -> str:
 @pxt.udf
 def assemble_context(
     question: str,
-    tool_outputs: Optional[List[Dict[str, Any]]],
-    doc_context: Optional[List[Union[Dict[str, Any], str]]],
-    chat_memory_context: Optional[List[Dict[str, Any]]] = None,
+    tool_outputs: list[dict[str, Any]] | None,
+    doc_context: list[dict[str, Any] | str] | None,
+    chat_memory_context: list[dict[str, Any]] | None = None,
 ) -> str:
     """Combine all context sources into a single text block for the LLM."""
     doc_context_str = "N/A"
@@ -90,13 +90,13 @@ AVAILABLE CONTEXT:
 
 @pxt.udf
 def assemble_final_messages(
-    history_context: Optional[List[Dict[str, Any]]],
+    history_context: list[dict[str, Any]] | None,
     multimodal_context_text: str,
-    image_context: Optional[List[Dict[str, Any]]] = None,
-    video_frame_context: Optional[List[Dict[str, Any]]] = None,
-) -> List[Dict[str, Any]]:
+    image_context: list[dict[str, Any]] | None = None,
+    video_frame_context: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
     """Build the final message list for the LLM, incorporating all context."""
-    msgs: List[Dict[str, Any]] = []
+    msgs: list[dict[str, Any]] = []
 
     if history_context:
         for item in reversed(history_context):
@@ -105,7 +105,7 @@ def assemble_final_messages(
             if role and content:
                 msgs.append({"role": role, "content": content})
 
-    final_user_content: List[Dict[str, Any]] = []
+    final_user_content: list[dict[str, Any]] = []
 
     if image_context:
         for item in image_context:

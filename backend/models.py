@@ -85,6 +85,27 @@ class TranscriptionResponse(BaseModel):
     full_text: str
 
 
+# ── Agent conversation responses ─────────────────────────────────────────────
+
+class ConversationSummary(BaseModel):
+    conversation_id: str
+    title: str
+    created_at: str
+    updated_at: str
+    message_count: int
+
+
+class ChatMessageItem(BaseModel):
+    role: str
+    content: str
+    timestamp: str
+
+
+class ConversationDetail(BaseModel):
+    conversation_id: str
+    messages: list[ChatMessageItem]
+
+
 # ── Search endpoint responses ────────────────────────────────────────────────
 
 class SearchResult(BaseModel):

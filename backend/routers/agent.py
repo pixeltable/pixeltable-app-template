@@ -7,7 +7,14 @@ from pydantic import BaseModel
 import pixeltable as pxt
 
 import config
-from models import ToolAgentRow, ChatHistoryRow
+from models import (
+    ToolAgentRow,
+    ChatHistoryRow,
+    ConversationSummary,
+    ChatMessageItem,
+    ConversationDetail,
+    DeleteResponse,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/agent", tags=["agent"])
@@ -108,7 +115,7 @@ def query(body: QueryRequest):
 
 # ── Conversations ─────────────────────────────────────────────────────────────
 
-@router.get("/conversations")
+@router.get("/conversations", response_model=list[ConversationSummary])
 def list_conversations():
     user_id = config.DEFAULT_USER_ID
     try:
@@ -151,7 +158,7 @@ def list_conversations():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/conversations/{conversation_id}")
+@router.get("/conversations/{conversation_id}", response_model=ConversationDetail)
 def get_conversation(conversation_id: str):
     user_id = config.DEFAULT_USER_ID
     try:
@@ -179,7 +186,7 @@ def get_conversation(conversation_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.delete("/conversations/{conversation_id}")
+@router.delete("/conversations/{conversation_id}", response_model=DeleteResponse)
 def delete_conversation(conversation_id: str):
     user_id = config.DEFAULT_USER_ID
     try:

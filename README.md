@@ -19,8 +19,8 @@ cp .env.example .env   # add your ANTHROPIC_API_KEY and OPENAI_API_KEY
 
 # Backend
 cd backend
-uv venv && source .venv/bin/activate
-uv pip install -r requirements.txt
+uv sync
+source .venv/bin/activate
 python -m spacy download en_core_web_sm
 python setup_pixeltable.py   # initialize schema (one-time)
 python main.py               # http://localhost:8000
@@ -38,10 +38,10 @@ npm install && npm run dev   # http://localhost:5173
 backend/
 ├── main.py                 FastAPI app, CORS, static serving
 ├── config.py               Model IDs, system prompts, env overrides
-├── models.py               Pydantic row models (agent + chat tables)
+├── models.py               Pydantic models (row schemas + API responses)
 ├── functions.py            @pxt.udf definitions (web search, context assembly)
 ├── setup_pixeltable.py     Full multimodal schema (tables, views, indexes, agent)
-├── requirements.txt
+├── pyproject.toml          Dependencies (uv sync)
 └── routers/
     ├── data.py             Upload, list, delete, chunks, frames, transcription
     ├── search.py           Cross-modal similarity search
@@ -56,7 +56,7 @@ frontend/src/
 
 ## Learn More
 
-[Pixeltable Docs](https://docs.pixeltable.com/) · [GitHub](https://github.com/pixeltable/pixeltable) · [Cookbooks](https://docs.pixeltable.com/howto/cookbooks)
+[Pixeltable Docs](https://docs.pixeltable.com/) · [GitHub](https://github.com/pixeltable/pixeltable) · [Cookbooks](https://docs.pixeltable.com/howto/cookbooks) · [AGENTS.md](AGENTS.md)
 
 ## License
 
