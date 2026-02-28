@@ -7,6 +7,7 @@ from pydantic import BaseModel
 import pixeltable as pxt
 
 import config
+from models import SearchResponse
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api", tags=["search"])
@@ -19,7 +20,7 @@ class SearchRequest(BaseModel):
     threshold: float = 0.3
 
 
-@router.post("/search")
+@router.post("/search", response_model=SearchResponse)
 def search(body: SearchRequest):
     user_id = config.DEFAULT_USER_ID
     results: list[dict] = []

@@ -36,3 +36,12 @@ ALLOWED_EXTENSIONS = {
 
 # Default user (single-user / local mode)
 DEFAULT_USER_ID = "local_user"
+
+# CORS
+CORS_ORIGINS: list[str] = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+    ).split(",")
+    if origin.strip()
+]

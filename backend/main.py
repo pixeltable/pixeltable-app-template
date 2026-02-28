@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse, JSONResponse
 
 import pixeltable as pxt
 
+import config
 from routers import data, search, agent
 
 logging.basicConfig(
@@ -40,7 +41,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=config.CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -61,7 +62,7 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
 @app.get("/{full_path:path}")
-async def spa_fallback(full_path: str):
+def spa_fallback(full_path: str):
     if not STATIC_DIR.is_dir():
         return JSONResponse(
             {"detail": "Frontend not built. Run: cd frontend && npm run build"},
@@ -82,5 +83,4 @@ if __name__ == "__main__":
         port=8000,
         reload=True,
         reload_excludes=["data/*", "*.log"],
-        loop="asyncio",
     )

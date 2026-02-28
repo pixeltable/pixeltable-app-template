@@ -10,6 +10,10 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 import pixeltable as pxt
 
 import config
+from models import (
+    UploadResponse, FilesResponse, DeleteResponse,
+    ChunkItem, ChunksResponse, FrameItem, FramesResponse, TranscriptionResponse,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/data", tags=["data"])
@@ -39,7 +43,7 @@ TABLE_PATHS = {
 
 # ── Upload ────────────────────────────────────────────────────────────────────
 
-@router.post("/upload", status_code=201)
+@router.post("/upload", status_code=201, response_model=UploadResponse)
 def upload_file(file: UploadFile = File(...)):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename")
@@ -86,7 +90,7 @@ def upload_file(file: UploadFile = File(...)):
 
 # ── List files ────────────────────────────────────────────────────────────────
 
-@router.get("/files")
+@router.get("/files", response_model=FilesResponse)
 def list_files():
     user_id = config.DEFAULT_USER_ID
     result: dict = {"documents": [], "images": [], "videos": []}
@@ -150,7 +154,7 @@ def list_files():
 
 # ── Delete ────────────────────────────────────────────────────────────────────
 
-@router.delete("/files/{file_uuid}/{file_type}")
+@router.delete("/files/{file_uuid}/{file_type}", response_model=DeleteResponse)
 def delete_file(file_uuid: str, file_type: str):
     if file_type not in TABLE_PATHS:
         raise HTTPException(status_code=400, detail=f"Unknown type: {file_type}")
@@ -164,47 +168,42 @@ def delete_file(file_uuid: str, file_type: str):
 
 # ── Document chunks ───────────────────────────────────────────────────────────
 
-@router.get("/chunks/{file_uuid}")
+@router.get("/chunks/{file_uuid}", response_model=ChunksResponse)
 def get_chunks(file_uuid: str):
     try:
         chunks = pxt.get_table(f"{config.APP_NAMESPACE}.chunks")
-        rows = list(
+        result = (
             chunks.where(chunks.uuid == UUID(file_uuid))
             .select(text=chunks.text, title=chunks.title, heading=chunks.heading, page=chunks.page)
             .collect()
         )
-        return {"uuid": file_uuid, "chunks": rows, "total": len(rows)}
+        items = list(result.to_pydantic(ChunkItem))
+        return ChunksResponse(uuid=file_uuid, chunks=items, total=len(items))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 # ── Video keyframes ───────────────────────────────────────────────────────────
 
-@router.get("/frames/{file_uuid}")
+@router.get("/frames/{file_uuid}", response_model=FramesResponse)
 def get_frames(file_uuid: str, limit: int = 12):
     try:
         frames_view = pxt.get_table(f"{config.APP_NAMESPACE}.video_frames")
-        rows = list(
+        result = (
             frames_view.where(frames_view.uuid == UUID(file_uuid))
-            .select(frame=frames_view.frame_thumbnail, pos=frames_view.pos)
+            .select(frame=frames_view.frame_thumbnail, position=frames_view.pos)
             .limit(limit)
             .collect()
         )
-        return {
-            "uuid": file_uuid,
-            "frames": [
-                {"frame": r["frame"], "position": r["pos"]}
-                for r in rows
-            ],
-            "total": len(rows),
-        }
+        items = list(result.to_pydantic(FrameItem))
+        return FramesResponse(uuid=file_uuid, frames=items, total=len(items))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 # ── Video transcription ──────────────────────────────────────────────────────
 
-@router.get("/transcription/{file_uuid}")
+@router.get("/transcription/{file_uuid}", response_model=TranscriptionResponse)
 def get_transcription(file_uuid: str):
     try:
         sentences_view = pxt.get_table(f"{config.APP_NAMESPACE}.video_sentences")
