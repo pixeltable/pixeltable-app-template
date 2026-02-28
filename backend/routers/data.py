@@ -66,14 +66,11 @@ def upload_file(file: UploadFile = File(...)):
     table.insert([{
         media_type: str(file_path),
         "timestamp": current_ts,
-        "user_id": config.DEFAULT_USER_ID,
     }])
 
     # Retrieve the auto-generated uuid7() primary key
     rows = list(
-        table.where(
-            (table.user_id == config.DEFAULT_USER_ID) & (table.timestamp == current_ts)
-        )
+        table.where(table.timestamp == current_ts)
         .select(table.uuid)
         .limit(1)
         .collect()
@@ -92,14 +89,12 @@ def upload_file(file: UploadFile = File(...)):
 
 @router.get("/files", response_model=FilesResponse)
 def list_files():
-    user_id = config.DEFAULT_USER_ID
     result: dict = {"documents": [], "images": [], "videos": []}
 
     try:
         docs = pxt.get_table(TABLE_PATHS["document"])
         result["documents"] = list(
-            docs.where(docs.user_id == user_id)
-            .select(uuid=docs.uuid, name=docs.document, timestamp=docs.timestamp)
+            docs.select(uuid=docs.uuid, name=docs.document, timestamp=docs.timestamp)
             .order_by(docs.timestamp, asc=False)
             .collect()
         )
@@ -114,8 +109,7 @@ def list_files():
     try:
         imgs = pxt.get_table(TABLE_PATHS["image"])
         result["images"] = list(
-            imgs.where(imgs.user_id == user_id)
-            .select(
+            imgs.select(
                 uuid=imgs.uuid,
                 name=imgs.image,
                 thumbnail=imgs.thumbnail,
@@ -136,8 +130,7 @@ def list_files():
     try:
         vids = pxt.get_table(TABLE_PATHS["video"])
         result["videos"] = list(
-            vids.where(vids.user_id == user_id)
-            .select(uuid=vids.uuid, name=vids.video, timestamp=vids.timestamp)
+            vids.select(uuid=vids.uuid, name=vids.video, timestamp=vids.timestamp)
             .order_by(vids.timestamp, asc=False)
             .collect()
         )
@@ -160,9 +153,7 @@ def delete_file(file_uuid: str, file_type: str):
         raise HTTPException(status_code=400, detail=f"Unknown type: {file_type}")
 
     table = pxt.get_table(TABLE_PATHS[file_type])
-    status = table.delete(
-        where=(table.uuid == UUID(file_uuid)) & (table.user_id == config.DEFAULT_USER_ID)
-    )
+    status = table.delete(where=(table.uuid == UUID(file_uuid)))
     return {"message": "Deleted", "num_deleted": status.num_rows}
 
 

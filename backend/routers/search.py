@@ -22,7 +22,6 @@ class SearchRequest(BaseModel):
 
 @router.post("/search", response_model=SearchResponse)
 def search(body: SearchRequest):
-    user_id = config.DEFAULT_USER_ID
     results: list[dict] = []
 
     if "document" in body.types:
@@ -30,7 +29,7 @@ def search(body: SearchRequest):
             chunks = pxt.get_table(f"{config.APP_NAMESPACE}.chunks")
             sim = chunks.text.similarity(body.query)
             rows = list(
-                chunks.where((chunks.user_id == user_id) & (sim > body.threshold))
+                chunks.where(sim > body.threshold)
                 .order_by(sim, asc=False)
                 .select(
                     text=chunks.text,
@@ -61,7 +60,7 @@ def search(body: SearchRequest):
             imgs = pxt.get_table(f"{config.APP_NAMESPACE}.images")
             sim = imgs.image.similarity(body.query)
             rows = list(
-                imgs.where((imgs.user_id == user_id) & (sim > 0.2))
+                imgs.where(sim > 0.2)
                 .order_by(sim, asc=False)
                 .select(
                     uuid=imgs.uuid,
@@ -92,7 +91,7 @@ def search(body: SearchRequest):
             frames = pxt.get_table(f"{config.APP_NAMESPACE}.video_frames")
             sim = frames.frame.similarity(body.query)
             rows = list(
-                frames.where((frames.user_id == user_id) & (sim > 0.2))
+                frames.where(sim > 0.2)
                 .order_by(sim, asc=False)
                 .select(
                     uuid=frames.uuid,
@@ -121,9 +120,7 @@ def search(body: SearchRequest):
             sents = pxt.get_table(f"{config.APP_NAMESPACE}.video_sentences")
             sim = sents.text.similarity(body.query)
             rows = list(
-                sents.where(
-                    (sents.user_id == config.DEFAULT_USER_ID) & (sim > body.threshold)
-                )
+                sents.where(sim > body.threshold)
                 .order_by(sim, asc=False)
                 .select(
                     text=sents.text,

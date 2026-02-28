@@ -34,9 +34,6 @@ ALLOWED_EXTENSIONS = {
     "mp4", "mov", "avi",
 }
 
-# Default user (single-user / local mode)
-DEFAULT_USER_ID = "local_user"
-
 # CORS
 CORS_ORIGINS: list[str] = [
     origin.strip()

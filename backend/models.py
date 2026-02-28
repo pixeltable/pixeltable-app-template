@@ -12,7 +12,6 @@ class ToolAgentRow(BaseModel):
     """Row model for the app.agent table."""
     prompt: str
     timestamp: datetime
-    user_id: str
     initial_system_prompt: str = config.INITIAL_SYSTEM_PROMPT
     final_system_prompt: str = config.FINAL_SYSTEM_PROMPT
     max_tokens: int = config.DEFAULT_MAX_TOKENS
@@ -25,7 +24,6 @@ class ChatHistoryRow(BaseModel):
     content: str
     conversation_id: str
     timestamp: datetime
-    user_id: str
 
 
 # ── Data endpoint responses ──────────────────────────────────────────────────

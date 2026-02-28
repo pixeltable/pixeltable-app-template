@@ -35,7 +35,6 @@ documents = pxt.create_table(
         "document": pxt.Document,
         "uuid": uuid7(),
         "timestamp": pxt.Timestamp,
-        "user_id": pxt.String,
     },
     primary_key=["uuid"],
     if_exists="ignore",
@@ -64,10 +63,10 @@ print("  Documents: table + chunks view + embedding index")
 
 
 @pxt.query
-def search_documents(query_text: str, user_id: str):
+def search_documents(query_text: str):
     sim = chunks.text.similarity(query_text)
     return (
-        chunks.where((chunks.user_id == user_id) & (sim > 0.5) & (pxt_str.len(chunks.text) > 30))
+        chunks.where((sim > 0.5) & (pxt_str.len(chunks.text) > 30))
         .order_by(sim, asc=False)
         .select(
             chunks.text,
@@ -89,7 +88,6 @@ images = pxt.create_table(
         "image": pxt.Image,
         "uuid": uuid7(),
         "timestamp": pxt.Timestamp,
-        "user_id": pxt.String,
     },
     primary_key=["uuid"],
     if_exists="ignore",
@@ -110,10 +108,10 @@ print("  Images: table + thumbnail computed column + CLIP embedding index")
 
 
 @pxt.query
-def search_images(query_text: str, user_id: str):
+def search_images(query_text: str):
     sim = images.image.similarity(query_text)
     return (
-        images.where((images.user_id == user_id) & (sim > 0.25))
+        images.where(sim > 0.25)
         .order_by(sim, asc=False)
         .select(
             encoded_image=pxt_image.b64_encode(
@@ -133,7 +131,6 @@ videos = pxt.create_table(
         "video": pxt.Video,
         "uuid": uuid7(),
         "timestamp": pxt.Timestamp,
-        "user_id": pxt.String,
     },
     primary_key=["uuid"],
     if_exists="ignore",
@@ -164,10 +161,10 @@ print("  Videos: keyframes view + CLIP embedding index")
 
 
 @pxt.query
-def search_video_frames(query_text: str, user_id: str):
+def search_video_frames(query_text: str):
     sim = video_frames.frame.similarity(query_text)
     return (
-        video_frames.where((video_frames.user_id == user_id) & (sim > 0.25))
+        video_frames.where(sim > 0.25)
         .order_by(sim, asc=False)
         .select(
             encoded_frame=pxt_image.b64_encode(video_frames.frame, "png"),
@@ -195,7 +192,7 @@ video_audio_chunks.add_computed_column(
     transcription=openai.transcriptions(
         audio=video_audio_chunks.audio_chunk, model=config.WHISPER_MODEL_ID
     ),
-    if_exists="replace",
+    if_exists="ignore",
 )
 
 video_sentences = pxt.create_view(
@@ -219,9 +216,7 @@ def search_video_transcripts(query_text: str):
     """Search video transcripts by semantic similarity."""
     sim = video_sentences.text.similarity(query_text)
     return (
-        video_sentences.where(
-            (video_sentences.user_id == config.DEFAULT_USER_ID) & (sim > 0.7)
-        )
+        video_sentences.where(sim > 0.7)
         .order_by(sim, asc=False)
         .select(
             video_sentences.text,
@@ -241,7 +236,6 @@ chat_history = pxt.create_table(
         "content": pxt.String,
         "conversation_id": pxt.String,
         "timestamp": pxt.Timestamp,
-        "user_id": pxt.String,
     },
     if_exists="ignore",
 )
@@ -254,9 +248,9 @@ print("  Chat history: table + embedding index")
 
 
 @pxt.query
-def get_recent_chat_history(user_id: str, limit: int = 4):
+def get_recent_chat_history(limit: int = 4):
     return (
-        chat_history.where(chat_history.user_id == user_id)
+        chat_history
         .order_by(chat_history.timestamp, asc=False)
         .select(role=chat_history.role, content=chat_history.content)
         .limit(limit)
@@ -264,10 +258,10 @@ def get_recent_chat_history(user_id: str, limit: int = 4):
 
 
 @pxt.query
-def search_chat_history(query_text: str, user_id: str):
+def search_chat_history(query_text: str):
     sim = chat_history.content.similarity(query_text)
     return (
-        chat_history.where((chat_history.user_id == user_id) & (sim > 0.8))
+        chat_history.where(sim > 0.8)
         .order_by(sim, asc=False)
         .select(role=chat_history.role, content=chat_history.content, sim=sim)
         .limit(10)
@@ -286,7 +280,6 @@ agent = pxt.create_table(
     {
         "prompt": pxt.String,
         "timestamp": pxt.Timestamp,
-        "user_id": pxt.String,
         "initial_system_prompt": pxt.String,
         "final_system_prompt": pxt.String,
         "max_tokens": pxt.Int,
@@ -308,36 +301,36 @@ agent.add_computed_column(
             "temperature": agent.temperature,
         },
     ),
-    if_exists="replace",
+    if_exists="ignore",
 )
 
 # Step 2: Tool execution
 agent.add_computed_column(
     tool_output=invoke_tools(tools, agent.initial_response),
-    if_exists="replace",
+    if_exists="ignore",
 )
 
 # Step 3: Context retrieval (RAG)
 agent.add_computed_column(
-    doc_context=search_documents(agent.prompt, agent.user_id),
-    if_exists="replace",
-)
-agent.add_computed_column(
-    image_context=search_images(agent.prompt, agent.user_id),
-    if_exists="replace",
-)
-agent.add_computed_column(
-    video_frame_context=search_video_frames(agent.prompt, agent.user_id),
+    doc_context=search_documents(agent.prompt),
     if_exists="ignore",
 )
 agent.add_computed_column(
-    chat_memory_context=search_chat_history(agent.prompt, agent.user_id),
+    image_context=search_images(agent.prompt),
+    if_exists="ignore",
+)
+agent.add_computed_column(
+    video_frame_context=search_video_frames(agent.prompt),
+    if_exists="ignore",
+)
+agent.add_computed_column(
+    chat_memory_context=search_chat_history(agent.prompt),
     if_exists="ignore",
 )
 
 # Step 4: Recent chat history
 agent.add_computed_column(
-    history_context=get_recent_chat_history(agent.user_id),
+    history_context=get_recent_chat_history(),
     if_exists="ignore",
 )
 
@@ -349,7 +342,7 @@ agent.add_computed_column(
         agent.doc_context,
         agent.chat_memory_context,
     ),
-    if_exists="replace",
+    if_exists="ignore",
 )
 
 # Step 6: Assemble final messages
@@ -360,7 +353,7 @@ agent.add_computed_column(
         image_context=agent.image_context,
         video_frame_context=agent.video_frame_context,
     ),
-    if_exists="replace",
+    if_exists="ignore",
 )
 
 # Step 7: Final LLM call
@@ -374,13 +367,13 @@ agent.add_computed_column(
             "temperature": agent.temperature,
         },
     ),
-    if_exists="replace",
+    if_exists="ignore",
 )
 
 # Step 8: Extract answer text
 agent.add_computed_column(
     answer=agent.final_response.content[0].text,
-    if_exists="replace",
+    if_exists="ignore",
 )
 
 print("  Agent: 8-step tool-calling pipeline")

@@ -39,8 +39,6 @@ class QueryResponse(BaseModel):
 
 @router.post("/query", response_model=QueryResponse)
 def query(body: QueryRequest):
-    user_id = config.DEFAULT_USER_ID
-
     if not body.query:
         raise HTTPException(status_code=400, detail="Query text is required")
 
@@ -51,15 +49,11 @@ def query(body: QueryRequest):
         row = ToolAgentRow(
             prompt=body.query,
             timestamp=current_timestamp,
-            user_id=user_id,
         )
         agent_table.insert([row])
 
         result = (
-            agent_table.where(
-                (agent_table.timestamp == current_timestamp)
-                & (agent_table.user_id == user_id)
-            )
+            agent_table.where(agent_table.timestamp == current_timestamp)
             .select(
                 agent_table.answer,
                 agent_table.doc_context,
@@ -82,7 +76,6 @@ def query(body: QueryRequest):
                 content=body.query,
                 conversation_id=conversation_id,
                 timestamp=current_timestamp,
-                user_id=user_id,
             )])
             answer = data.get("answer", "Error: No answer generated.")
             if answer and not answer.startswith("Error:"):
@@ -91,7 +84,6 @@ def query(body: QueryRequest):
                     content=answer,
                     conversation_id=conversation_id,
                     timestamp=datetime.now(),
-                    user_id=user_id,
                 )])
         except Exception as e:
             logger.error(f"Error saving chat history: {e}")
@@ -117,12 +109,10 @@ def query(body: QueryRequest):
 
 @router.get("/conversations", response_model=list[ConversationSummary])
 def list_conversations():
-    user_id = config.DEFAULT_USER_ID
     try:
         table = pxt.get_table(f"{config.APP_NAMESPACE}.chat_history")
         rows = list(
-            table.where(table.user_id == user_id)
-            .select(
+            table.select(
                 role=table.role,
                 content=table.content,
                 conversation_id=table.conversation_id,
@@ -160,14 +150,10 @@ def list_conversations():
 
 @router.get("/conversations/{conversation_id}", response_model=ConversationDetail)
 def get_conversation(conversation_id: str):
-    user_id = config.DEFAULT_USER_ID
     try:
         table = pxt.get_table(f"{config.APP_NAMESPACE}.chat_history")
         rows = list(
-            table.where(
-                (table.user_id == user_id)
-                & (table.conversation_id == conversation_id)
-            )
+            table.where(table.conversation_id == conversation_id)
             .select(role=table.role, content=table.content, timestamp=table.timestamp)
             .order_by(table.timestamp, asc=True)
             .collect()
@@ -188,13 +174,9 @@ def get_conversation(conversation_id: str):
 
 @router.delete("/conversations/{conversation_id}", response_model=DeleteResponse)
 def delete_conversation(conversation_id: str):
-    user_id = config.DEFAULT_USER_ID
     try:
         table = pxt.get_table(f"{config.APP_NAMESPACE}.chat_history")
-        status = table.delete(
-            where=(table.user_id == user_id)
-            & (table.conversation_id == conversation_id)
-        )
+        status = table.delete(where=(table.conversation_id == conversation_id))
         return {"message": "Deleted", "num_deleted": status.num_rows}
     except Exception as e:
         logger.error(f"Error deleting conversation: {e}", exc_info=True)

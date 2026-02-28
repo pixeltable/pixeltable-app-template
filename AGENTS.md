@@ -82,7 +82,7 @@ All FastAPI endpoints use `def`, not `async def`. Pixeltable operations are sync
 
 ### Schema-as-code
 
-`setup_pixeltable.py` is run once to initialize (or reset) the schema. It uses `drop_dir` + `create_dir` for a clean slate, and `if_exists="ignore"` / `if_exists="replace"` for idempotent column additions. The schema defines:
+`setup_pixeltable.py` is run once to initialize (or reset) the schema. It uses `drop_dir` + `create_dir` for a clean slate, and `if_exists="ignore"` for idempotent operations. The schema defines:
 
 1. **Document pipeline** — table → `DocumentSplitter` view → sentence-transformer embedding index
 2. **Image pipeline** — table → thumbnail computed column → CLIP embedding index

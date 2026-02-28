@@ -169,7 +169,7 @@ export function AgentPage() {
             </div>
           )}
           {messages.map((msg, i) => (
-            <MessageBubble key={i} message={msg} />
+            <MessageBubble key={`${msg.role}-${msg.timestamp ?? i}`} message={msg} />
           ))}
           {isLoading && (
             <div className="flex items-start gap-3">
