@@ -9,18 +9,15 @@ import config
 import pixeltable as pxt
 
 from pixeltable.functions import image as pxt_image
-from pixeltable.functions.uuid import uuid7
-from pixeltable.functions.video import extract_audio
-from pixeltable.functions.anthropic import invoke_tools, messages
-from pixeltable.functions.huggingface import sentence_transformer, clip
 from pixeltable.functions import openai
 from pixeltable.functions import string as pxt_str
-from pixeltable.iterators import (
-    DocumentSplitter,
-    FrameIterator,
-    AudioSplitter,
-    StringSplitter,
-)
+from pixeltable.functions.anthropic import invoke_tools, messages
+from pixeltable.functions.audio import audio_splitter
+from pixeltable.functions.document import document_splitter
+from pixeltable.functions.huggingface import sentence_transformer, clip
+from pixeltable.functions.string import string_splitter
+from pixeltable.functions.uuid import uuid7
+from pixeltable.functions.video import extract_audio, frame_iterator
 
 import functions
 
@@ -43,7 +40,7 @@ documents = pxt.create_table(
 chunks = pxt.create_view(
     f"{config.APP_NAMESPACE}.chunks",
     documents,
-    iterator=DocumentSplitter.create(
+    iterator=document_splitter(
         document=documents.document,
         separators="page, sentence",
         metadata="title, heading, page",
@@ -140,7 +137,7 @@ videos = pxt.create_table(
 video_frames = pxt.create_view(
     f"{config.APP_NAMESPACE}.video_frames",
     videos,
-    iterator=FrameIterator.create(video=videos.video, keyframes_only=True),
+    iterator=frame_iterator(video=videos.video, keyframes_only=True),
     if_exists="ignore",
 )
 
@@ -184,13 +181,13 @@ videos.add_computed_column(
 video_audio_chunks = pxt.create_view(
     f"{config.APP_NAMESPACE}.video_audio_chunks",
     videos,
-    iterator=AudioSplitter.create(audio=videos.audio, chunk_duration_sec=30.0),
+    iterator=audio_splitter(audio=videos.audio, duration=30.0),
     if_exists="ignore",
 )
 
 video_audio_chunks.add_computed_column(
     transcription=openai.transcriptions(
-        audio=video_audio_chunks.audio_chunk, model=config.WHISPER_MODEL_ID
+        audio=video_audio_chunks.audio_segment, model=config.WHISPER_MODEL_ID
     ),
     if_exists="ignore",
 )
@@ -198,7 +195,7 @@ video_audio_chunks.add_computed_column(
 video_sentences = pxt.create_view(
     f"{config.APP_NAMESPACE}.video_sentences",
     video_audio_chunks.where(video_audio_chunks.transcription != None),
-    iterator=StringSplitter.create(
+    iterator=string_splitter(
         text=video_audio_chunks.transcription.text, separators="sentence"
     ),
     if_exists="ignore",
