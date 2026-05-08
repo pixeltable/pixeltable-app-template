@@ -7,7 +7,7 @@ from pixeltable.serving import FastAPIRouter
 from fastapi import HTTPException
 
 import config
-from models import ToolAgentRow, ChatHistoryRow, QueryRequest, QueryMetadata, QueryResponse
+from models import ToolAgentRow, ChatHistoryRow, AgentResult, QueryRequest, QueryMetadata, QueryResponse
 
 logger = logging.getLogger(__name__)
 router = FastAPIRouter(prefix="/api/agent", tags=["agent"])
@@ -42,16 +42,13 @@ def query(body: QueryRequest):
     try:
         agent_table = pxt.get_table(f"{config.APP_NAMESPACE}.agent")
         ts = datetime.now()
-        agent_table.insert([ToolAgentRow(prompt=body.query, timestamp=ts)])
+        status = agent_table.insert([ToolAgentRow(prompt=body.query, timestamp=ts)], return_rows=True)
 
-        result = (agent_table.where(agent_table.timestamp == ts)
-                  .select(agent_table.answer, agent_table.doc_context, agent_table.image_context, agent_table.tool_output)
-                  .collect())
-        if not result:
+        if not status.rows:
             raise HTTPException(status_code=500, detail="No results after processing")
 
-        data = result[0]
-        answer = data.get("answer", "Error: No answer generated.")
+        result = AgentResult.model_validate(status.rows[0])
+        answer = result.answer or "Error: No answer generated."
         conversation_id = body.conversation_id or "default"
 
         try:
@@ -65,9 +62,9 @@ def query(body: QueryRequest):
             answer=answer,
             metadata=QueryMetadata(
                 timestamp=ts.isoformat(),
-                has_doc_context=bool(data.get("doc_context")),
-                has_image_context=bool(data.get("image_context")),
-                has_tool_output=bool(data.get("tool_output")),
+                has_doc_context=bool(result.doc_context),
+                has_image_context=bool(result.image_context),
+                has_tool_output=bool(result.tool_output),
             ),
         )
     except HTTPException:

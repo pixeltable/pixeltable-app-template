@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from pydantic import BaseModel
 import config
 
@@ -17,6 +18,14 @@ class ChatHistoryRow(BaseModel):
     content: str
     conversation_id: str
     timestamp: datetime
+
+
+class AgentResult(BaseModel):
+    model_config = {"extra": "ignore"}
+    answer: str | None = None
+    doc_context: Any = None
+    image_context: Any = None
+    tool_output: Any = None
 
 
 class QueryRequest(BaseModel):
