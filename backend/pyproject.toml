@@ -12,7 +12,7 @@ dependencies = [
     "anthropic",
     "openai",
     "sentence-transformers",
-    "duckduckgo-search",
+    "ddgs",
     "spacy",
     "en-core-web-sm",
     "tiktoken",

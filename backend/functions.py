@@ -9,9 +9,9 @@ import pixeltable as pxt
 def web_search(keywords: str, max_results: int = 5) -> str:
     """Search the web using DuckDuckGo (no API key required)."""
     try:
-        from duckduckgo_search import DDGS
+        from ddgs import DDGS
         with DDGS() as ddgs:
-            results = list(ddgs.news(keywords=keywords, region="wt-wt", safesearch="off", timelimit="m", max_results=max_results))
+            results = ddgs.news(keywords, max_results=max_results)
             if not results:
                 return "No results found."
             return "\n".join(
