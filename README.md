@@ -170,8 +170,8 @@ See [Pixeltable Configuration](https://docs.pixeltable.com/platform/configuratio
 backend/
 ├── main.py                 FastAPI app, CORS, router init, SPA fallback
 ├── config.py               Model IDs, system prompts, env overrides
-├── models.py               Pydantic models (agent endpoint only)
-├── functions.py            @pxt.udf definitions (web search, context assembly)
+├── models.py               Pydantic models (row schemas, result validation, API contract)
+├── functions.py            @pxt.udf definitions (web search via ddgs, context assembly)
 ├── setup_pixeltable.py     Schema (tables, views, indexes, agent pipeline — no router queries)
 ├── pyproject.toml          Dependencies (uv sync)
 └── routers/

@@ -27,8 +27,8 @@ A production-ready starter kit demonstrating how to put Pixeltable in production
 backend/
 ├── main.py                 FastAPI app (CORS, routers, SPA fallback)
 ├── config.py               Environment-driven settings (models, prompts, CORS)
-├── models.py               Pydantic models (agent endpoint only: row schemas + query request/response)
-├── functions.py             @pxt.udf definitions (web search, context assembly)
+├── models.py               Pydantic models (row schemas, result validation, API request/response)
+├── functions.py             @pxt.udf definitions (web search via ddgs, context assembly)
 ├── setup_pixeltable.py      Declarative schema: tables, views, indexes, agent pipeline (no router queries)
 ├── pyproject.toml           Dependencies managed via uv
 └── routers/
@@ -135,7 +135,7 @@ The frontend (`api.ts`) handles aggregation that was previously done server-side
 
 ### Minimal Pydantic models
 
-`models.py` contains only the models needed by the single hand-written endpoint (`POST /api/agent/query`): `ToolAgentRow` and `ChatHistoryRow` (row schemas for `table.insert()`) and `QueryRequest`/`QueryResponse` (API contract). All other endpoints are declarative — `FastAPIRouter` auto-generates request/response schemas from table columns and `@pxt.query` return types. Query endpoints return `{ "rows": [...] }` automatically.
+`models.py` contains only the models needed by the single hand-written endpoint (`POST /api/agent/query`): `ToolAgentRow` and `ChatHistoryRow` (row schemas for `table.insert()`), `AgentResult` (validates the dict from `return_rows=True` with `extra="ignore"` to extract only the fields the endpoint needs), and `QueryRequest`/`QueryResponse` (API contract). All other endpoints are declarative — `FastAPIRouter` auto-generates request/response schemas from table columns and `@pxt.query` return types. Query endpoints return `{ "rows": [...] }` automatically.
 
 ### Disentangled schema vs. serving
 
@@ -147,7 +147,7 @@ Business logic lives in Pixeltable functions, not endpoint handlers. `@pxt.udf` 
 
 ### Agent pipeline as computed columns
 
-The entire tool-calling agent is a chain of `add_computed_column()` calls on the `agent` table. Inserting a row triggers the full pipeline: tool planning → execution → multimodal RAG → context assembly → final answer. The router just inserts and reads back.
+The entire tool-calling agent is a chain of `add_computed_column()` calls on the `agent` table. Inserting a row triggers the full pipeline: tool planning → execution → multimodal RAG → context assembly → final answer. The router uses `insert(return_rows=True)` to get computed results directly from the insert (no follow-up query), then validates with `AgentResult.model_validate()` for typed field access.
 
 ### Typed frontend
 
@@ -211,6 +211,14 @@ def list_my_items():
     return my_table.select(name=my_table.name, score=my_table.score)
 
 router.add_query_route(path="/items", query=list_my_items, method="get")
+```
+
+**Insert with `return_rows=True` (get computed results without a follow-up query):**
+```python
+from models import AgentResult  # extra="ignore" to discard columns you don't need
+
+status = table.insert([row], return_rows=True)
+result = AgentResult.model_validate(status.rows[0])  # typed access to computed columns
 ```
 
 **Adding a tool to the agent:**
