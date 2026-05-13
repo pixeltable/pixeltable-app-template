@@ -1,0 +1,72 @@
+# Pixeltable service configuration for `pxt serve`.
+#
+# Start the API server:
+#   PYTHONPATH=. pxt serve pipeline
+#   PYTHONPATH=. pxt serve pipeline --port 9000
+#
+# The `modules` field imports schema.py on startup, which creates tables,
+# views, embedding indexes, and registers @pxt.query functions.
+
+[[service]]
+name = "pipeline"
+prefix = "/api"
+port = 8000
+modules = ["schema"]
+
+# ── Query routes ─────────────────────────────────────────────────────────────
+
+[[service.routes]]
+type = "query"
+path = "/search"
+query = "schema.search_documents"
+method = "post"
+
+[[service.routes]]
+type = "query"
+path = "/documents"
+query = "schema.list_documents"
+method = "get"
+
+[[service.routes]]
+type = "query"
+path = "/images"
+query = "schema.list_images"
+method = "get"
+
+# ── Insert routes ────────────────────────────────────────────────────────────
+# Each insert triggers computed columns (chunking, embeddings, thumbnails)
+# automatically. Optional export_sql sends results to a serving DB on every
+# insert — uncomment the [service.routes.export_sql] blocks below.
+
+[[service.routes]]
+type = "insert"
+path = "/ingest/document"
+table = "pipeline.documents"
+inputs = ["title", "body", "source_id"]
+outputs = ["uuid"]
+
+# Uncomment to auto-export every inserted document to a serving DB:
+# [service.routes.export_sql]
+# db_connect = "postgresql+psycopg://user:pass@host/db"
+# table = "processed_documents"
+# method = "insert"
+
+[[service.routes]]
+type = "insert"
+path = "/ingest/image"
+table = "pipeline.images"
+uploadfile_inputs = ["image"]
+inputs = ["label", "source_id"]
+outputs = ["uuid"]
+
+# ── Delete routes ────────────────────────────────────────────────────────────
+
+[[service.routes]]
+type = "delete"
+path = "/delete/document"
+table = "pipeline.documents"
+
+[[service.routes]]
+type = "delete"
+path = "/delete/image"
+table = "pipeline.images"

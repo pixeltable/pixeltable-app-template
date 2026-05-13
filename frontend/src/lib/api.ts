@@ -1,6 +1,7 @@
 import type {
   QueryResponse, FilesResponse, FileItem, PxtQueryResponse,
   ChunkItem, FrameItem, SearchResponse, SearchResult, Conversation, ChatMessage,
+  AgentSettings,
 } from '@/types'
 
 const BASE = '/api'
@@ -146,9 +147,20 @@ export async function search(params: { query: string; types?: string[]; limit?: 
 
 // ── Agent ────────────────────────────────────────────────────────────────────
 
-export async function sendQuery(query: string, conversationId?: string | null): Promise<QueryResponse> {
+export async function sendQuery(
+  query: string,
+  conversationId?: string | null,
+  settings?: AgentSettings,
+): Promise<QueryResponse> {
   return request<QueryResponse>(`${BASE}/agent/query`, {
-    method: 'POST', body: JSON.stringify({ query, conversation_id: conversationId }),
+    method: 'POST',
+    body: JSON.stringify({
+      query,
+      conversation_id: conversationId,
+      ...(settings?.temperature != null && { temperature: settings.temperature }),
+      ...(settings?.maxTokens != null && { max_tokens: settings.maxTokens }),
+      ...(settings?.systemPrompt && { system_prompt: settings.systemPrompt }),
+    }),
   })
 }
 

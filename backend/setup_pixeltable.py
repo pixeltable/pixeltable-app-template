@@ -44,6 +44,7 @@ chunks.add_embedding_index("text", idx_name="chunks_text_embed", string_embed=se
 
 @pxt.query
 def _search_documents(query_text: str):
+    """Search uploaded documents by semantic similarity."""
     sim = chunks.text.similarity(string=query_text)
     return (
         chunks.where((sim > 0.5) & (pxt_str.len(chunks.text) > 30))
@@ -147,9 +148,11 @@ chat_history.add_embedding_index(column="content", idx_name="chat_content_embed"
 
 
 @pxt.query
-def _get_recent_chat_history(limit: int = 4):
+def _get_recent_chat_history(conversation_id: str, limit: int = 4):
+    """Recent turns from the current conversation (scoped by conversation_id)."""
     return (
-        chat_history.order_by(chat_history.timestamp, asc=False)
+        chat_history.where(chat_history.conversation_id == conversation_id)
+        .order_by(chat_history.timestamp, asc=False)
         .select(role=chat_history.role, content=chat_history.content)
         .limit(limit)
     )
@@ -157,6 +160,7 @@ def _get_recent_chat_history(limit: int = 4):
 
 @pxt.query
 def _search_chat_history(query_text: str):
+    """Semantic recall across ALL conversations — long-term memory."""
     sim = chat_history.content.similarity(string=query_text)
     return (
         chat_history.where(sim > 0.8).order_by(sim, asc=False)
@@ -165,13 +169,28 @@ def _search_chat_history(query_text: str):
     )
 
 
-# Agent pipeline: 8-step tool-calling chain via computed columns
-tools = pxt.tools(functions.web_search, _search_video_transcripts)
+# Agent pipeline: tool-calling chain via computed columns
+#
+# Tool registry — the LLM discovers which tools to call based on the query.
+# This is the "Agent Discovery" layer: the model matches task requirements
+# to tool capabilities at runtime.
+tools = pxt.tools(functions.web_search, _search_documents, _search_video_transcripts)
+
+# ── MCP integration (optional) ──────────────────────────────────────────────
+# Load tools from any MCP-compliant server and combine with local tools.
+# This connects the agent to external services (local files, cloud providers,
+# databases, APIs) via the standard MCP protocol.
+#
+# mcp_tools = pxt.mcp_udfs("http://localhost:8000/mcp")
+# tools = pxt.tools(functions.web_search, _search_documents, _search_video_transcripts, *mcp_tools)
+#
+# See: https://github.com/pixeltable/mcp-server-pixeltable-developer
 
 agent = pxt.create_table(
     f"{ns}.agent",
-    {"prompt": pxt.String, "timestamp": pxt.Timestamp, "initial_system_prompt": pxt.String,
-     "final_system_prompt": pxt.String, "max_tokens": pxt.Int, "temperature": pxt.Float},
+    {"prompt": pxt.String, "conversation_id": pxt.String, "timestamp": pxt.Timestamp,
+     "initial_system_prompt": pxt.String, "final_system_prompt": pxt.String,
+     "max_tokens": pxt.Int, "temperature": pxt.Float},
     if_exists="ignore",
 )
 agent.add_computed_column(
@@ -188,7 +207,7 @@ agent.add_computed_column(doc_context=_search_documents(agent.prompt), if_exists
 agent.add_computed_column(image_context=_search_images(agent.prompt), if_exists="ignore")
 agent.add_computed_column(video_frame_context=_search_video_frames(agent.prompt), if_exists="ignore")
 agent.add_computed_column(chat_memory_context=_search_chat_history(agent.prompt), if_exists="ignore")
-agent.add_computed_column(history_context=_get_recent_chat_history(), if_exists="ignore")
+agent.add_computed_column(history_context=_get_recent_chat_history(agent.conversation_id), if_exists="ignore")
 agent.add_computed_column(
     multimodal_context=functions.assemble_context(
         agent.prompt, agent.tool_output, agent.doc_context, agent.chat_memory_context),

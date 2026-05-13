@@ -10,6 +10,12 @@ export interface QueryResponse {
   metadata: QueryMetadata
 }
 
+export interface AgentSettings {
+  temperature?: number
+  maxTokens?: number
+  systemPrompt?: string
+}
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string

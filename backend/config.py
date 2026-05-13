@@ -21,6 +21,8 @@ FINAL_SYSTEM_PROMPT = (
 DEFAULT_MAX_TOKENS: int = 1024
 DEFAULT_TEMPERATURE: float = 0.7
 
+MAX_QUERY_LENGTH: int = int(os.getenv("MAX_QUERY_LENGTH", "10000"))
+
 CORS_ORIGINS: list[str] = [
     origin.strip()
     for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")

@@ -2,14 +2,14 @@ import { useState, useRef } from 'react'
 import { flushSync } from 'react-dom'
 import {
   Send, Loader2, Bot, User, Plus, Clock, Trash2,
-  FileText, ImageIcon, Wrench,
+  FileText, ImageIcon, Wrench, Settings,
 } from 'lucide-react'
 import { marked } from 'marked'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import * as api from '@/lib/api'
 import { useMountEffect } from '@/lib/hooks'
-import type { ChatMessage, Conversation, QueryMetadata } from '@/types'
+import type { AgentSettings, ChatMessage, Conversation, QueryMetadata } from '@/types'
 import { cn } from '@/lib/utils'
 
 export function AgentPage() {
@@ -19,6 +19,12 @@ export function AgentPage() {
   const [conversationId, setConversationId] = useState<string | null>(null)
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [showHistory, setShowHistory] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [settings, setSettings] = useState<AgentSettings>({
+    temperature: 0.7,
+    maxTokens: 1024,
+    systemPrompt: '',
+  })
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
@@ -49,7 +55,13 @@ export function AgentPage() {
     if (!conversationId) setConversationId(cid)
 
     try {
-      const res = await api.sendQuery(trimmed, cid)
+      const activeSettings: AgentSettings = {
+        ...(settings.temperature !== 0.7 && { temperature: settings.temperature }),
+        ...(settings.maxTokens !== 1024 && { maxTokens: settings.maxTokens }),
+        ...(settings.systemPrompt && { systemPrompt: settings.systemPrompt }),
+      }
+      const hasCustomSettings = Object.keys(activeSettings).length > 0
+      const res = await api.sendQuery(trimmed, cid, hasCustomSettings ? activeSettings : undefined)
       const assistantMsg: ChatMessage = {
         role: 'assistant',
         content: res.answer,
@@ -153,11 +165,68 @@ export function AgentPage() {
             <Plus className="h-4 w-4 mr-1" />
             New
           </Button>
+          <Button
+            size="sm"
+            variant={showSettings ? 'default' : 'ghost'}
+            onClick={() => setShowSettings(s => !s)}
+          >
+            <Settings className="h-4 w-4 mr-1" />
+            Settings
+          </Button>
           <div className="flex-1" />
           <span className="text-xs text-muted-foreground">
-            8-step tool-calling pipeline via Pixeltable computed columns
+            Tool-calling pipeline via Pixeltable computed columns
           </span>
         </div>
+
+        {/* Response Personalization */}
+        {showSettings && (
+          <div className="border-b px-4 py-3 bg-muted/30 space-y-3">
+            <div className="flex items-center gap-6">
+              <label className="flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground w-20">Temperature</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.1}
+                  value={settings.temperature ?? 0.7}
+                  onChange={e =>
+                    setSettings(s => ({ ...s, temperature: parseFloat(e.target.value) }))
+                  }
+                  className="w-24 accent-primary"
+                />
+                <span className="w-8 text-right tabular-nums">
+                  {(settings.temperature ?? 0.7).toFixed(1)}
+                </span>
+              </label>
+              <label className="flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground w-20">Max tokens</span>
+                <select
+                  value={settings.maxTokens ?? 1024}
+                  onChange={e =>
+                    setSettings(s => ({ ...s, maxTokens: parseInt(e.target.value) }))
+                  }
+                  className="bg-card border rounded px-2 py-1 text-xs"
+                >
+                  {[256, 512, 1024, 2048, 4096].map(v => (
+                    <option key={v} value={v}>{v}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <label className="flex items-start gap-2 text-xs">
+              <span className="text-muted-foreground w-20 pt-1 shrink-0">System prompt</span>
+              <textarea
+                value={settings.systemPrompt ?? ''}
+                onChange={e => setSettings(s => ({ ...s, systemPrompt: e.target.value }))}
+                placeholder="Override the default system prompt..."
+                rows={2}
+                className="flex-1 bg-card border rounded px-2 py-1 text-xs resize-none focus:outline-none focus:ring-1 focus:ring-primary/30"
+              />
+            </label>
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">

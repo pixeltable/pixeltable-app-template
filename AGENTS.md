@@ -42,10 +42,16 @@ frontend/src/
 ├── lib/api.ts               Typed fetch wrapper + client-side aggregation/fan-in
 └── types/index.ts           TypeScript interfaces (PxtQueryResponse<T> + app-specific types)
 
-orchestration/                   Ephemeral orchestration deployment pattern
-├── pipeline.py                  Batch processing (ingest → compute → export_sql)
-├── udfs.py                      Pixeltable UDFs
-├── Dockerfile                   Ephemeral container
+orchestration/                   Ephemeral batch processing pattern
+├── schema.py                    Tables, views, embedding indexes, computed columns
+├── pipeline.py                  Batch: ingest → compute → export_sql → exit
+├── Dockerfile                   Ephemeral container (PIXELTABLE_HOME=/tmp)
+└── docker-compose.yml           Local testing
+
+serving/                         Declarative API serving (zero Python web code)
+├── schema.py                    Tables, views, indexes, @pxt.query functions
+├── pixeltable.toml              pxt serve config (routes, modules, export_sql)
+├── Dockerfile                   Long-running container
 └── docker-compose.yml           Local testing
 
 deploy/
@@ -99,8 +105,8 @@ All FastAPI endpoints use `def`, not `async def`. Pixeltable operations are sync
 1. **Document pipeline** — table → `DocumentSplitter` view → sentence-transformer embedding index
 2. **Image pipeline** — table → thumbnail computed column → CLIP embedding index
 3. **Video pipeline** — table → `FrameIterator` view (keyframes + CLIP) → audio extraction → Whisper transcription → `StringSplitter` view → embedding index
-4. **Chat history** — table with embedding index for memory retrieval
-5. **Agent pipeline** — 8-step chain (11 computed columns): initial LLM call with tools → tool execution → context retrieval (RAG across all media) → history injection → context assembly → final LLM call → answer extraction
+4. **Chat history** — table with embedding index for two-tier memory: conversation-scoped recent history + cross-conversation semantic recall
+5. **Agent pipeline** — 11 computed columns: initial LLM call with tools (web search, document search, transcript search) → tool execution → parallel RAG retrieval (docs, images, video frames, chat memory) → conversation-scoped history → context assembly → final LLM call → answer extraction
 
 ### Integrated `FastAPIRouter` (v0.6+)
 
@@ -129,13 +135,13 @@ All three routers use Pixeltable's `FastAPIRouter` (a subclass of FastAPI's `API
 | `/api/agent/conversation` | `add_query_route` (POST) | Messages for a `conversation_id` |
 | `/api/agent/messages` | `add_query_route` (GET) | All messages (frontend groups client-side) |
 | `/api/agent/delete-conversation` | `add_delete_route` | `match_columns=["conversation_id"]` |
-| `/api/agent/query` | **Hand-written** `@router.post` | Multi-table side effects (agent + 2× chat_history) |
+| `/api/agent/query` | **Hand-written** `@router.post` | Input guardrail, response personalization, multi-table side effects (agent + 2× chat_history) |
 
 The frontend (`api.ts`) handles aggregation that was previously done server-side: parallel fetches to granular endpoints, client-side merge/sort/group-by, and deduplication.
 
 ### Minimal Pydantic models
 
-`models.py` contains only the models needed by the single hand-written endpoint (`POST /api/agent/query`): `ToolAgentRow` and `ChatHistoryRow` (row schemas for `table.insert()`), `AgentResult` (validates the dict from `return_rows=True` with `extra="ignore"` to extract only the fields the endpoint needs), and `QueryRequest`/`QueryResponse` (API contract). All other endpoints are declarative — `FastAPIRouter` auto-generates request/response schemas from table columns and `@pxt.query` return types. Query endpoints return `{ "rows": [...] }` automatically.
+`models.py` contains only the models needed by the single hand-written endpoint (`POST /api/agent/query`): `ToolAgentRow` and `ChatHistoryRow` (row schemas for `table.insert()`), `AgentResult` (validates the dict from `return_rows=True` with `extra="ignore"` to extract only the fields the endpoint needs), and `QueryRequest`/`QueryResponse` (API contract). `QueryRequest` accepts optional `temperature`, `max_tokens`, and `system_prompt` for per-request personalization. All other endpoints are declarative — `FastAPIRouter` auto-generates request/response schemas from table columns and `@pxt.query` return types. Query endpoints return `{ "rows": [...] }` automatically.
 
 ### Disentangled schema vs. serving
 
@@ -172,6 +178,106 @@ All configure `PIXELTABLE_HOME=/data/pixeltable` pointing to persistent storage.
 ### `pyproject.toml` + `uv`
 
 Modern Python packaging. `uv sync` creates the venv and installs deps in one command. No `requirements.txt`.
+
+## Enterprise Architecture Patterns
+
+This section maps enterprise orchestration concepts to Pixeltable primitives. Everything below is either already implemented in the starter kit or achievable by composing existing features.
+
+### Orchestration Layer
+
+The computed column chain IS the orchestration engine. `setup_pixeltable.py` defines the orchestration schema — inserting a row triggers the full DAG automatically. No Airflow, no Temporal, no explicit workflow engine.
+
+### Memory Management
+
+Two tiers are implemented:
+- **Short-term (conversation-scoped)** — `_get_recent_chat_history(conversation_id)` retrieves recent turns from the current thread.
+- **Long-term (semantic recall)** — `_search_chat_history(query_text)` searches across ALL past conversations by embedding similarity.
+
+To add a **knowledge bank** (user preferences, facts, persistent notes), add another table with an embedding index and register its search query as a tool — see [agents-memory-mcp.md](https://github.com/pixeltable/pixeltable-skill/blob/main/references/agents-memory-mcp.md).
+
+### Agent Discovery / Routing
+
+The LLM chooses which tools to call based on the query — this IS agent discovery. The tool registry (`pxt.tools(web_search, _search_documents, _search_video_transcripts)`) maps directly to the "Agent Discovery" concept: matching task requirements to capabilities at runtime.
+
+For explicit intent routing (classify → dispatch to specialized handlers), use a computed column:
+
+```python
+@pxt.udf
+def route_prompt(intent: str, query: str) -> list[dict]:
+    prompts = {
+        "technical": "You are a senior technical support engineer.",
+        "billing": "You are a billing specialist. Be empathetic.",
+        "general": "You are a friendly customer service representative.",
+    }
+    system = prompts.get(intent.strip().lower(), prompts["general"])
+    return [{"role": "system", "content": system}, {"role": "user", "content": query}]
+
+agent.add_computed_column(
+    intent=messages(model="...", messages=[...]).content[0].text,
+    if_exists="ignore",
+)
+agent.add_computed_column(
+    routed_messages=route_prompt(agent.intent, agent.prompt),
+    if_exists="ignore",
+)
+```
+
+### Multi-Agent / Orchestrator-Worker (A2A)
+
+Pixeltable's `pxt.udf(table, return_value=...)` wraps an entire pipeline table as a callable function — this is the "AI Agents Marketplace" concept. Each worker table is a specialized agent:
+
+```python
+# Worker A: summarizer pipeline
+summarizer = pxt.create_table("agents.summarizer", {"text": pxt.String}, ...)
+summarizer.add_computed_column(summary=messages(...), ...)
+summarize_fn = pxt.udf(summarizer, return_value=summarizer.summary)
+
+# Worker B: fact-checker pipeline
+checker = pxt.create_table("agents.checker", {"claim": pxt.String}, ...)
+checker.add_computed_column(assessment=messages(...), ...)
+fact_check_fn = pxt.udf(checker, return_value=checker.assessment)
+
+# Orchestrator calls workers as computed columns (auto-parallelized)
+orchestrator.add_computed_column(summary=summarize_fn(text=orchestrator.article), ...)
+orchestrator.add_computed_column(fact_check=fact_check_fn(claim=orchestrator.article), ...)
+```
+
+Independent computed columns run in parallel automatically — no `asyncio.gather`, no explicit threading.
+
+### MCP Protocol Integration
+
+Connect to any MCP-compliant server to extend the agent with external tools:
+
+```python
+mcp_tools = pxt.mcp_udfs("http://localhost:8000/mcp")
+tools = pxt.tools(web_search, _search_documents, *mcp_tools)
+```
+
+MCP tools are called via `invoke_tools()` exactly like local UDFs. See the commented block in `setup_pixeltable.py` and the [MCP Server repo](https://github.com/pixeltable/mcp-server-pixeltable-developer).
+
+### Privacy & Security Guardrails
+
+The starter kit implements:
+- **Input validation** — length limits and sanitization in the `/api/agent/query` endpoint
+- **CORS restrictions** — configurable origin allowlist (`config.CORS_ORIGINS`)
+- **Container hardening** — non-root user, dropped capabilities in Helm deployment
+- **Secrets management** — API keys via environment variables / K8s Secrets
+
+For LLM-based guardrails (content filtering, prompt injection detection), add a computed column before the initial LLM call:
+
+```python
+agent.add_computed_column(
+    safety_check=messages(
+        model="...",
+        messages=[{"role": "user", "content": "Is this safe? Reply SAFE or UNSAFE:\n\n" + agent.prompt}],
+    ).content[0].text,
+    if_exists="ignore",
+)
+```
+
+### Response Personalization
+
+The agent accepts per-request `temperature`, `max_tokens`, and `system_prompt` via the API. The frontend Settings panel exposes these controls. For deeper personalization (user profiles, personas), add a `personas` table and look up persona settings before insert — see how [Pixelbot](https://github.com/pixeltable/pixelbot) implements `user_personas`.
 
 ## Key Patterns to Follow
 

@@ -1,99 +1,34 @@
-"""Pixeltable as an orchestration layer — ephemeral batch pipeline.
+"""Batch pipeline: ingest → compute → export.
 
-Ingests data from a source (JSON file, RDBMS, or queue), processes it
-through Pixeltable computed columns, and exports structured results to a
-serving database via ``export_sql``.
-
-Media outputs (thumbnails, audio, etc.) land directly in a cloud bucket
-when ``destination`` is set on computed columns.
+Ingests data from a source (JSON file, RDBMS, or sample data), processes it
+through Pixeltable computed columns (chunking, embeddings, thumbnails), and
+exports structured results to a serving database via export_sql.
 
 Usage:
     python pipeline.py                              # process sample data
     python pipeline.py --input batch.json           # process a JSON batch
-    python pipeline.py --input-db 'postgresql://…'  # pull from source RDBMS
+    python pipeline.py --input-db 'postgresql://…'  # pull from source DB
 
 Environment:
-    SERVING_DB_URL   SQLAlchemy connection string for the serving DB
-                     (default: sqlite:///serving.db)
-    OPENAI_API_KEY   Required for embedding / summarisation columns
+    SERVING_DB_URL   SQLAlchemy connection string (default: sqlite:///serving.db)
+    OPENAI_API_KEY   Enables LLM summary column
     MEDIA_DEST       Cloud URI for generated media (e.g. s3://bucket/out)
 """
-
 import argparse
 import json
 import os
-import sys
 import time
-from pathlib import Path
+from datetime import datetime
 
-import pixeltable as pxt
 from pixeltable.io.sql import export_sql
 
-from udfs import char_count, preview, thumbnail, word_count
+import schema
 
 SERVING_DB_URL = os.getenv("SERVING_DB_URL", "sqlite:///serving.db")
-MEDIA_DEST = os.getenv("MEDIA_DEST")  # e.g. s3://bucket/output
 
+# ── Sample data ──────────────────────────────────────────────────────────────
 
-# ── Schema ──────────────────────────────────────────────────────────────────
-
-def setup_schema() -> pxt.Table:
-    """Create (or reuse) the Pixeltable schema. Fully idempotent."""
-    pxt.create_dir("pipeline", if_exists="ignore")
-
-    t = pxt.create_table(
-        "pipeline.documents",
-        {"title": pxt.String, "body": pxt.String, "source_id": pxt.String},
-        if_exists="ignore",
-    )
-
-    t.add_computed_column(word_count=word_count(t.body), if_exists="ignore")
-    t.add_computed_column(char_count=char_count(t.body), if_exists="ignore")
-    t.add_computed_column(preview=preview(t.body), if_exists="ignore")
-
-    # Optional: if OPENAI_API_KEY is set, add an LLM summary column
-    if os.getenv("OPENAI_API_KEY"):
-        try:
-            from pixeltable.functions.openai import chat_completions
-
-            messages = [{"role": "user", "content": "Summarize in one sentence: " + t.body}]
-            t.add_computed_column(
-                summary=chat_completions(
-                    messages=messages,
-                    model="gpt-4o-mini",
-                ).choices[0].message.content,
-                if_exists="ignore",
-            )
-        except Exception as exc:
-            print(f"Skipping summary column: {exc}")
-
-    return t
-
-
-def setup_images_schema() -> pxt.Table:
-    """Create an images table with media-generating computed columns."""
-    t = pxt.create_table(
-        "pipeline.images",
-        {"image": pxt.Image, "label": pxt.String, "source_id": pxt.String},
-        if_exists="ignore",
-    )
-
-    # Metadata columns — these export as structured data via export_sql
-    t.add_computed_column(width=t.image.width, if_exists="ignore")
-    t.add_computed_column(height=t.image.height, if_exists="ignore")
-    t.add_computed_column(mode=t.image.mode, if_exists="ignore")
-
-    # Media-generating column: thumbnail.
-    # When MEDIA_DEST is set, generated thumbnails land directly in the bucket.
-    dest_kwargs = {"destination": MEDIA_DEST} if MEDIA_DEST else {}
-    t.add_computed_column(thumb=thumbnail(t.image), if_exists="ignore", **dest_kwargs)
-
-    return t
-
-
-# ── Data loading ────────────────────────────────────────────────────────────
-
-SAMPLE_DATA = [
+SAMPLE_DOCUMENTS = [
     {
         "title": "Introduction to Pixeltable",
         "body": (
@@ -154,7 +89,6 @@ SAMPLE_DATA = [
     },
 ]
 
-
 SAMPLE_IMAGES = [
     {
         "image": "https://raw.githubusercontent.com/pixeltable/pixeltable/main/docs/resources/images/000000000036.jpg",
@@ -167,6 +101,8 @@ SAMPLE_IMAGES = [
         "source_id": "img-002",
     },
 ]
+
+# ── Data loading ─────────────────────────────────────────────────────────────
 
 
 def load_from_json(path: str) -> list[dict]:
@@ -183,26 +119,29 @@ def load_from_db(db_url: str) -> list[dict]:
         return [dict(r._mapping) for r in rows]
 
 
-# ── Export ──────────────────────────────────────────────────────────────────
+# ── Export ───────────────────────────────────────────────────────────────────
 
-def export_results(docs: pxt.Table, images: pxt.Table) -> None:
-    """Export processed data to the serving database via export_sql."""
+
+def export_results() -> None:
+    """Export processed data to the serving database."""
+    docs = schema.documents
+    imgs = schema.images
+
     export_sql(
-        docs.select(docs.source_id, docs.title, docs.preview, docs.word_count, docs.char_count),
+        docs.select(docs.source_id, docs.title, docs.body, docs.uuid, docs.timestamp),
         "processed_documents",
         db_connect_str=SERVING_DB_URL,
         if_exists="replace",
     )
-    print(f"Exported documents -> {SERVING_DB_URL}:processed_documents")
+    print(f"  Documents -> {SERVING_DB_URL}:processed_documents")
 
-    # Export image metadata (not the pixels — those live in blob storage)
     export_sql(
-        images.select(images.source_id, images.label, images.width, images.height, images.mode),
+        imgs.select(imgs.source_id, imgs.label, imgs.width, imgs.height, imgs.mode),
         "processed_images",
         db_connect_str=SERVING_DB_URL,
         if_exists="replace",
     )
-    print(f"Exported images    -> {SERVING_DB_URL}:processed_images")
+    print(f"  Images    -> {SERVING_DB_URL}:processed_images")
 
 
 def verify_export() -> None:
@@ -212,22 +151,39 @@ def verify_export() -> None:
     engine = sa.create_engine(SERVING_DB_URL)
     with engine.connect() as conn:
         doc_rows = conn.execute(
-            sa.text("SELECT source_id, title, word_count FROM processed_documents")
+            sa.text("SELECT source_id, title FROM processed_documents")
         ).fetchall()
         img_rows = conn.execute(
             sa.text("SELECT source_id, label, width, height FROM processed_images")
         ).fetchall()
 
-    print(f"\nServing DB — processed_documents ({len(doc_rows)} rows):")
+    print(f"\n  Serving DB — processed_documents ({len(doc_rows)} rows):")
     for r in doc_rows:
-        print(f"  {r[0]}  {r[1]:<35s}  words={r[2]}")
+        print(f"    {r[0]}  {r[1]}")
 
-    print(f"\nServing DB — processed_images ({len(img_rows)} rows):")
+    print(f"\n  Serving DB — processed_images ({len(img_rows)} rows):")
     for r in img_rows:
-        print(f"  {r[0]}  {r[1]:<15s}  {r[2]}x{r[3]}")
+        print(f"    {r[0]}  {r[1]:<15s}  {r[2]}x{r[3]}")
 
 
-# ── Main ────────────────────────────────────────────────────────────────────
+def verify_search() -> None:
+    """Test semantic search on the ingested documents."""
+    query = "how does Pixeltable handle orchestration?"
+    sim = schema.sentences.text.similarity(string=query)
+    results = (
+        schema.sentences.where(sim > 0.3)
+        .order_by(sim, asc=False)
+        .select(schema.sentences.text, sim=sim)
+        .limit(3)
+        .collect()
+    )
+    print(f"\n  Search test — '{query}' ({len(results)} hits):")
+    for row in results:
+        print(f"    [{row['sim']:.2f}] {row['text'][:100]}...")
+
+
+# ── Main ─────────────────────────────────────────────────────────────────────
+
 
 def main():
     parser = argparse.ArgumentParser(description="Pixeltable batch pipeline")
@@ -237,13 +193,9 @@ def main():
     args = parser.parse_args()
 
     t0 = time.time()
+    now = datetime.now()
 
-    # 1. Schema
-    print("Setting up schema...")
-    docs_table = setup_schema()
-    images_table = setup_images_schema()
-
-    # 2. Load document data
+    # 1. Load data
     if args.input:
         data = load_from_json(args.input)
         print(f"Loaded {len(data)} documents from {args.input}")
@@ -251,26 +203,32 @@ def main():
         data = load_from_db(args.input_db)
         print(f"Loaded {len(data)} documents from source DB")
     else:
-        data = SAMPLE_DATA
+        data = SAMPLE_DOCUMENTS
         print(f"Using {len(data)} sample documents")
 
-    # 3. Insert documents (computed columns fire automatically)
+    for row in data:
+        row.setdefault("timestamp", now)
+
+    # 2. Insert documents (computed columns fire automatically:
+    #    sentence chunking, embeddings, optional LLM summary)
     print("Inserting documents...")
-    docs_table.insert(data)
+    schema.documents.insert(data)
 
-    # 4. Insert images (thumbnails generated automatically)
+    # 3. Insert images (thumbnails + metadata generated automatically)
     if not args.skip_images:
-        print("Inserting images (downloading + generating thumbnails)...")
-        if MEDIA_DEST:
-            print(f"  Thumbnails will land in: {MEDIA_DEST}")
-        else:
-            print("  Thumbnails stored locally (set MEDIA_DEST for cloud bucket)")
-        images_table.insert(SAMPLE_IMAGES)
+        print("Inserting images...")
+        img_data = SAMPLE_IMAGES.copy()
+        for row in img_data:
+            row.setdefault("timestamp", now)
+        schema.images.insert(img_data)
 
-    # 5. Export to serving DB
+    # 4. Export to serving DB
     print("Exporting results...")
-    export_results(docs_table, images_table)
+    export_results()
     verify_export()
+
+    # 5. Verify search works
+    verify_search()
 
     elapsed = time.time() - t0
     print(f"\nPipeline completed in {elapsed:.1f}s")

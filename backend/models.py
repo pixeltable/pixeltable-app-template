@@ -6,6 +6,7 @@ import config
 
 class ToolAgentRow(BaseModel):
     prompt: str
+    conversation_id: str = "default"
     timestamp: datetime
     initial_system_prompt: str = config.INITIAL_SYSTEM_PROMPT
     final_system_prompt: str = config.FINAL_SYSTEM_PROMPT
@@ -31,6 +32,9 @@ class AgentResult(BaseModel):
 class QueryRequest(BaseModel):
     query: str
     conversation_id: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    system_prompt: str | None = None
 
 
 class QueryMetadata(BaseModel):

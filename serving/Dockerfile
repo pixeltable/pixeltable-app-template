@@ -11,13 +11,14 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --python /usr/local/bin/python3
 ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 
-COPY schema.py pipeline.py sample_batch.json ./
+COPY schema.py pixeltable.toml ./
 
 RUN addgroup --system --gid 1000 appgroup && \
     adduser --system --uid 1000 --ingroup appgroup appuser && \
-    mkdir -p /tmp/pixeltable && chown -R appuser:appgroup /tmp/pixeltable
+    mkdir -p /data/pixeltable && chown -R appuser:appgroup /data/pixeltable
 
 USER appuser
-ENV PIXELTABLE_HOME=/tmp/pixeltable
+ENV PIXELTABLE_HOME=/data/pixeltable
+ENV PYTHONPATH=/app
 
-ENTRYPOINT ["uv", "run", "python", "pipeline.py"]
+ENTRYPOINT ["uv", "run", "pxt", "serve", "pipeline"]
