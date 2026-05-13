@@ -2,7 +2,7 @@
 
 [Pixeltable](https://github.com/pixeltable/pixeltable) is **open-source data infrastructure for AI** — it replaces the patchwork of blob storage, metadata DBs, vector stores, media processing, orchestration, and glue code with a single declarative system. Tables, computed columns, and embedding indexes handle what typically requires stitching together S3, Postgres, Pinecone, FFmpeg, HuggingFace, Airflow, LangChain, and custom scripts to wire them all together.
 
-This repo contains two reference architectures that map to Pixeltable's [deployment strategies](https://docs.pixeltable.com/howto/deployment/overview):
+This repo contains three reference architectures that map to Pixeltable's [deployment strategies](https://docs.pixeltable.com/howto/deployment/overview):
 
 1. **Starter Kit** (this folder) — Pixeltable as **full backend**: a long-running FastAPI + React app with persistent storage. The starter kit demonstrates three core patterns through a simple three-tab UI:
 
@@ -55,6 +55,21 @@ graph TD
     Trigger --> Schema --> Ingest --> Process
     Process -->|"structured data"| SQL
     Process -->|"generated media"| Bucket
+```
+
+3. **[Declarative Serving](serving/)** — Pixeltable as **zero-code API server**: define your schema in Python, your routes in TOML, and run `pxt serve`. Pixeltable generates the FastAPI app for you — no routers, no Pydantic models, no endpoint handlers.
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
+graph TD
+    Schema["<b>schema.py</b><br/>tables · views · indexes · @pxt.query"]
+    TOML["<b>pixeltable.toml</b><br/>insert · query · delete routes"]
+    Serve["<b>pxt serve</b>"]
+    API["<b>FastAPI App</b><br/>auto-generated · OpenAPI docs"]
+
+    Schema --> Serve
+    TOML --> Serve
+    Serve --> API
 ```
 
 These patterns extend to any use case — [ML data wrangling](https://docs.pixeltable.com/use-cases/ml-data-wrangling), [RAG applications](https://docs.pixeltable.com/use-cases/ai-applications), [agentic workflows](https://docs.pixeltable.com/use-cases/agents-mcp), and more. If you're migrating from an existing stack, see how Pixeltable maps to [DIY data pipelines](https://docs.pixeltable.com/migrate/from-diy-data-pipeline), [RDBMS + vector DBs](https://docs.pixeltable.com/migrate/from-rdbms-vectordbs), or [agent frameworks](https://docs.pixeltable.com/migrate/from-agent-frameworks).
@@ -185,10 +200,16 @@ frontend/src/
 ├── lib/api.ts              Typed fetch wrapper + client-side aggregation/fan-in
 └── types/index.ts          Shared interfaces (PxtQueryResponse<T> for generic query responses)
 
-orchestration/                  Ephemeral orchestration deployment pattern
-├── pipeline.py                 Batch processing script (ingest → compute → export_sql)
-├── udfs.py                     Pixeltable UDFs
-├── Dockerfile                  Ephemeral container
+orchestration/                  Ephemeral batch processing pattern
+├── schema.py                   Tables, views, embedding indexes, computed columns
+├── pipeline.py                 Batch: ingest → compute → export_sql → exit
+├── Dockerfile                  Ephemeral container (PIXELTABLE_HOME=/tmp)
+└── docker-compose.yml          Local testing
+
+serving/                        Declarative API serving (zero Python web code)
+├── schema.py                   Tables, views, indexes, @pxt.query functions
+├── pixeltable.toml             pxt serve config (routes, modules, export_sql)
+├── Dockerfile                  Long-running container
 └── docker-compose.yml          Local testing
 
 deploy/
@@ -214,7 +235,7 @@ Pixeltable is designed to work well with AI coding assistants. See [Building wit
 
 ## Standalone Serving with `pxt serve`
 
-If you don't need a custom FastAPI app, Pixeltable can serve tables and queries directly from a TOML config file or the CLI — no Python code required. See the [Serving docs](https://docs.pixeltable.com/howto/deployment/serving) for details.
+If you don't need a custom FastAPI app, Pixeltable can serve tables and queries directly from a TOML config — no Python web code required. See [`serving/`](serving/) for a working example, or the [Serving docs](https://docs.pixeltable.com/howto/deployment/serving) for full details.
 
 ## Learn More
 
