@@ -1,4 +1,5 @@
 """UDFs for the Pixeltable Starter Kit agent pipeline."""
+
 import os
 from typing import Any
 
@@ -10,6 +11,7 @@ def web_search(keywords: str, max_results: int = 5) -> str:
     """Search the web using DuckDuckGo (no API key required)."""
     try:
         from ddgs import DDGS
+
         with DDGS() as ddgs:
             results = ddgs.news(keywords, max_results=max_results)
             if not results:
@@ -35,7 +37,13 @@ def assemble_context(
         items = []
         for item in doc_context:
             text = item.get("text", "") if isinstance(item, dict) else str(item)
-            source = os.path.basename(str(item.get("source_doc", "Unknown") if isinstance(item, dict) else "Unknown"))
+            source = os.path.basename(
+                str(
+                    item.get("source_doc", "Unknown")
+                    if isinstance(item, dict)
+                    else "Unknown"
+                )
+            )
             if text:
                 items.append(f"- [Source: {source}] {text}")
         if items:
@@ -43,7 +51,10 @@ def assemble_context(
 
     chat_str = "N/A"
     if chat_memory_context:
-        lines = [f"- [{m.get('role', '?')}] {m.get('content', '')[:150]}" for m in chat_memory_context]
+        lines = [
+            f"- [{m.get('role', '?')}] {m.get('content', '')[:150]}"
+            for m in chat_memory_context
+        ]
         if lines:
             chat_str = "\n".join(lines)
 
@@ -55,7 +66,9 @@ def assemble_context(
     )
 
 
-def _extract_b64_images(items: list[dict[str, Any]] | None, key: str) -> list[dict[str, Any]]:
+def _extract_b64_images(
+    items: list[dict[str, Any]] | None, key: str
+) -> list[dict[str, Any]]:
     """Extract base64-encoded image blocks from context items."""
     result = []
     for item in items or []:
@@ -65,7 +78,16 @@ def _extract_b64_images(items: list[dict[str, Any]] | None, key: str) -> list[di
         if isinstance(data, bytes):
             data = data.decode("utf-8")
         if isinstance(data, str):
-            result.append({"type": "image", "source": {"type": "base64", "media_type": "image/png", "data": data}})
+            result.append(
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/png",
+                        "data": data,
+                    },
+                }
+            )
     return result
 
 

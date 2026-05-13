@@ -6,6 +6,7 @@ Idempotent — safe to import or run multiple times.
     python schema.py                # initialize schema directly
     import schema                   # used by pipeline.py
 """
+
 import os
 
 import pixeltable as pxt
@@ -50,9 +51,16 @@ if os.getenv("OPENAI_API_KEY"):
 
         documents.add_computed_column(
             summary=chat_completions(
-                messages=[{"role": "user", "content": "Summarize in one sentence: " + documents.body}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Summarize in one sentence: " + documents.body,
+                    }
+                ],
                 model="gpt-4o-mini",
-            ).choices[0].message.content,
+            )
+            .choices[0]
+            .message.content,
             if_exists="ignore",
         )
     except Exception as exc:

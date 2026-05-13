@@ -5,7 +5,9 @@ load_dotenv(override=True)
 
 APP_NAMESPACE = "app"
 
-EMBEDDING_MODEL_ID = os.getenv("EMBEDDING_MODEL", "intfloat/multilingual-e5-large-instruct")
+EMBEDDING_MODEL_ID = os.getenv(
+    "EMBEDDING_MODEL", "intfloat/multilingual-e5-large-instruct"
+)
 CLIP_MODEL_ID = os.getenv("CLIP_MODEL", "openai/clip-vit-base-patch32")
 WHISPER_MODEL_ID = os.getenv("WHISPER_MODEL", "whisper-1")
 CLAUDE_MODEL_ID = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-20250514")
@@ -25,6 +27,8 @@ MAX_QUERY_LENGTH: int = int(os.getenv("MAX_QUERY_LENGTH", "10000"))
 
 CORS_ORIGINS: list[str] = [
     origin.strip()
-    for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    for origin in os.getenv(
+        "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+    ).split(",")
     if origin.strip()
 ]

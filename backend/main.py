@@ -9,13 +9,17 @@ import config
 import setup_pixeltable  # noqa: F401 — triggers schema init on first import
 from routers import data, search, agent
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
+)
 
 app = FastAPI(title="Pixeltable Starter Kit", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=config.CORS_ORIGINS, allow_credentials=False,
-    allow_methods=["*"], allow_headers=["*"],
+    allow_origins=config.CORS_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 app.include_router(data.router)
 app.include_router(search.router)
@@ -32,7 +36,10 @@ def health():
 @app.get("/{full_path:path}")
 def spa_fallback(full_path: str):
     if not STATIC_DIR.is_dir():
-        return JSONResponse({"detail": "Frontend not built. Run: cd frontend && npm run build"}, status_code=404)
+        return JSONResponse(
+            {"detail": "Frontend not built. Run: cd frontend && npm run build"},
+            status_code=404,
+        )
     file_path = STATIC_DIR / full_path
     if file_path.is_file():
         return FileResponse(file_path)
@@ -41,4 +48,11 @@ def spa_fallback(full_path: str):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, reload_excludes=["data/*", "*.log"])
+
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        reload_excludes=["data/*", "*.log"],
+    )

@@ -6,6 +6,7 @@ Imported by pxt serve via the `modules` field in pyproject.toml.
     python schema.py                # initialize schema directly
     pxt serve pipeline              # imported automatically via modules = ["schema"]
 """
+
 import os
 
 import pixeltable as pxt
@@ -50,9 +51,16 @@ if os.getenv("OPENAI_API_KEY"):
 
         documents.add_computed_column(
             summary=chat_completions(
-                messages=[{"role": "user", "content": "Summarize in one sentence: " + documents.body}],
+                messages=[
+                    {
+                        "role": "user",
+                        "content": "Summarize in one sentence: " + documents.body,
+                    }
+                ],
                 model="gpt-4o-mini",
-            ).choices[0].message.content,
+            )
+            .choices[0]
+            .message.content,
             if_exists="ignore",
         )
     except Exception as exc:
@@ -102,7 +110,10 @@ def search_documents(query_text: str, limit: int = 10):
 def list_documents():
     """List all documents."""
     return documents.select(
-        documents.uuid, documents.title, documents.source_id, documents.timestamp,
+        documents.uuid,
+        documents.title,
+        documents.source_id,
+        documents.timestamp,
     ).order_by(documents.timestamp, asc=False)
 
 
@@ -110,8 +121,12 @@ def list_documents():
 def list_images():
     """List all images with metadata."""
     return images.select(
-        images.uuid, images.label, images.source_id,
-        images.width, images.height, images.thumbnail,
+        images.uuid,
+        images.label,
+        images.source_id,
+        images.width,
+        images.height,
+        images.thumbnail,
     ).order_by(images.timestamp, asc=False)
 
 

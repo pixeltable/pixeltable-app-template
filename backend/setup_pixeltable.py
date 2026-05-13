@@ -1,8 +1,9 @@
 """Pixeltable schema definition — runs on first import, idempotent.
 
-    python setup_pixeltable.py              # CLI init
-    RESET_SCHEMA=true python setup_pixeltable.py  # wipe + recreate
+python setup_pixeltable.py              # CLI init
+RESET_SCHEMA=true python setup_pixeltable.py  # wipe + recreate
 """
+
 import os
 
 import pixeltable as pxt
@@ -35,11 +36,21 @@ documents = pxt.create_table(
     if_exists="ignore",
 )
 chunks = pxt.create_view(
-    f"{ns}.chunks", documents,
-    iterator=document_splitter(document=documents.document, separators="page, sentence", metadata="title, heading, page"),
+    f"{ns}.chunks",
+    documents,
+    iterator=document_splitter(
+        document=documents.document,
+        separators="page, sentence",
+        metadata="title, heading, page",
+    ),
     if_exists="ignore",
 )
-chunks.add_embedding_index("text", idx_name="chunks_text_embed", string_embed=sentence_embed, if_exists="ignore")
+chunks.add_embedding_index(
+    "text",
+    idx_name="chunks_text_embed",
+    string_embed=sentence_embed,
+    if_exists="ignore",
+)
 
 
 @pxt.query
@@ -49,8 +60,14 @@ def _search_documents(query_text: str):
     return (
         chunks.where((sim > 0.5) & (pxt_str.len(chunks.text) > 30))
         .order_by(sim, asc=False)
-        .select(chunks.text, source_doc=chunks.document, sim=sim,
-                title=chunks.title, heading=chunks.heading, page_number=chunks.page)
+        .select(
+            chunks.text,
+            source_doc=chunks.document,
+            sim=sim,
+            title=chunks.title,
+            heading=chunks.heading,
+            page_number=chunks.page,
+        )
         .limit(20)
     )
 
@@ -66,15 +83,23 @@ images.add_computed_column(
     thumbnail=pxt_image.b64_encode(pxt_image.thumbnail(images.image, size=(320, 320))),
     if_exists="ignore",
 )
-images.add_embedding_index("image", idx_name="images_clip_embed", embedding=clip_embed, if_exists="ignore")
+images.add_embedding_index(
+    "image", idx_name="images_clip_embed", embedding=clip_embed, if_exists="ignore"
+)
 
 
 @pxt.query
 def _search_images(query_text: str):
     sim = images.image.similarity(string=query_text)
     return (
-        images.where(sim > 0.25).order_by(sim, asc=False)
-        .select(encoded_image=pxt_image.b64_encode(pxt_image.thumbnail(images.image, size=(224, 224)), "png"), sim=sim)
+        images.where(sim > 0.25)
+        .order_by(sim, asc=False)
+        .select(
+            encoded_image=pxt_image.b64_encode(
+                pxt_image.thumbnail(images.image, size=(224, 224)), "png"
+            ),
+            sim=sim,
+        )
         .limit(5)
     )
 
@@ -87,44 +112,69 @@ videos = pxt.create_table(
     if_exists="ignore",
 )
 video_frames = pxt.create_view(
-    f"{ns}.video_frames", videos,
+    f"{ns}.video_frames",
+    videos,
     iterator=frame_iterator(video=videos.video, keyframes_only=True),
     if_exists="ignore",
 )
 video_frames.add_computed_column(
-    frame_thumbnail=pxt_image.b64_encode(pxt_image.thumbnail(video_frames.frame, size=(320, 320))),
+    frame_thumbnail=pxt_image.b64_encode(
+        pxt_image.thumbnail(video_frames.frame, size=(320, 320))
+    ),
     if_exists="ignore",
 )
-video_frames.add_embedding_index(column="frame", idx_name="frames_clip_embed", embedding=clip_embed, if_exists="ignore")
+video_frames.add_embedding_index(
+    column="frame",
+    idx_name="frames_clip_embed",
+    embedding=clip_embed,
+    if_exists="ignore",
+)
 
 
 @pxt.query
 def _search_video_frames(query_text: str):
     sim = video_frames.frame.similarity(string=query_text)
     return (
-        video_frames.where(sim > 0.25).order_by(sim, asc=False)
-        .select(encoded_frame=pxt_image.b64_encode(video_frames.frame, "png"), source_video=video_frames.video, sim=sim)
+        video_frames.where(sim > 0.25)
+        .order_by(sim, asc=False)
+        .select(
+            encoded_frame=pxt_image.b64_encode(video_frames.frame, "png"),
+            source_video=video_frames.video,
+            sim=sim,
+        )
         .limit(5)
     )
 
 
-videos.add_computed_column(audio=extract_audio(videos.video, format="mp3"), if_exists="ignore")
+videos.add_computed_column(
+    audio=extract_audio(videos.video, format="mp3"), if_exists="ignore"
+)
 video_audio_chunks = pxt.create_view(
-    f"{ns}.video_audio_chunks", videos,
+    f"{ns}.video_audio_chunks",
+    videos,
     iterator=audio_splitter(audio=videos.audio, duration=30.0),
     if_exists="ignore",
 )
 video_audio_chunks.add_computed_column(
-    transcription=openai.transcriptions(audio=video_audio_chunks.audio_segment, model=config.WHISPER_MODEL_ID),
+    transcription=openai.transcriptions(
+        audio=video_audio_chunks.audio_segment, model=config.WHISPER_MODEL_ID
+    ),
     if_exists="ignore",
 )
 video_sentences = pxt.create_view(
     f"{ns}.video_sentences",
-    video_audio_chunks.where(video_audio_chunks.transcription != None),
-    iterator=string_splitter(text=video_audio_chunks.transcription.text, separators="sentence"),
+    video_audio_chunks.where(video_audio_chunks.transcription != None),  # noqa: E711
+    iterator=string_splitter(
+        text=video_audio_chunks.transcription.text, separators="sentence"
+    ),
     if_exists="ignore",
 )
-video_sentences.add_embedding_index(column="text", idx_name="sentences_text_embed", string_embed=sentence_embed, if_exists="ignore")
+video_sentences.add_embedding_index(
+    column="text",
+    idx_name="sentences_text_embed",
+    string_embed=sentence_embed,
+    if_exists="ignore",
+)
 
 
 @pxt.query
@@ -132,7 +182,8 @@ def _search_video_transcripts(query_text: str):
     """Search video transcripts by semantic similarity."""
     sim = video_sentences.text.similarity(string=query_text)
     return (
-        video_sentences.where(sim > 0.7).order_by(sim, asc=False)
+        video_sentences.where(sim > 0.7)
+        .order_by(sim, asc=False)
         .select(video_sentences.text, source_video=video_sentences.video, sim=sim)
         .limit(20)
     )
@@ -141,10 +192,20 @@ def _search_video_transcripts(query_text: str):
 # Chat history with embedding index
 chat_history = pxt.create_table(
     f"{ns}.chat_history",
-    {"role": pxt.String, "content": pxt.String, "conversation_id": pxt.String, "timestamp": pxt.Timestamp},
+    {
+        "role": pxt.String,
+        "content": pxt.String,
+        "conversation_id": pxt.String,
+        "timestamp": pxt.Timestamp,
+    },
     if_exists="ignore",
 )
-chat_history.add_embedding_index(column="content", idx_name="chat_content_embed", string_embed=sentence_embed, if_exists="ignore")
+chat_history.add_embedding_index(
+    column="content",
+    idx_name="chat_content_embed",
+    string_embed=sentence_embed,
+    if_exists="ignore",
+)
 
 
 @pxt.query
@@ -163,7 +224,8 @@ def _search_chat_history(query_text: str):
     """Semantic recall across ALL conversations — long-term memory."""
     sim = chat_history.content.similarity(string=query_text)
     return (
-        chat_history.where(sim > 0.8).order_by(sim, asc=False)
+        chat_history.where(sim > 0.8)
+        .order_by(sim, asc=False)
         .select(role=chat_history.role, content=chat_history.content, sim=sim)
         .limit(10)
     )
@@ -188,45 +250,79 @@ tools = pxt.tools(functions.web_search, _search_documents, _search_video_transcr
 
 agent = pxt.create_table(
     f"{ns}.agent",
-    {"prompt": pxt.String, "conversation_id": pxt.String, "timestamp": pxt.Timestamp,
-     "initial_system_prompt": pxt.String, "final_system_prompt": pxt.String,
-     "max_tokens": pxt.Int, "temperature": pxt.Float},
+    {
+        "prompt": pxt.String,
+        "conversation_id": pxt.String,
+        "timestamp": pxt.Timestamp,
+        "initial_system_prompt": pxt.String,
+        "final_system_prompt": pxt.String,
+        "max_tokens": pxt.Int,
+        "temperature": pxt.Float,
+    },
     if_exists="ignore",
 )
 agent.add_computed_column(
     initial_response=messages(
         model=config.CLAUDE_MODEL_ID,
         messages=[{"role": "user", "content": agent.prompt}],
-        tools=tools, tool_choice=tools.choice(required=True), max_tokens=agent.max_tokens,
-        model_kwargs={"system": agent.initial_system_prompt, "temperature": agent.temperature},
+        tools=tools,
+        tool_choice=tools.choice(required=True),
+        max_tokens=agent.max_tokens,
+        model_kwargs={
+            "system": agent.initial_system_prompt,
+            "temperature": agent.temperature,
+        },
     ),
     if_exists="ignore",
 )
-agent.add_computed_column(tool_output=invoke_tools(tools, agent.initial_response), if_exists="ignore")
-agent.add_computed_column(doc_context=_search_documents(agent.prompt), if_exists="ignore")
-agent.add_computed_column(image_context=_search_images(agent.prompt), if_exists="ignore")
-agent.add_computed_column(video_frame_context=_search_video_frames(agent.prompt), if_exists="ignore")
-agent.add_computed_column(chat_memory_context=_search_chat_history(agent.prompt), if_exists="ignore")
-agent.add_computed_column(history_context=_get_recent_chat_history(agent.conversation_id), if_exists="ignore")
+agent.add_computed_column(
+    tool_output=invoke_tools(tools, agent.initial_response), if_exists="ignore"
+)
+agent.add_computed_column(
+    doc_context=_search_documents(agent.prompt), if_exists="ignore"
+)
+agent.add_computed_column(
+    image_context=_search_images(agent.prompt), if_exists="ignore"
+)
+agent.add_computed_column(
+    video_frame_context=_search_video_frames(agent.prompt), if_exists="ignore"
+)
+agent.add_computed_column(
+    chat_memory_context=_search_chat_history(agent.prompt), if_exists="ignore"
+)
+agent.add_computed_column(
+    history_context=_get_recent_chat_history(agent.conversation_id), if_exists="ignore"
+)
 agent.add_computed_column(
     multimodal_context=functions.assemble_context(
-        agent.prompt, agent.tool_output, agent.doc_context, agent.chat_memory_context),
+        agent.prompt, agent.tool_output, agent.doc_context, agent.chat_memory_context
+    ),
     if_exists="ignore",
 )
 agent.add_computed_column(
     final_messages=functions.assemble_final_messages(
-        agent.history_context, agent.multimodal_context,
-        image_context=agent.image_context, video_frame_context=agent.video_frame_context),
+        agent.history_context,
+        agent.multimodal_context,
+        image_context=agent.image_context,
+        video_frame_context=agent.video_frame_context,
+    ),
     if_exists="ignore",
 )
 agent.add_computed_column(
     final_response=messages(
-        model=config.CLAUDE_MODEL_ID, messages=agent.final_messages, max_tokens=agent.max_tokens,
-        model_kwargs={"system": agent.final_system_prompt, "temperature": agent.temperature},
+        model=config.CLAUDE_MODEL_ID,
+        messages=agent.final_messages,
+        max_tokens=agent.max_tokens,
+        model_kwargs={
+            "system": agent.final_system_prompt,
+            "temperature": agent.temperature,
+        },
     ),
     if_exists="ignore",
 )
-agent.add_computed_column(answer=agent.final_response.content[0].text, if_exists="ignore")
+agent.add_computed_column(
+    answer=agent.final_response.content[0].text, if_exists="ignore"
+)
 
 if __name__ == "__main__":
     print("Schema setup complete.")

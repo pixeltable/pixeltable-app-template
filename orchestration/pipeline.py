@@ -14,6 +14,7 @@ Environment:
     OPENAI_API_KEY   Enables LLM summary column
     MEDIA_DEST       Cloud URI for generated media (e.g. s3://bucket/out)
 """
+
 import argparse
 import json
 import os
@@ -189,7 +190,9 @@ def main():
     parser = argparse.ArgumentParser(description="Pixeltable batch pipeline")
     parser.add_argument("--input", help="JSON file with documents to process")
     parser.add_argument("--input-db", help="SQLAlchemy URL to pull documents from")
-    parser.add_argument("--skip-images", action="store_true", help="Skip image processing")
+    parser.add_argument(
+        "--skip-images", action="store_true", help="Skip image processing"
+    )
     args = parser.parse_args()
 
     t0 = time.time()
