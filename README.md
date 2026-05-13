@@ -63,7 +63,7 @@ graph TD
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
 graph TD
     Schema["<b>schema.py</b><br/>tables · views · indexes · @pxt.query"]
-    TOML["<b>pixeltable.toml</b><br/>insert · query · delete routes"]
+    TOML["<b>pyproject.toml</b><br/>[tool.pixeltable] routes"]
     Serve["<b>pxt serve</b>"]
     API["<b>FastAPI App</b><br/>auto-generated · OpenAPI docs"]
 
@@ -208,7 +208,7 @@ orchestration/                  Ephemeral batch processing pattern
 
 serving/                        Declarative API serving (zero Python web code)
 ├── schema.py                   Tables, views, indexes, @pxt.query functions
-├── pixeltable.toml             pxt serve config (routes, modules, export_sql)
+├── pyproject.toml              Dependencies + pxt serve config ([tool.pixeltable])
 ├── Dockerfile                  Long-running container
 └── docker-compose.yml          Local testing
 

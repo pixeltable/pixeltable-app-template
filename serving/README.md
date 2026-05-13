@@ -5,15 +5,15 @@ Serve Pixeltable tables and queries as a REST API with **zero Python web code**.
 This is the complement to the [starter kit](../README.md) (full custom backend) and [`orchestration/`](../orchestration/) (ephemeral batch). Here Pixeltable IS the server — no hand-written endpoints, no routers, no Pydantic models.
 
 ```
-Schema (Python)          Routes (TOML)           Runtime
-┌─────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│ schema.py   │    │ pixeltable.toml  │    │ pxt serve       │
-│             │    │                  │    │                 │
-│ Tables      │───▶│ insert routes    │───▶│ FastAPI app     │
-│ Views       │    │ query routes     │    │ auto-generated  │
-│ Indexes     │    │ delete routes    │    │ OpenAPI docs    │
-│ @pxt.query  │    │ export_sql       │    │ /docs           │
-└─────────────┘    └──────────────────┘    └─────────────────┘
+Schema (Python)          Routes (TOML)                    Runtime
+┌─────────────┐    ┌──────────────────────────┐    ┌─────────────────┐
+│ schema.py   │    │ pyproject.toml           │    │ pxt serve       │
+│             │    │ [tool.pixeltable.service] │    │                 │
+│ Tables      │───▶│ insert routes            │───▶│ FastAPI app     │
+│ Views       │    │ query routes             │    │ auto-generated  │
+│ Indexes     │    │ delete routes            │    │ OpenAPI docs    │
+│ @pxt.query  │    │ export_sql               │    │ /docs           │
+└─────────────┘    └──────────────────────────┘    └─────────────────┘
 ```
 
 ## Quick Start
@@ -67,22 +67,22 @@ Same schema pattern as `orchestration/` — one file defines tables, views, comp
 - **Images:** table → thumbnail + metadata computed columns → `list_images` query
 - **Optional:** LLM summary column when `OPENAI_API_KEY` is set
 
-### Declarative routes (`pixeltable.toml`)
+### Declarative routes (`pyproject.toml`)
 
-Routes are TOML, not Python:
+Routes live in `[tool.pixeltable]` inside `pyproject.toml` — standard Python convention, no extra config file:
 
 ```toml
-[[service]]
+[[tool.pixeltable.service]]
 name = "pipeline"
 modules = ["schema"]       # imports schema.py on startup
 
-[[service.routes]]
+[[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search"
 query = "schema.search_documents"   # dotted path to @pxt.query
 method = "post"
 
-[[service.routes]]
+[[tool.pixeltable.service.routes]]
 type = "insert"
 path = "/ingest/document"
 table = "pipeline.documents"
@@ -90,21 +90,21 @@ inputs = ["title", "body", "source_id"]
 outputs = ["uuid"]
 ```
 
-`pxt serve` reads this config, imports the module, resolves the query functions, and generates a complete FastAPI app with OpenAPI docs.
+`pxt serve` reads this config, imports the module, resolves the query functions, and generates a complete FastAPI app with OpenAPI docs. You can also use a standalone `pixeltable.toml` file — Pixeltable checks both locations.
 
 ### Live SQL export on insert
 
 Insert routes can auto-export to a serving DB on every request — no batch step needed:
 
 ```toml
-[[service.routes]]
+[[tool.pixeltable.service.routes]]
 type = "insert"
 path = "/ingest/document"
 table = "pipeline.documents"
 inputs = ["title", "body", "source_id"]
 outputs = ["uuid"]
 
-[service.routes.export_sql]
+[tool.pixeltable.service.routes.export_sql]
 db_connect = "postgresql+psycopg://user:pass@host/db"
 table = "processed_documents"
 method = "insert"
@@ -151,8 +151,7 @@ This starter kit demonstrates three ways to deploy Pixeltable:
 ```
 serving/
 ├── schema.py           Tables, views, indexes, @pxt.query functions
-├── pixeltable.toml     pxt serve config (routes, modules, export_sql)
-├── pyproject.toml      Dependencies (uv)
+├── pyproject.toml      Dependencies + pxt serve config (routes, modules, export_sql)
 ├── Dockerfile          Long-running container
 └── docker-compose.yml  Local testing
 ```

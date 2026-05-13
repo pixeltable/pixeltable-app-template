@@ -50,7 +50,7 @@ orchestration/                   Ephemeral batch processing pattern
 
 serving/                         Declarative API serving (zero Python web code)
 ├── schema.py                    Tables, views, indexes, @pxt.query functions
-├── pixeltable.toml              pxt serve config (routes, modules, export_sql)
+├── pyproject.toml               Dependencies + pxt serve config ([tool.pixeltable])
 ├── Dockerfile                   Long-running container
 └── docker-compose.yml           Local testing
 

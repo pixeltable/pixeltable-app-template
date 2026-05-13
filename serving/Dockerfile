@@ -11,7 +11,7 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --python /usr/local/bin/python3
 ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 
-COPY schema.py pixeltable.toml ./
+COPY schema.py ./
 
 RUN addgroup --system --gid 1000 appgroup && \
     adduser --system --uid 1000 --ingroup appgroup appuser && \

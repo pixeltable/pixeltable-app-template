@@ -1,7 +1,7 @@
 """Pixeltable schema for declarative serving.
 
 Defines tables, views, embedding indexes, and @pxt.query functions.
-Imported by pxt serve via the `modules` field in pixeltable.toml.
+Imported by pxt serve via the `modules` field in pyproject.toml.
 
     python schema.py                # initialize schema directly
     pxt serve pipeline              # imported automatically via modules = ["schema"]
