@@ -78,7 +78,7 @@ These patterns extend to any use case — [ML data wrangling](https://docs.pixel
 
 ## Quick Start
 
-**Prerequisites:** Python 3.10+, Node.js 18+, [uv](https://docs.astral.sh/uv/)
+**Prerequisites:** Python 3.10+, Node.js 18+, [uv](https://docs.astral.sh/uv/) — or just open in a [Dev Container](#dev-container).
 
 ```bash
 git clone https://github.com/pixeltable/pixeltable-starter-kit.git
@@ -168,6 +168,45 @@ Each creates a managed K8s cluster with a 50Gi persistent volume for Pixeltable 
 cd deploy/aws-cdk && pip install -r requirements.txt && cdk deploy
 ```
 
+### Fly.io
+
+**Requires [flyctl](https://fly.io/docs/flyctl/install/).** Deploys the Dockerfile with a persistent volume and auto-scaling (including scale-to-zero):
+
+```bash
+cp deploy/fly/fly.toml .
+fly launch --no-deploy
+fly volumes create pxt_data --size 10 --region iad
+fly secrets set OPENAI_API_KEY=sk-... ANTHROPIC_API_KEY=sk-ant-...
+fly deploy
+```
+
+See [`deploy/fly/README.md`](deploy/fly/README.md) for full configuration.
+
+### Render
+
+**Requires a [Render](https://render.com) account.** Copy the Blueprint to your repo root and deploy from the dashboard:
+
+```bash
+cp deploy/render/render.yaml .
+git add render.yaml && git commit -m "add render blueprint" && git push
+# Then: Render dashboard → New → Blueprint Instance → connect repo
+```
+
+See [`deploy/render/README.md`](deploy/render/README.md) for full configuration.
+
+### Railway
+
+**Requires a [Railway](https://railway.app) account.** Copy the config to your repo root and deploy:
+
+```bash
+cp deploy/railway/railway.json .
+# Push, then: railway.app/new → Deploy from GitHub repo
+# Set PIXELTABLE_HOME=/data/pixeltable, OPENAI_API_KEY, ANTHROPIC_API_KEY in Variables
+# Add a Volume mounted at /data/pixeltable
+```
+
+See [`deploy/railway/README.md`](deploy/railway/README.md) for full configuration.
+
 ### Storage notes
 
 All deployment options configure `PIXELTABLE_HOME=/data/pixeltable` pointing to persistent storage (Docker volumes, K8s PVCs, or EFS). For large media workloads, configure external blob storage:
@@ -213,6 +252,9 @@ serving/                        Declarative API serving (zero Python web code)
 └── docker-compose.yml          Local testing
 
 deploy/
+├── fly/                    Fly.io (fly.toml + persistent volume)
+├── render/                 Render (Blueprint render.yaml)
+├── railway/                Railway (railway.json + Dockerfile)
 ├── helm/                   Helm chart (any existing K8s cluster)
 ├── terraform-k8s/          Terraform + AWS EKS
 ├── terraform-gke/          Terraform + GCP GKE
@@ -232,6 +274,17 @@ Pixeltable is designed to work well with AI coding assistants. See [Building wit
 - **[MCP Server](https://github.com/pixeltable/mcp-server-pixeltable-developer)** — interactive Pixeltable exploration (tables, queries, Python REPL)
 - **[Claude Code Skill](https://github.com/pixeltable/pixeltable-skill)** — deep Pixeltable expertise for Claude
 - **[AGENTS.md](AGENTS.md)** — architecture guide for AI agents working with this codebase
+
+## Dev Container
+
+Open this repo in [VS Code Dev Containers](https://containers.dev/), [GitHub Codespaces](https://github.com/features/codespaces), or any tool supporting the [Dev Container spec](https://containers.dev/). The `.devcontainer/` config auto-installs Python 3.12, Node 20, uv, and all dependencies — zero local setup.
+
+```bash
+# VS Code: Cmd+Shift+P → "Dev Containers: Reopen in Container"
+# GitHub Codespaces: Code → Create codespace on main
+```
+
+After the container builds, add your API keys to `.env` and start developing.
 
 ## Standalone Serving with `pxt serve`
 

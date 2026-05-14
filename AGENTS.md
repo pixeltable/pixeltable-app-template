@@ -55,11 +55,18 @@ serving/                         Declarative API serving (zero Python web code)
 └── docker-compose.yml           Local testing
 
 deploy/
+├── fly/                     Fly.io (fly.toml + persistent volume)
+├── render/                  Render (Blueprint render.yaml)
+├── railway/                 Railway (railway.json + Dockerfile)
 ├── helm/                    Helm chart (any existing K8s cluster)
 ├── terraform-k8s/           Terraform + AWS EKS
 ├── terraform-gke/           Terraform + GCP GKE
 ├── terraform-aks/           Terraform + Azure AKS
 └── aws-cdk/                 CDK + ECS Fargate
+
+.devcontainer/               Dev Container for VS Code / Codespaces
+├── devcontainer.json        Python 3.12, Node 20, uv, extensions
+└── post-create.sh           Auto-installs backend + frontend deps
 ```
 
 ## Setup
@@ -163,6 +170,9 @@ TypeScript interfaces in `types/index.ts` mirror the backend Pydantic models. `l
 
 A multi-stage `Dockerfile` builds the frontend and Python runtime into a single image. `docker-compose.yml` runs it locally with named volumes for Pixeltable data. Deployment options live in `deploy/`:
 
+- **`deploy/fly/`** — [Fly.io](https://fly.io): `fly.toml` with persistent volume, auto-scaling, scale-to-zero. Simplest path to production.
+- **`deploy/render/`** — [Render](https://render.com): Blueprint (`render.yaml`) for one-click deploy with persistent disk.
+- **`deploy/railway/`** — [Railway](https://railway.app): `railway.json` for build/deploy config. Add a volume at `/data/pixeltable`.
 - **`deploy/helm/`** — Helm chart for deploying on **any existing K8s cluster**. Creates Secret, PVC, schema init Job (Helm hook), Deployment with health checks, and LoadBalancer Service. No infra provisioning — just `helm install`.
 - **`deploy/terraform-k8s/`** — Provisions full AWS stack from scratch: VPC, EKS cluster, ECR, plus K8s resources. Pixeltable data on 50Gi EBS.
 - **`deploy/terraform-gke/`** — Same pattern for GCP: VPC, GKE cluster, Artifact Registry. 50Gi Persistent Disk.

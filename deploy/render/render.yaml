@@ -1,0 +1,38 @@
+# Render Blueprint — reproducible deploy of the Pixeltable Starter Kit.
+#
+# First-time deploy:
+#   1. Copy this file to the repo root: cp deploy/render/render.yaml .
+#   2. In Render dashboard → New → Blueprint → point at this repo.
+#   3. Render creates the web service + persistent disk.
+#   4. Set the two `sync: false` env vars (API keys) in the UI.
+#   5. Subsequent deploys reattach to the same disk — Pixeltable data persists.
+#
+# Or use `render blueprint apply` from the CLI.
+
+services:
+  - type: web
+    name: pixeltable-starter
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: standard               # Standard provides 4 GB RAM (needed for embeddings + Postgres).
+    region: oregon               # Match your frontend region if latency matters.
+    healthCheckPath: /api/data/list/documents
+    autoDeploy: true
+
+    disk:
+      name: pixeltable-data
+      mountPath: /data/pixeltable
+      sizeGB: 10                 # Increase for large media workloads.
+
+    envVars:
+      - key: PIXELTABLE_HOME
+        value: /data/pixeltable
+      - key: OPENAI_API_KEY
+        sync: false              # Set manually in Render dashboard.
+      - key: ANTHROPIC_API_KEY
+        sync: false              # Set manually in Render dashboard.
+      # Optional: external media storage
+      # - key: PIXELTABLE_INPUT_MEDIA_DEST
+      #   value: s3://your-bucket/input
+      # - key: CORS_ORIGINS
+      #   sync: false            # e.g. https://your-app.vercel.app

@@ -1,0 +1,39 @@
+{
+  "name": "Pixeltable Starter Kit",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12-bookworm",
+
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "20" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  "forwardPorts": [8000, 5173],
+  "portsAttributes": {
+    "8000": { "label": "Backend (FastAPI)", "onAutoForward": "notify" },
+    "5173": { "label": "Frontend (Vite)", "onAutoForward": "openPreview" }
+  },
+
+  "mounts": [
+    "source=pixeltable-data,target=/home/vscode/.pixeltable,type=volume"
+  ],
+
+  "containerEnv": {
+    "PIXELTABLE_HOME": "/home/vscode/.pixeltable"
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspaces/pixeltable-starter-kit/backend/.venv/bin/python"
+      }
+    }
+  }
+}
