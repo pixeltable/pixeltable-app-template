@@ -1,0 +1,32 @@
+# DigitalOcean App Platform spec for the Pixeltable Starter Kit.
+#
+# Deploy:
+#   1. Push this repo to GitHub
+#   2. doctl apps create --spec deploy/digitalocean/app.yaml
+#   3. Set OPENAI_API_KEY and ANTHROPIC_API_KEY in the dashboard
+#
+# Or: DigitalOcean dashboard → Apps → Create App → point at this repo.
+
+name: pixeltable-starter
+region: nyc
+features:
+  - buildpack-stack=ubuntu-22
+
+services:
+  - name: web
+    dockerfile_path: Dockerfile
+    http_port: 8000
+    instance_count: 1
+    instance_size_slug: professional-s
+    health_check:
+      http_path: /api/data/list/documents
+      initial_delay_seconds: 120
+      period_seconds: 30
+      timeout_seconds: 5
+    envs:
+      - key: PIXELTABLE_HOME
+        value: /data/pixeltable
+      - key: OPENAI_API_KEY
+        type: SECRET
+      - key: ANTHROPIC_API_KEY
+        type: SECRET

@@ -205,6 +205,17 @@ See [`deploy/render/README.md`](deploy/render/README.md) for full configuration.
 
 See [`deploy/railway/README.md`](deploy/railway/README.md) for full configuration.
 
+### DigitalOcean
+
+**Requires a [DigitalOcean](https://www.digitalocean.com) account.** Deploy via the App Platform spec or `doctl` CLI:
+
+```bash
+doctl apps create --spec deploy/digitalocean/app.yaml
+# Set OPENAI_API_KEY and ANTHROPIC_API_KEY as secrets in the dashboard
+```
+
+App Platform doesn't have native persistent volumes for Docker services — see [`deploy/digitalocean/README.md`](deploy/digitalocean/README.md) for persistence options (managed Postgres or Droplet with Docker Compose).
+
 ### Vercel (frontend only)
 
 **Requires a [Vercel](https://vercel.com) account.** Deploys the React frontend on Vercel's edge CDN with `/api` requests proxied to your backend on another platform:
@@ -266,6 +277,7 @@ deploy/
 ├── render/                 Render (Blueprint render.yaml)
 ├── railway/                Railway (railway.json + Dockerfile)
 ├── vercel/                 Vercel (frontend only — proxies /api to backend)
+├── digitalocean/           DigitalOcean App Platform (app.yaml spec)
 ├── helm/                   Helm chart (any existing K8s cluster)
 ├── terraform-k8s/          Terraform + AWS EKS
 ├── terraform-gke/          Terraform + GCP GKE
