@@ -144,7 +144,7 @@ This starter kit demonstrates three ways to deploy Pixeltable:
 
 ### Coming soon: `pxt deploy`
 
-`pxt deploy` will extend this pattern to managed infrastructure — deploy your service config directly to Pixeltable Cloud with compute routes, auto-scaling, and zero container management. Same TOML config, same schema, no Dockerfile needed.
+`pxt deploy` extends this pattern to managed infrastructure — deploy your service config directly to Pixeltable Cloud with auto-scaling and zero container management. Same TOML config, same schema, no Dockerfile needed. The CLI command is already merged ([PR #1319](https://github.com/pixeltable/pixeltable/pull/1319), [PR #1331](https://github.com/pixeltable/pixeltable/pull/1331)); cloud hosting is coming soon. See [`deploy/pixeltable-cloud/`](../deploy/pixeltable-cloud/) for details.
 
 ## Files
 

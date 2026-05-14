@@ -278,6 +278,7 @@ deploy/
 ├── railway/                Railway (railway.json + Dockerfile)
 ├── vercel/                 Vercel (frontend only — proxies /api to backend)
 ├── digitalocean/           DigitalOcean App Platform (app.yaml spec)
+├── pixeltable-cloud/       Pixeltable Cloud via pxt deploy (coming soon)
 ├── helm/                   Helm chart (any existing K8s cluster)
 ├── terraform-k8s/          Terraform + AWS EKS
 ├── terraform-gke/          Terraform + GCP GKE

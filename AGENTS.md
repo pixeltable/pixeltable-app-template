@@ -60,6 +60,7 @@ deploy/
 ├── railway/                 Railway (railway.json + Dockerfile)
 ├── vercel/                  Vercel (frontend only — proxies /api to backend)
 ├── digitalocean/            DigitalOcean App Platform (app.yaml spec)
+├── pixeltable-cloud/        Pixeltable Cloud via pxt deploy (coming soon)
 ├── helm/                    Helm chart (any existing K8s cluster)
 ├── terraform-k8s/           Terraform + AWS EKS
 ├── terraform-gke/           Terraform + GCP GKE
@@ -177,6 +178,7 @@ A multi-stage `Dockerfile` builds the frontend and Python runtime into a single 
 - **`deploy/railway/`** — [Railway](https://railway.app): `railway.json` for build/deploy config. Add a volume at `/data/pixeltable`.
 - **`deploy/vercel/`** — [Vercel](https://vercel.com): **frontend only** — deploys the React app with `/api` rewrites to a backend on another platform. Vercel is serverless-only and cannot run Pixeltable's embedded Postgres.
 - **`deploy/digitalocean/`** — [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform): `app.yaml` spec with Docker builder. For persistence, use managed Postgres or deploy to a Droplet with Docker Compose.
+- **`deploy/pixeltable-cloud/`** — **Coming soon.** `pxt deploy` deploys the same `serving/` config to Pixeltable Cloud — managed compute, storage, auto-scaling, no Dockerfile. Same schema, same routes, one command. See [PR #1319](https://github.com/pixeltable/pixeltable/pull/1319) and [PR #1331](https://github.com/pixeltable/pixeltable/pull/1331).
 - **`deploy/helm/`** — Helm chart for deploying on **any existing K8s cluster**. Creates Secret, PVC, schema init Job (Helm hook), Deployment with health checks, and LoadBalancer Service. No infra provisioning — just `helm install`.
 - **`deploy/terraform-k8s/`** — Provisions full AWS stack from scratch: VPC, EKS cluster, ECR, plus K8s resources. Pixeltable data on 50Gi EBS.
 - **`deploy/terraform-gke/`** — Same pattern for GCP: VPC, GKE cluster, Artifact Registry. 50Gi Persistent Disk.
