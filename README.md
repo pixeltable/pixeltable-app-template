@@ -207,6 +207,18 @@ cp deploy/railway/railway.json .
 
 See [`deploy/railway/README.md`](deploy/railway/README.md) for full configuration.
 
+### Vercel (frontend only)
+
+**Requires a [Vercel](https://vercel.com) account.** Deploys the React frontend on Vercel's edge CDN with `/api` requests proxied to your backend on another platform:
+
+```bash
+cp deploy/vercel/vercel.json frontend/
+cd frontend && npx vercel --yes
+# Set BACKEND_URL=https://your-backend.fly.dev in Vercel dashboard
+```
+
+See [`deploy/vercel/README.md`](deploy/vercel/README.md) for full configuration.
+
 ### Storage notes
 
 All deployment options configure `PIXELTABLE_HOME=/data/pixeltable` pointing to persistent storage (Docker volumes, K8s PVCs, or EFS). For large media workloads, configure external blob storage:
@@ -255,6 +267,7 @@ deploy/
 ├── fly/                    Fly.io (fly.toml + persistent volume)
 ├── render/                 Render (Blueprint render.yaml)
 ├── railway/                Railway (railway.json + Dockerfile)
+├── vercel/                 Vercel (frontend only — proxies /api to backend)
 ├── helm/                   Helm chart (any existing K8s cluster)
 ├── terraform-k8s/          Terraform + AWS EKS
 ├── terraform-gke/          Terraform + GCP GKE
