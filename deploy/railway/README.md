@@ -11,25 +11,23 @@ Deploy the Pixeltable Starter Kit on [Railway](https://railway.app). Includes a 
 
 ### Option 1: Dashboard deploy
 
-```bash
-# Copy railway.json to repo root
-cp deploy/railway/railway.json .
-git add railway.json && git commit -m "add railway config" && git push
-```
-
 1. Go to [railway.app/new](https://railway.app/new)
-2. Select **Deploy from GitHub repo**
-3. Connect your repo — Railway reads `railway.json` for build/deploy config
+2. Select **Deploy from GitHub repo** and connect your repo
+3. In your service → **Settings** → **Config as Code**, set the config file path to `/deploy/railway/railway.json`
+4. Redeploy to pick up the config
+
+No need to copy files to the repo root — Railway supports [custom config file paths](https://docs.railway.com/guides/config-as-code#using-a-custom-config-as-code-file).
 
 ### Option 2: Railway CLI
 
 ```bash
-cp deploy/railway/railway.json .
 npm i -g @railway/cli
 railway login
 railway init
 railway up
 ```
+
+Then set the config file path in the dashboard as described above.
 
 ### Set environment variables
 

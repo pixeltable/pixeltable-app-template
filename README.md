@@ -196,14 +196,12 @@ See [`deploy/render/README.md`](deploy/render/README.md) for full configuration.
 
 ### Railway
 
-**Requires a [Railway](https://railway.app) account.** Copy the config to your repo root and deploy:
+**Requires a [Railway](https://railway.app) account.** Railway supports [custom config paths](https://docs.railway.com/guides/config-as-code#using-a-custom-config-as-code-file) — no need to copy files:
 
-```bash
-cp deploy/railway/railway.json .
-# Push, then: railway.app/new → Deploy from GitHub repo
-# Set PIXELTABLE_HOME=/data/pixeltable, OPENAI_API_KEY, ANTHROPIC_API_KEY in Variables
-# Add a Volume mounted at /data/pixeltable
-```
+1. [railway.app/new](https://railway.app/new) → **Deploy from GitHub repo**
+2. Service → **Settings** → set config path to `/deploy/railway/railway.json`
+3. Set `PIXELTABLE_HOME=/data/pixeltable`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` in Variables
+4. Add a Volume mounted at `/data/pixeltable`
 
 See [`deploy/railway/README.md`](deploy/railway/README.md) for full configuration.
 
