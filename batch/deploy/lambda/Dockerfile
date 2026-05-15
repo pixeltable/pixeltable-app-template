@@ -7,6 +7,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev --python /var/lang/bin/python3.12
 ENV UV_PROJECT_ENVIRONMENT=.venv
+ENV UV_CACHE_DIR=/tmp/uv-cache
 
 COPY schema.py pipeline.py sample_batch.json ./
 COPY handler.py ./

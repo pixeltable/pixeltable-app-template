@@ -5,8 +5,8 @@ Run the Pixeltable batch pipeline as a [Cloud Run Job](https://cloud.google.com/
 ## Prerequisites
 
 - [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) (`gcloud`)
-- A GCP project with Artifact Registry and Cloud Run APIs enabled
-- Docker (for building the image)
+- A GCP project with billing enabled
+- Docker (for local builds) or Cloud Build (no Docker needed)
 
 ## Deploy
 
@@ -19,13 +19,21 @@ gcloud config set project $PROJECT_ID
 # 2. Enable APIs
 gcloud services enable \
   artifactregistry.googleapis.com \
-  run.googleapis.com
+  run.googleapis.com \
+  cloudbuild.googleapis.com
 
 # 3. Create Artifact Registry repo (once)
 gcloud artifacts repositories create pixeltable \
   --repository-format=docker --location=$REGION
 
-# 4. Build and push
+# 4. Build and push (choose one)
+
+# Option A: Cloud Build (no local Docker needed)
+gcloud builds submit batch/ \
+  --tag $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest \
+  --region $REGION
+
+# Option B: Local Docker build
 cd batch
 docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest .
 docker push $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest
@@ -43,6 +51,8 @@ gcloud run jobs create pixeltable-pipeline \
 # 6. Run it
 gcloud run jobs execute pixeltable-pipeline --region $REGION
 ```
+
+> **Permissions:** Cloud Build needs `roles/artifactregistry.writer` and `roles/storage.admin` on the default Compute Engine service account (`PROJECT_NUMBER-compute@developer.gserviceaccount.com`). If the build succeeds but push fails with "Permission denied", grant these roles.
 
 ## Trigger on a Schedule
 

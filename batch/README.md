@@ -127,14 +127,16 @@ Each folder has a README with full deploy commands. Quick summary:
 ### Google Cloud Run Jobs
 
 ```bash
-cd batch
-docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest .
-docker push $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest
+# Build remotely with Cloud Build (no local Docker needed)
+gcloud builds submit batch/ \
+  --tag $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest \
+  --region $REGION
 gcloud run jobs create pixeltable-pipeline \
   --image $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest \
+  --region $REGION \
   --memory 4Gi --cpu 2 --task-timeout 3600s --max-retries 3 \
   --set-env-vars PIXELTABLE_HOME=/tmp/pixeltable
-gcloud run jobs execute pixeltable-pipeline
+gcloud run jobs execute pixeltable-pipeline --region $REGION
 ```
 
 See [`deploy/cloud-run/`](deploy/cloud-run/) for CI/CD via Cloud Build, cron scheduling, and Pub/Sub triggers.

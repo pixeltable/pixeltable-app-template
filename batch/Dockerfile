@@ -15,9 +15,11 @@ COPY schema.py pipeline.py sample_batch.json ./
 
 RUN addgroup --system --gid 1000 appgroup && \
     adduser --system --uid 1000 --ingroup appgroup appuser && \
-    mkdir -p /tmp/pixeltable && chown -R appuser:appgroup /tmp/pixeltable
+    mkdir -p /tmp/pixeltable /tmp/uv-cache && \
+    chown -R appuser:appgroup /tmp/pixeltable /tmp/uv-cache
 
 USER appuser
 ENV PIXELTABLE_HOME=/tmp/pixeltable
+ENV UV_CACHE_DIR=/tmp/uv-cache
 
 ENTRYPOINT ["uv", "run", "python", "pipeline.py"]
