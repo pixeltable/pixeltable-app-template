@@ -2,13 +2,71 @@
 
 [Pixeltable](https://github.com/pixeltable/pixeltable) is **open-source data infrastructure for AI** — it replaces the patchwork of blob storage, metadata DBs, vector stores, media processing, orchestration, and glue code with a single declarative system. Tables, computed columns, and embedding indexes handle what typically requires stitching together S3, Postgres, Pinecone, FFmpeg, HuggingFace, Airflow, LangChain, and custom scripts to wire them all together.
 
-This repo contains three reference architectures that map to Pixeltable's [deployment strategies](https://docs.pixeltable.com/howto/deployment/overview):
+## Three Patterns
 
-1. **Starter Kit** (this folder) — Pixeltable as **full backend**: a long-running FastAPI + React app with persistent storage. The starter kit demonstrates three core patterns through a simple three-tab UI:
+This repo demonstrates three ways to use Pixeltable. Pick the one that matches your workload:
 
-    - **Data** — Upload documents, images, and videos. Pixeltable automatically chunks, extracts keyframes, transcribes audio, and generates thumbnails via computed columns and iterators.
-    - **Search** — Cross-modal similarity search across all media types using embedding indexes.
-    - **Agent** — Chat with a tool-calling agent (Claude) wired up entirely as Pixeltable computed columns.
+| Question | Pattern | Folder |
+|---|---|---|
+| I need a web app with a frontend | **Full Backend** — FastAPI + React | [`backend/`](backend/) + [`frontend/`](frontend/) |
+| I need batch/background processing (cron, queue, Cloud Run Job) | **Batch Processing** — pure Python script, no HTTP server | [`orchestration/`](orchestration/) |
+| I want an API with zero web code | **Declarative Serving** — `pxt serve` generates routes from TOML | [`serving/`](serving/) |
+
+Pixeltable itself is not an HTTP framework — it's a data engine. The starter kit wraps it in FastAPI because that demo needs a web UI, but **if your workload is batch processing, you don't need FastAPI at all**. `orchestration/` is a plain Python script that inserts data, lets computed columns process it, exports results, and exits. Run it as a Cloud Run Job, ECS Task, Kubernetes Job, Lambda, or a cron'd container.
+
+> For a more complete example, see **[Pixelbot](https://github.com/pixeltable/pixelbot)**.
+
+### Project Structure
+
+```
+backend/                       Full backend (FastAPI + React)
+├── main.py                    FastAPI app, CORS, router init, SPA fallback
+├── setup_pixeltable.py        Schema (tables, views, indexes, agent pipeline)
+├── functions.py               @pxt.udf definitions (web search, context assembly)
+├── models.py                  Pydantic models (row schemas, API contract)
+├── config.py                  Model IDs, system prompts, env overrides
+└── routers/
+    ├── data.py                Upload, list, delete, detail queries
+    ├── search.py              4 similarity search endpoints
+    └── agent.py               3 declarative + 1 hand-written agent query
+
+frontend/src/
+├── App.tsx                    Tab navigation (Data / Search / Agent)
+├── components/                Page components + shared UI
+├── lib/api.ts                 Typed fetch wrapper + client-side aggregation
+└── types/index.ts             Shared TypeScript interfaces
+
+orchestration/                 Batch processing (no HTTP server, no FastAPI)
+├── schema.py                  Tables, views, embedding indexes, computed columns
+├── pipeline.py                Script: ingest → compute → export_sql → exit
+├── Dockerfile                 Ephemeral container
+└── deploy/                    Cloud Run Job, K8s Job/CronJob/KEDA, ECS Fargate, Lambda
+
+serving/                       Declarative API serving (pxt serve, zero web code)
+├── schema.py                  Tables, views, indexes, @pxt.query functions
+├── pyproject.toml             Dependencies + route config ([tool.pixeltable])
+├── Dockerfile                 Long-running container
+└── docker-compose.yml         Local testing
+
+deploy/                        Deployment configs for the full backend
+├── fly/                       Fly.io (fly.toml + persistent volume)
+├── render/                    Render (Blueprint render.yaml)
+├── railway/                   Railway (railway.json + Dockerfile)
+├── vercel/                    Vercel (frontend only — proxies /api to backend)
+├── digitalocean/              DigitalOcean App Platform (app.yaml spec)
+├── pixeltable-cloud/          Pixeltable Cloud via pxt deploy (coming soon)
+├── helm/                      Helm chart (any existing K8s cluster)
+├── terraform-k8s/             Terraform + AWS EKS
+├── terraform-gke/             Terraform + GCP GKE
+├── terraform-aks/             Terraform + Azure AKS
+└── aws-cdk/                   AWS CDK + ECS Fargate
+```
+
+---
+
+## 1. Full Backend (Starter Kit)
+
+A long-running FastAPI + React app with persistent storage. Three tabs demonstrate three core Pixeltable patterns: multimodal upload with automatic processing, cross-modal similarity search, and a tool-calling agent wired entirely as computed columns.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
@@ -36,57 +94,7 @@ graph TD
     AP -.->|"@pxt.query"| EI
 ```
 
-2. **[Ephemeral Orchestration](orchestration/)** — Pixeltable as **batch processing engine** with no HTTP server: a Python script that ingests data, lets computed columns process it, [`export_sql`](https://docs.pixeltable.com/howto/cookbooks/data/data-export-sql)s results to a serving DB, and exits. Run it as a [Cloud Run Job](https://cloud.google.com/run/docs/create-jobs), ECS Fargate Task, Kubernetes Job, Lambda, or a cron'd container. No FastAPI, no endpoints — just data in, results out.
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
-graph TD
-    Trigger["<b>Cron · Queue · Webhook</b><br/>Cloud Scheduler · SQS · Pub/Sub"]
-
-    subgraph Container["Ephemeral Container · Pixeltable"]
-        Schema["<b>Create Schema</b><br/>tables + computed columns"]
-        Ingest["<b>Ingest</b><br/>text + media from queue, RDBMS, or S3"]
-        Process["<b>Computed Columns</b> + @pxt.udf<br/>thumbnails · transcription · embeddings"]
-    end
-
-    SQL["<b>Serving DB</b> · export_sql<br/>Postgres · MySQL · Snowflake"]
-    Bucket["<b>Cloud Bucket</b> · destination<br/>S3 · GCS · Azure Blob"]
-
-    Trigger --> Schema --> Ingest --> Process
-    Process -->|"structured data"| SQL
-    Process -->|"generated media"| Bucket
-```
-
-3. **[Declarative Serving](serving/)** — Pixeltable as **zero-code API server**: define your schema in Python, your routes in TOML, and run `pxt serve`. Pixeltable generates the FastAPI app for you — no routers, no Pydantic models, no endpoint handlers.
-
-```mermaid
-%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
-graph TD
-    Schema["<b>schema.py</b><br/>tables · views · indexes · @pxt.query"]
-    TOML["<b>pyproject.toml</b><br/>[tool.pixeltable] routes"]
-    Serve["<b>pxt serve</b>"]
-    API["<b>FastAPI App</b><br/>auto-generated · OpenAPI docs"]
-
-    Schema --> Serve
-    TOML --> Serve
-    Serve --> API
-```
-
-### Choosing a Pattern
-
-| Question | → Pattern |
-|---|---|
-| I need a web app with a frontend | **Starter Kit** — full FastAPI + React |
-| I need to process data in the background (batch, cron, queue) | **[Ephemeral Orchestration](orchestration/)** — pure Python script, no HTTP server |
-| I want an API with zero web code | **[Declarative Serving](serving/)** — `pxt serve` generates routes from TOML |
-
-Pixeltable itself is not an HTTP framework. It's a data engine. The starter kit wraps it in FastAPI because that demo needs a web UI, but **if your workload is batch processing, you don't need FastAPI at all** — `orchestration/` is a plain Python script that inserts data, lets computed columns process it, exports results, and exits. Run it as a Cloud Run Job, ECS Task, Kubernetes Job, Lambda, or a cron'd Docker container.
-
-These patterns extend to any use case — [ML data wrangling](https://docs.pixeltable.com/use-cases/ml-data-wrangling), [RAG applications](https://docs.pixeltable.com/use-cases/ai-applications), [agentic workflows](https://docs.pixeltable.com/use-cases/agents-mcp), and more. If you're migrating from an existing stack, see how Pixeltable maps to [DIY data pipelines](https://docs.pixeltable.com/migrate/from-diy-data-pipeline), [RDBMS + vector DBs](https://docs.pixeltable.com/migrate/from-rdbms-vectordbs), or [agent frameworks](https://docs.pixeltable.com/migrate/from-agent-frameworks).
-
-> For a more complete example, see **[Pixelbot](https://github.com/pixeltable/pixelbot)**.
-
-## Quick Start
+### Quick Start
 
 **Prerequisites:** Python 3.10+, Node.js 18+, [uv](https://docs.astral.sh/uv/) — or just open in a [Dev Container](#dev-container).
 
@@ -109,29 +117,25 @@ npm install && npm run dev   # http://localhost:5173
 
 **Production:** `cd frontend && npm run build` then `cd ../backend && python main.py` — serves everything at `:8000`.
 
-## Deploy
+### Deploy
 
-### Docker Compose (local / single server)
-
-**Requires [Docker](https://docs.docker.com/get-docker/)** (Docker Desktop on macOS/Windows, or Docker Engine on Linux).
+<details>
+<summary><b>Docker Compose</b> (local / single server)</summary>
 
 ```bash
 cp .env.example .env          # add API keys
 docker compose up --build     # http://localhost:8000
 ```
 
-Pixeltable data persists across restarts via named Docker volumes. Two volumes are used: `pixeltable-data` (catalog + managed blobs at `/data/pixeltable`) and `uploads` (raw files at `/app/data` that Pixeltable rows reference by path). Keep both or neither — deleting only `uploads` will dangle refs. To reset everything: `docker compose down -v`. For production, set `PIXELTABLE_INPUT_MEDIA_DEST=s3://...` so Pixeltable owns the media and the `uploads` volume becomes unnecessary.
+Pixeltable data persists via named Docker volumes. Two volumes: `pixeltable-data` (catalog + blobs at `/data/pixeltable`) and `uploads` (raw files at `/app/data`). To reset: `docker compose down -v`. For production, set `PIXELTABLE_INPUT_MEDIA_DEST=s3://...` so Pixeltable owns the media.
+</details>
 
-### Helm (any existing Kubernetes cluster)
-
-**Requires [Helm 3](https://helm.sh/docs/intro/install/)** and a running K8s cluster (EKS, GKE, AKS, k3s, etc.).
+<details>
+<summary><b>Helm</b> (any existing Kubernetes cluster)</summary>
 
 ```bash
-# Build and push image to your registry
 docker build -t <your-registry>/pixeltable-starter:latest .
 docker push <your-registry>/pixeltable-starter:latest
-
-# Deploy
 helm install pixeltable-starter ./deploy/helm/pixeltable-starter \
   --set image.repository=<your-registry>/pixeltable-starter \
   --set secrets.OPENAI_API_KEY=sk-... \
@@ -148,39 +152,36 @@ helm install pixeltable-starter ./deploy/helm/pixeltable-starter \
   --set image.pullPolicy=Never --set service.type=NodePort \
   --set secrets.OPENAI_API_KEY=$OPENAI_API_KEY \
   --set secrets.ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
-kubectl port-forward svc/pixeltable-starter 9000:8000   # http://localhost:9000
+kubectl port-forward svc/pixeltable-starter 9000:8000
 ```
 
-See [`deploy/helm/README.md`](deploy/helm/README.md) for full configuration.
+See [`deploy/helm/README.md`](deploy/helm/README.md).
+</details>
 
-### Terraform (provision cluster from scratch)
-
-**Requires [Terraform](https://developer.hashicorp.com/terraform/install)** and cloud credentials. These configs provision everything — VPC, managed K8s cluster, container registry, and all K8s resources:
+<details>
+<summary><b>Terraform</b> (provision cluster from scratch — AWS EKS / GCP GKE / Azure AKS)</summary>
 
 ```bash
-# AWS EKS
-cd deploy/terraform-k8s && terraform init && terraform apply
-
-# GCP GKE
-cd deploy/terraform-gke && terraform init && terraform apply
-
-# Azure AKS
-cd deploy/terraform-aks && terraform init && terraform apply
+cd deploy/terraform-k8s && terraform init && terraform apply   # AWS EKS
+cd deploy/terraform-gke && terraform init && terraform apply   # GCP GKE
+cd deploy/terraform-aks && terraform init && terraform apply   # Azure AKS
 ```
 
-Each creates a managed K8s cluster with a 50Gi persistent volume for Pixeltable data. See each `deploy/terraform-*/README.md` for required variables.
+Each creates a managed K8s cluster with a 50Gi persistent volume. See each `deploy/terraform-*/README.md`.
+</details>
 
-### AWS CDK (ECS Fargate)
-
-**Requires [AWS CDK](https://docs.aws.amazon.com/cdk/v2/guide/getting-started.html)** and configured AWS credentials. Serverless containers with EFS for persistent storage and an ALB for load balancing:
+<details>
+<summary><b>AWS CDK</b> (ECS Fargate)</summary>
 
 ```bash
 cd deploy/aws-cdk && pip install -r requirements.txt && cdk deploy
 ```
 
-### Fly.io
+Serverless containers with EFS for persistent storage and ALB for load balancing.
+</details>
 
-**Requires [flyctl](https://fly.io/docs/flyctl/install/).** Deploys the Dockerfile with a persistent volume and auto-scaling (including scale-to-zero):
+<details>
+<summary><b>Fly.io</b></summary>
 
 ```bash
 cp deploy/fly/fly.toml .
@@ -190,11 +191,11 @@ fly secrets set OPENAI_API_KEY=sk-... ANTHROPIC_API_KEY=sk-ant-...
 fly deploy
 ```
 
-See [`deploy/fly/README.md`](deploy/fly/README.md) for full configuration.
+See [`deploy/fly/README.md`](deploy/fly/README.md).
+</details>
 
-### Render
-
-**Requires a [Render](https://render.com) account.** Copy the Blueprint to your repo root and deploy from the dashboard:
+<details>
+<summary><b>Render</b></summary>
 
 ```bash
 cp deploy/render/render.yaml .
@@ -202,33 +203,32 @@ git add render.yaml && git commit -m "add render blueprint" && git push
 # Then: Render dashboard → New → Blueprint Instance → connect repo
 ```
 
-See [`deploy/render/README.md`](deploy/render/README.md) for full configuration.
+See [`deploy/render/README.md`](deploy/render/README.md).
+</details>
 
-### Railway
-
-**Requires a [Railway](https://railway.app) account.** Railway supports [custom config paths](https://docs.railway.com/guides/config-as-code#using-a-custom-config-as-code-file) — no need to copy files:
+<details>
+<summary><b>Railway</b></summary>
 
 1. [railway.app/new](https://railway.app/new) → **Deploy from GitHub repo**
 2. Service → **Settings** → set config path to `/deploy/railway/railway.json`
 3. Set `PIXELTABLE_HOME=/data/pixeltable`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` in Variables
 4. Add a Volume mounted at `/data/pixeltable`
 
-See [`deploy/railway/README.md`](deploy/railway/README.md) for full configuration.
+See [`deploy/railway/README.md`](deploy/railway/README.md).
+</details>
 
-### DigitalOcean
-
-**Requires a [DigitalOcean](https://www.digitalocean.com) account.** Deploy via the App Platform spec or `doctl` CLI:
+<details>
+<summary><b>DigitalOcean</b></summary>
 
 ```bash
 doctl apps create --spec deploy/digitalocean/app.yaml
-# Set OPENAI_API_KEY and ANTHROPIC_API_KEY as secrets in the dashboard
 ```
 
-App Platform doesn't have native persistent volumes for Docker services — see [`deploy/digitalocean/README.md`](deploy/digitalocean/README.md) for persistence options (managed Postgres or Droplet with Docker Compose).
+App Platform doesn't have native persistent volumes — see [`deploy/digitalocean/README.md`](deploy/digitalocean/README.md) for persistence options.
+</details>
 
-### Vercel (frontend only)
-
-**Requires a [Vercel](https://vercel.com) account.** Deploys the React frontend on Vercel's edge CDN with `/api` requests proxied to your backend on another platform:
+<details>
+<summary><b>Vercel</b> (frontend only)</summary>
 
 ```bash
 cp deploy/vercel/vercel.json frontend/
@@ -236,72 +236,108 @@ cd frontend && npx vercel --yes
 # Set BACKEND_URL=https://your-backend.fly.dev in Vercel dashboard
 ```
 
-See [`deploy/vercel/README.md`](deploy/vercel/README.md) for full configuration.
+Deploys the React frontend on Vercel's edge CDN with `/api` proxied to your backend. See [`deploy/vercel/README.md`](deploy/vercel/README.md).
+</details>
 
-### Storage notes
+<details>
+<summary><b>Storage notes</b></summary>
 
-All deployment options configure `PIXELTABLE_HOME=/data/pixeltable` pointing to persistent storage (Docker volumes, K8s PVCs, or EFS). For large media workloads, configure external blob storage:
+All deployment options configure `PIXELTABLE_HOME=/data/pixeltable` pointing to persistent storage. For large media workloads:
 
 ```bash
 PIXELTABLE_INPUT_MEDIA_DEST=s3://your-bucket/input    # or gs:// or az://
 PIXELTABLE_OUTPUT_MEDIA_DEST=s3://your-bucket/output
 ```
 
-See [Pixeltable Configuration](https://docs.pixeltable.com/platform/configuration.md) and each `deploy/` README for details.
+See [Pixeltable Configuration](https://docs.pixeltable.com/platform/configuration.md).
+</details>
 
-## Project Structure
+---
 
-```
-backend/
-├── main.py                 FastAPI app, CORS, router init, SPA fallback
-├── config.py               Model IDs, system prompts, env overrides
-├── models.py               Pydantic models (row schemas, result validation, API contract)
-├── functions.py            @pxt.udf definitions (web search via ddgs, context assembly)
-├── setup_pixeltable.py     Schema (tables, views, indexes, agent pipeline — no router queries)
-├── pyproject.toml          Dependencies (uv sync)
-└── routers/
-    ├── data.py             FastAPIRouter + @pxt.query (upload, list, delete, detail queries)
-    ├── search.py           FastAPIRouter + @pxt.query (4 similarity search endpoints)
-    └── agent.py            FastAPIRouter + @pxt.query (3 declarative + 1 hand-written agent query)
+## 2. Batch Processing
 
-frontend/src/
-├── App.tsx                 Tab navigation (Data / Search / Agent)
-├── components/             Page components + shared UI (Button, Badge)
-├── lib/api.ts              Typed fetch wrapper + client-side aggregation/fan-in
-└── types/index.ts          Shared interfaces (PxtQueryResponse<T> for generic query responses)
+A Python script that ingests data, lets computed columns process it, exports results to a serving DB via [`export_sql`](https://docs.pixeltable.com/howto/cookbooks/data/data-export-sql), and exits. **No HTTP server, no FastAPI.** Run it as a Cloud Run Job, ECS Task, K8s Job, Lambda, or a cron'd container.
 
-orchestration/                  Batch processing (no HTTP server, no FastAPI)
-├── schema.py                   Tables, views, embedding indexes, computed columns
-├── pipeline.py                 Script: ingest → compute → export_sql → exit
-├── Dockerfile                  Ephemeral container
-├── docker-compose.yml          Local testing
-└── deploy/                     Cloud Run Job, K8s Job/CronJob/KEDA, ECS Fargate, Lambda
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
+graph TD
+    Trigger["<b>Cron · Queue · Webhook</b><br/>Cloud Scheduler · SQS · Pub/Sub"]
 
-serving/                        Declarative API serving (zero Python web code)
-├── schema.py                   Tables, views, indexes, @pxt.query functions
-├── pyproject.toml              Dependencies + pxt serve config ([tool.pixeltable])
-├── Dockerfile                  Long-running container
-└── docker-compose.yml          Local testing
+    subgraph Container["Ephemeral Container · Pixeltable"]
+        Schema["<b>Create Schema</b><br/>tables + computed columns"]
+        Ingest["<b>Ingest</b><br/>text + media from queue, RDBMS, or S3"]
+        Process["<b>Computed Columns</b> + @pxt.udf<br/>thumbnails · transcription · embeddings"]
+    end
 
-deploy/
-├── fly/                    Fly.io (fly.toml + persistent volume)
-├── render/                 Render (Blueprint render.yaml)
-├── railway/                Railway (railway.json + Dockerfile)
-├── vercel/                 Vercel (frontend only — proxies /api to backend)
-├── digitalocean/           DigitalOcean App Platform (app.yaml spec)
-├── pixeltable-cloud/       Pixeltable Cloud via pxt deploy (coming soon)
-├── helm/                   Helm chart (any existing K8s cluster)
-├── terraform-k8s/          Terraform + AWS EKS
-├── terraform-gke/          Terraform + GCP GKE
-├── terraform-aks/          Terraform + Azure AKS
-└── aws-cdk/                AWS CDK + ECS Fargate
+    SQL["<b>Serving DB</b> · export_sql<br/>Postgres · MySQL · Snowflake"]
+    Bucket["<b>Cloud Bucket</b> · destination<br/>S3 · GCS · Azure Blob"]
+
+    Trigger --> Schema --> Ingest --> Process
+    Process -->|"structured data"| SQL
+    Process -->|"generated media"| Bucket
 ```
 
-## Swapping AI Providers
+### Quick Start
 
-This starter kit uses **Anthropic** (agent) and **OpenAI** (transcription). Embeddings already run locally via HuggingFace. Pixeltable integrates with [20+ AI providers](https://docs.pixeltable.com/integrations/frameworks) — including [Ollama](https://docs.pixeltable.com/howto/providers/working-with-ollama), [Gemini](https://docs.pixeltable.com/howto/providers/working-with-gemini), [Bedrock](https://docs.pixeltable.com/howto/providers/working-with-bedrock), [Groq](https://docs.pixeltable.com/howto/providers/working-with-groq), [Together](https://docs.pixeltable.com/howto/providers/working-with-together), and [more](https://docs.pixeltable.com/integrations/frameworks). To swap providers, update the computed columns in `setup_pixeltable.py` — see [LLM tool calling](https://docs.pixeltable.com/howto/cookbooks/agents/llm-tool-calling) for which providers support the agent's tool-calling pattern.
+```bash
+cd orchestration
+uv sync
+PIXELTABLE_HOME=/tmp/pxt uv run python pipeline.py
+```
 
-## Developing with AI Tools
+### Deploy
+
+Ready-to-use configs in [`orchestration/deploy/`](orchestration/deploy/):
+
+| Platform | Config | Runtime | Best for |
+|---|---|---|---|
+| [**Cloud Run Jobs**](orchestration/deploy/cloud-run/) | `cloudbuild.yaml` | Up to 24h | GCP, cron/Pub/Sub triggers |
+| [**Kubernetes Job**](orchestration/deploy/k8s-job/) | `job.yaml`, `cronjob.yaml`, `keda-scaledjob.yaml` | Unlimited | Any K8s, queue-driven scaling |
+| [**ECS Fargate**](orchestration/deploy/ecs-fargate/) | `task-definition.json` | Unlimited | AWS, Spot pricing (~70% cheaper) |
+| [**Lambda**](orchestration/deploy/lambda/) | `Dockerfile`, `handler.py` | Up to 15 min | Small batches, event-driven |
+
+See [`orchestration/README.md`](orchestration/) for full details.
+
+---
+
+## 3. Declarative Serving
+
+Define your schema in Python, your routes in TOML, and run `pxt serve`. Pixeltable generates a complete API — no routers, no Pydantic models, no endpoint handlers.
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
+graph TD
+    Schema["<b>schema.py</b><br/>tables · views · indexes · @pxt.query"]
+    TOML["<b>pyproject.toml</b><br/>[tool.pixeltable] routes"]
+    Serve["<b>pxt serve</b>"]
+    API["<b>REST API</b><br/>auto-generated · OpenAPI docs"]
+
+    Schema --> Serve
+    TOML --> Serve
+    Serve --> API
+```
+
+### Quick Start
+
+```bash
+cd serving
+uv sync
+PYTHONPATH=. uv run pxt serve pipeline    # http://localhost:8000/docs
+```
+
+**Coming soon: `pxt deploy`** — same config, deployed to Pixeltable Cloud with auto-scaling and zero container management. See [`deploy/pixeltable-cloud/`](deploy/pixeltable-cloud/).
+
+See [`serving/README.md`](serving/) for full details.
+
+---
+
+## Additional Resources
+
+### Swapping AI Providers
+
+This starter kit uses **Anthropic** (agent) and **OpenAI** (transcription). Embeddings run locally via HuggingFace. Pixeltable integrates with [20+ AI providers](https://docs.pixeltable.com/integrations/frameworks) — including [Ollama](https://docs.pixeltable.com/howto/providers/working-with-ollama), [Gemini](https://docs.pixeltable.com/howto/providers/working-with-gemini), [Bedrock](https://docs.pixeltable.com/howto/providers/working-with-bedrock), [Groq](https://docs.pixeltable.com/howto/providers/working-with-groq), [Together](https://docs.pixeltable.com/howto/providers/working-with-together), and [more](https://docs.pixeltable.com/integrations/frameworks). To swap providers, update the computed columns in `setup_pixeltable.py` — see [LLM tool calling](https://docs.pixeltable.com/howto/cookbooks/agents/llm-tool-calling) for which providers support the agent's tool-calling pattern.
+
+### Developing with AI Tools
 
 Pixeltable is designed to work well with AI coding assistants. See [Building with LLMs](https://docs.pixeltable.com/overview/building-pixeltable-with-llms) for setup instructions, or jump straight to:
 
@@ -310,7 +346,7 @@ Pixeltable is designed to work well with AI coding assistants. See [Building wit
 - **[Claude Code Skill](https://github.com/pixeltable/pixeltable-skill)** — deep Pixeltable expertise for Claude
 - **[AGENTS.md](AGENTS.md)** — architecture guide for AI agents working with this codebase
 
-## Dev Container
+### Dev Container
 
 Open this repo in [VS Code Dev Containers](https://containers.dev/), [GitHub Codespaces](https://github.com/features/codespaces), or any tool supporting the [Dev Container spec](https://containers.dev/). The `.devcontainer/` config auto-installs Python 3.12, Node 20, uv, and all dependencies — zero local setup.
 
@@ -319,13 +355,7 @@ Open this repo in [VS Code Dev Containers](https://containers.dev/), [GitHub Cod
 # GitHub Codespaces: Code → Create codespace on main
 ```
 
-After the container builds, add your API keys to `.env` and start developing.
-
-## Standalone Serving with `pxt serve`
-
-If you don't need a custom FastAPI app, Pixeltable can serve tables and queries directly from a TOML config — no Python web code required. See [`serving/`](serving/) for a working example, or the [Serving docs](https://docs.pixeltable.com/howto/deployment/serving) for full details.
-
-## Learn More
+### Learn More
 
 [Pixeltable Docs](https://docs.pixeltable.com/) · [GitHub](https://github.com/pixeltable/pixeltable) · [10-Minute Tour](https://docs.pixeltable.com/overview/ten-minute-tour) · [Cookbooks](https://docs.pixeltable.com/howto/cookbooks) · [AGENTS.md](AGENTS.md)
 
