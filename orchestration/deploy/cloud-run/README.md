@@ -1,6 +1,6 @@
 # Google Cloud Run Jobs
 
-Run the Pixeltable batch pipeline as a [Cloud Run Job](https://cloud.google.com/run/docs/create-jobs) — no HTTP server, scale-to-zero billing, up to 24h runtime per task.
+Run the Pixeltable batch pipeline as a [Cloud Run Job](https://cloud.google.com/run/docs/create-jobs). No HTTP server, scale-to-zero billing, up to 24h runtime per task.
 
 ## Prerequisites
 

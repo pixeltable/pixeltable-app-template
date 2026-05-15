@@ -4,12 +4,12 @@ Deploys the Pixeltable Starter Kit on ECS Fargate with persistent storage via EF
 
 ## What gets created
 
-- **VPC** — 2 AZs, public/private subnets, NAT gateway
-- **ECS Fargate cluster** — 4 vCPU / 8 GB task, auto-scales 1–4
-- **EFS file system** — Persistent storage for Pixeltable data
-- **Application Load Balancer** — Public HTTP endpoint
-- **Secrets Manager** — Stores API keys
-- **CloudWatch** — Container insights + log group
+- **VPC**: 2 AZs, public/private subnets, NAT gateway
+- **ECS Fargate cluster**: 4 vCPU / 8 GB task, auto-scales 1–4
+- **EFS file system**: Persistent storage for Pixeltable data
+- **Application Load Balancer**: Public HTTP endpoint
+- **Secrets Manager**: Stores API keys
+- **CloudWatch**: Container insights + log group
 
 ## Prerequisites
 

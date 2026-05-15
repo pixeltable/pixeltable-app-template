@@ -4,10 +4,10 @@ One-command deployment of the Pixeltable Starter Kit to Azure Kubernetes Service
 
 ## What gets created
 
-- **Resource Group** — Contains all Azure resources
-- **AKS cluster** — Managed node pool (Standard_D4s_v3 × 2 by default, auto-scales)
-- **Azure Container Registry** — Docker repository for the app image
-- **K8s resources** — Namespace, secret (API keys), PVC (50Gi), schema init job, deployment, LoadBalancer service
+- **Resource Group**: Contains all Azure resources
+- **AKS cluster**: Managed node pool (Standard_D4s_v3 × 2 by default, auto-scales)
+- **Azure Container Registry**: Docker repository for the app image
+- **K8s resources**: Namespace, secret (API keys), PVC (50Gi), schema init job, deployment, LoadBalancer service
 
 ## Prerequisites
 

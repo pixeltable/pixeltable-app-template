@@ -1,4 +1,4 @@
-# Helm Chart — Pixeltable Starter Kit
+# Helm Chart: Pixeltable Starter Kit
 
 Deploy the Pixeltable Starter Kit on **any existing Kubernetes cluster** using Helm.
 
@@ -70,11 +70,11 @@ All values are in `pixeltable-starter/values.yaml`. Key options:
 
 ## How It Works
 
-1. **Secret** — API keys are stored in a K8s Secret.
-2. **PVC** — A PersistentVolumeClaim holds Pixeltable's embedded PostgreSQL and file cache.
-3. **Deployment** — When `schemaInit.enabled=true`, the container runs `setup_pixeltable.py` before starting uvicorn. Pixeltable manages its own embedded Postgres, so schema init and the server run in the same container to share the database process.
-4. **Service** — Exposes port 8000 via LoadBalancer (configurable).
-5. **Health checks** — Readiness probe at `/api/health` with longer initial delays to allow for schema init and model downloads.
+1. **Secret**: API keys are stored in a K8s Secret.
+2. **PVC**: A PersistentVolumeClaim holds Pixeltable's embedded PostgreSQL and file cache.
+3. **Deployment**: When `schemaInit.enabled=true`, the container runs `setup_pixeltable.py` before starting uvicorn. Pixeltable manages its own embedded Postgres, so schema init and the server run in the same container to share the database process.
+4. **Service**: Exposes port 8000 via LoadBalancer (configurable).
+5. **Health checks**: Readiness probe at `/api/health` with longer initial delays to allow for schema init and model downloads.
 
 ## Upgrade
 

@@ -18,7 +18,7 @@ For longer-running jobs, use [Cloud Run Jobs](../cloud-run/), [ECS Fargate](../e
 | File | What it does |
 |---|---|
 | `Dockerfile` | Lambda container image (based on AWS Lambda Python 3.12 base) |
-| `handler.py` | Lambda entry point — parses SQS/S3 events, runs pipeline |
+| `handler.py` | Lambda entry point: parses SQS/S3 events, runs pipeline |
 
 ## Deploy
 

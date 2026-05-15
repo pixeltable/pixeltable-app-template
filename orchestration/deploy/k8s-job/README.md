@@ -1,6 +1,6 @@
 # Kubernetes Job
 
-Run the Pixeltable batch pipeline as a Kubernetes Job — one-shot or scheduled via CronJob. For queue-driven scaling, add [KEDA](https://keda.sh/).
+Run the Pixeltable batch pipeline as a Kubernetes Job: one-shot or scheduled via CronJob. For queue-driven scaling, add [KEDA](https://keda.sh/).
 
 ## Files
 
@@ -42,7 +42,7 @@ helm install keda kedacore/keda --namespace keda --create-namespace
 kubectl apply -f keda-scaledjob.yaml
 ```
 
-Edit `keda-scaledjob.yaml` to match your queue type (SQS, Redis, Pub/Sub, RabbitMQ — see [KEDA scalers](https://keda.sh/docs/scalers/)).
+Edit `keda-scaledjob.yaml` to match your queue type (SQS, Redis, Pub/Sub, RabbitMQ). See [KEDA scalers](https://keda.sh/docs/scalers/).
 
 ## Test with minikube
 

@@ -1,11 +1,11 @@
 # Pixeltable Batch Processing
 
-Use Pixeltable as a **batch processing engine** — no HTTP server, no FastAPI, no endpoints. A Python script that ingests data, lets computed columns do the work, exports structured results to a serving database via [`export_sql`](https://docs.pixeltable.com/howto/cookbooks/data/data-export-sql), and routes generated media directly to a cloud bucket via the [`destination`](https://docs.pixeltable.com/sdk/latest/table) parameter. The container shuts down when done.
+Use Pixeltable as a **batch processing engine**: no HTTP server, no FastAPI, no endpoints. A Python script that ingests data, lets computed columns do the work, exports structured results to a serving database via [`export_sql`](https://docs.pixeltable.com/howto/cookbooks/data/data-export-sql), and routes generated media directly to a cloud bucket via the [`destination`](https://docs.pixeltable.com/sdk/latest/table) parameter. The container shuts down when done.
 
 **When to use this pattern:**
 - Long-running batch jobs (processing thousands of documents, hours of video)
 - Background tasks triggered by a queue, cron, or webhook
-- Sidecar to your existing stack — you already have a serving layer and just need processing
+- Sidecar to your existing stack: you already have a serving layer and just need processing
 - You don't need an HTTP API at all
 
 This is the complement to the [starter kit](../README.md) (interactive web app with FastAPI) and [`serving/`](../serving/) (declarative API via `pxt serve`). If you need an API, use those instead. If you just need to process data and export results, this is the right pattern.
@@ -114,8 +114,8 @@ export_sql(
 |---|---|---|
 | `PIXELTABLE_HOME` | `~/.pixeltable` | Set to `/tmp/pixeltable` for ephemeral |
 | `SERVING_DB_URL` | `sqlite:///serving.db` | SQLAlchemy connection string for export target |
-| `OPENAI_API_KEY` | — | Enables LLM summary column |
-| `MEDIA_DEST` | — | Cloud URI for generated media (e.g. `s3://bucket/out`) |
+| `OPENAI_API_KEY` | | Enables LLM summary column |
+| `MEDIA_DEST` | | Cloud URI for generated media (e.g. `s3://bucket/out`) |
 
 ## Production Deployment
 
@@ -182,8 +182,8 @@ See [`deploy/lambda/`](deploy/lambda/) for the handler, SQS event source mapping
 
 ## See Also
 
-- **[`serving/`](../serving/)** — Declarative API serving with `pxt serve` (zero Python web code)
-- **[`backend/`](../backend/)** — Full backend with FastAPI routers + React frontend
+- **[`serving/`](../serving/)**: Declarative API serving with `pxt serve` (zero Python web code)
+- **[`backend/`](../backend/)**: Full backend with FastAPI routers + React frontend
 
 ## Files
 

@@ -4,10 +4,10 @@ One-command deployment of the Pixeltable Starter Kit to Google Kubernetes Engine
 
 ## What gets created
 
-- **VPC** — Custom network with subnet + secondary ranges for pods/services
-- **GKE cluster** — Managed node pool (e2-standard-4 × 2 by default, auto-scales)
-- **Artifact Registry** — Docker repository for the app image
-- **K8s resources** — Namespace, secret (API keys), PVC (50Gi), schema init job, deployment, LoadBalancer service
+- **VPC**: Custom network with subnet + secondary ranges for pods/services
+- **GKE cluster**: Managed node pool (e2-standard-4 × 2 by default, auto-scales)
+- **Artifact Registry**: Docker repository for the app image
+- **K8s resources**: Namespace, secret (API keys), PVC (50Gi), schema init job, deployment, LoadBalancer service
 
 ## Prerequisites
 

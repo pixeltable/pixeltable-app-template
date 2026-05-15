@@ -1,8 +1,8 @@
-# Vercel — Pixeltable Starter Kit (Frontend Only)
+# Vercel: Pixeltable Starter Kit (Frontend Only)
 
 Deploy the React frontend on [Vercel](https://vercel.com) with the Pixeltable backend running on a separate platform (Fly.io, Render, Railway, K8s, etc.).
 
-Vercel is serverless-only — it doesn't support long-running Docker containers or persistent storage, which Pixeltable's embedded Postgres requires. This config deploys **just the frontend** and proxies `/api` requests to your backend.
+Vercel is serverless-only: it doesn't support long-running Docker containers or persistent storage, which Pixeltable's embedded Postgres requires. This config deploys **just the frontend** and proxies `/api` requests to your backend.
 
 ## Architecture
 
@@ -67,13 +67,13 @@ The backend's `config.py` already reads `CORS_ORIGINS` from the environment.
 
 | Deployment | Use when |
 |---|---|
-| **Monolith** (Docker Compose, Fly, Render, Railway, K8s) | Simple — one container serves everything |
+| **Monolith** (Docker Compose, Fly, Render, Railway, K8s) | Simple: one container serves everything |
 | **Split** (Vercel frontend + separate backend) | You want Vercel's edge CDN, preview URLs, or your team already uses Vercel |
 
 For most cases, deploying the monolith to a single platform is simpler. Use the split pattern when Vercel's DX features matter to your team.
 
 ## See Also
 
-- [`deploy/fly/`](../fly/) — Backend on Fly.io
-- [`deploy/render/`](../render/) — Backend on Render
-- [`deploy/railway/`](../railway/) — Backend on Railway
+- [`deploy/fly/`](../fly/): Backend on Fly.io
+- [`deploy/render/`](../render/): Backend on Render
+- [`deploy/railway/`](../railway/): Backend on Railway

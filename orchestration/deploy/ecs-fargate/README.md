@@ -1,6 +1,6 @@
 # AWS ECS Fargate
 
-Run the Pixeltable batch pipeline as an ECS Fargate task — serverless containers with Spot pricing (~70% cheaper). Trigger from SQS, EventBridge, or Step Functions.
+Run the Pixeltable batch pipeline as an ECS Fargate task. Serverless containers with Spot pricing (~70% cheaper). Trigger from SQS, EventBridge, or Step Functions.
 
 ## Prerequisites
 
@@ -75,7 +75,7 @@ aws pipes create-pipe \
 
 ## Spot Pricing
 
-Use `FARGATE_SPOT` capacity provider for ~70% cost reduction. Tasks may be interrupted, but the pipeline is idempotent — re-run safely on retry.
+Use `FARGATE_SPOT` capacity provider for ~70% cost reduction. Tasks may be interrupted, but the pipeline is idempotent. Re-run safely on retry.
 
 ```bash
 aws ecs run-task \

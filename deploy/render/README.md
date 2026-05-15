@@ -1,4 +1,4 @@
-# Render — Pixeltable Starter Kit
+# Render: Pixeltable Starter Kit
 
 Deploy the Pixeltable Starter Kit on [Render](https://render.com) using a Blueprint (Infrastructure as Code).
 
@@ -23,7 +23,7 @@ Then in the Render dashboard:
 3. Set `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` in the env vars prompt (marked `sync: false`)
 4. Click **Apply**
 
-Subsequent deploys reattach to the same disk — Pixeltable data persists across deploys.
+Subsequent deploys reattach to the same disk: Pixeltable data persists across deploys.
 
 ### Option 2: Manual setup
 
@@ -42,7 +42,7 @@ Edit `render.yaml` before deploying:
 
 | Setting | Default | Description |
 |---|---|---|
-| `plan` | `standard` | Render plan (`starter`, `standard`, `pro`) — standard recommended for 4 GB RAM |
+| `plan` | `standard` | Render plan (`starter`, `standard`, `pro`): standard recommended for 4 GB RAM |
 | `region` | `oregon` | Deploy region |
 | `disk.sizeGB` | `10` | Persistent disk for Pixeltable data |
 

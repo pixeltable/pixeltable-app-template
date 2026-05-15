@@ -1,4 +1,4 @@
-# Fly.io — Pixeltable Starter Kit
+# Fly.io: Pixeltable Starter Kit
 
 Deploy the Pixeltable Starter Kit on [Fly.io](https://fly.io) with persistent volumes and auto-scaling.
 
@@ -13,7 +13,7 @@ Deploy the Pixeltable Starter Kit on [Fly.io](https://fly.io) with persistent vo
 # Copy fly.toml to repo root
 cp deploy/fly/fly.toml .
 
-# Create app (don't deploy yet — we need a volume first)
+# Create app (don't deploy yet: we need a volume first)
 fly launch --no-deploy
 
 # Create persistent volume for Pixeltable data

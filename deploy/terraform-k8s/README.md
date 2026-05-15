@@ -4,10 +4,10 @@ One-command deployment of the Pixeltable Starter Kit to AWS EKS.
 
 ## What gets created
 
-- **VPC** — 2 AZs, public/private subnets, NAT gateway
-- **EKS cluster** — Managed node group (m6i.xlarge × 2 by default)
-- **ECR repository** — For the app Docker image
-- **K8s resources** — Namespace, secret (API keys), PVC (50Gi for Pixeltable data), schema init job, deployment, LoadBalancer service
+- **VPC**: 2 AZs, public/private subnets, NAT gateway
+- **EKS cluster**: Managed node group (m6i.xlarge × 2 by default)
+- **ECR repository**: For the app Docker image
+- **K8s resources**: Namespace, secret (API keys), PVC (50Gi for Pixeltable data), schema init job, deployment, LoadBalancer service
 
 ## Prerequisites
 

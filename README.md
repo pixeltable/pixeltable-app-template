@@ -1,6 +1,6 @@
 # Pixeltable Starter Kit
 
-[Pixeltable](https://github.com/pixeltable/pixeltable) is **open-source data infrastructure for AI** — it replaces the patchwork of blob storage, metadata DBs, vector stores, media processing, orchestration, and glue code with a single declarative system. Tables, computed columns, and embedding indexes handle what typically requires stitching together S3, Postgres, Pinecone, FFmpeg, HuggingFace, Airflow, LangChain, and custom scripts to wire them all together.
+[Pixeltable](https://github.com/pixeltable/pixeltable) is **open-source data infrastructure for AI**. It replaces the patchwork of blob storage, metadata DBs, vector stores, media processing, orchestration, and glue code with a single declarative system. Tables, computed columns, and embedding indexes handle what typically requires stitching together S3, Postgres, Pinecone, FFmpeg, HuggingFace, Airflow, LangChain, and custom scripts to wire them all together.
 
 ## Three Patterns
 
@@ -8,11 +8,11 @@ This repo demonstrates three ways to use Pixeltable. Pick the one that matches y
 
 | Question | Pattern | Folder |
 |---|---|---|
-| I need a web app with a frontend | **Full Backend** — FastAPI + React | [`backend/`](backend/) + [`frontend/`](frontend/) |
-| I need batch/background processing (cron, queue, Cloud Run Job) | **Batch Processing** — pure Python script, no HTTP server | [`orchestration/`](orchestration/) |
-| I want an API with zero web code | **Declarative Serving** — `pxt serve` generates routes from TOML | [`serving/`](serving/) |
+| I need a web app with a frontend | **Full Backend**: FastAPI + React | [`backend/`](backend/) + [`frontend/`](frontend/) |
+| I need batch/background processing (cron, queue, Cloud Run Job) | **Batch Processing**: pure Python script, no HTTP server | [`orchestration/`](orchestration/) |
+| I want an API with zero web code | **Declarative Serving**: `pxt serve` generates routes from TOML | [`serving/`](serving/) |
 
-Pixeltable itself is not an HTTP framework — it's a data engine. The starter kit wraps it in FastAPI because that demo needs a web UI, but **if your workload is batch processing, you don't need FastAPI at all**. `orchestration/` is a plain Python script that inserts data, lets computed columns process it, exports results, and exits. Run it as a Cloud Run Job, ECS Task, Kubernetes Job, Lambda, or a cron'd container.
+Pixeltable itself is not an HTTP framework. It's a data engine. The starter kit wraps it in FastAPI because that demo needs a web UI, but **if your workload is batch processing, you don't need FastAPI at all**. `orchestration/` is a plain Python script that inserts data, lets computed columns process it, exports results, and exits. Run it as a Cloud Run Job, ECS Task, Kubernetes Job, Lambda, or a cron'd container.
 
 > For a more complete example, see **[Pixelbot](https://github.com/pixeltable/pixelbot)**.
 
@@ -52,7 +52,7 @@ deploy/                        Deployment configs for the full backend
 ├── fly/                       Fly.io (fly.toml + persistent volume)
 ├── render/                    Render (Blueprint render.yaml)
 ├── railway/                   Railway (railway.json + Dockerfile)
-├── vercel/                    Vercel (frontend only — proxies /api to backend)
+├── vercel/                    Vercel (frontend only, proxies /api to backend)
 ├── digitalocean/              DigitalOcean App Platform (app.yaml spec)
 ├── pixeltable-cloud/          Pixeltable Cloud via pxt deploy (coming soon)
 ├── helm/                      Helm chart (any existing K8s cluster)
@@ -79,7 +79,7 @@ graph TD
 
     API["<b>FastAPI</b>"]
 
-    subgraph PXT["Pixeltable — storage · orchestration · retrieval"]
+    subgraph PXT["Pixeltable: storage · orchestration · retrieval"]
         Tables["<b>Tables</b><br/>documents · images · videos · chat · agent"]
         Views["<b>Views & Iterators</b><br/>chunks · keyframes · transcripts"]
         CC["<b>Computed Columns</b> · @pxt.udf<br/>thumbnails · transcription · embeddings"]
@@ -96,7 +96,7 @@ graph TD
 
 ### Quick Start
 
-**Prerequisites:** Python 3.10+, Node.js 18+, [uv](https://docs.astral.sh/uv/) — or just open in a [Dev Container](#dev-container).
+**Prerequisites:** Python 3.10+, Node.js 18+, [uv](https://docs.astral.sh/uv/). Or just open in a [Dev Container](#dev-container).
 
 ```bash
 git clone https://github.com/pixeltable/pixeltable-starter-kit.git
@@ -115,7 +115,7 @@ cd frontend
 npm install && npm run dev   # http://localhost:5173
 ```
 
-**Production:** `cd frontend && npm run build` then `cd ../backend && python main.py` — serves everything at `:8000`.
+**Production:** `cd frontend && npm run build` then `cd ../backend && python main.py`. Serves everything at `:8000`.
 
 ### Deploy
 
@@ -159,7 +159,7 @@ See [`deploy/helm/README.md`](deploy/helm/README.md).
 </details>
 
 <details>
-<summary><b>Terraform</b> (provision cluster from scratch — AWS EKS / GCP GKE / Azure AKS)</summary>
+<summary><b>Terraform</b> (provision cluster from scratch: AWS EKS / GCP GKE / Azure AKS)</summary>
 
 ```bash
 cd deploy/terraform-k8s && terraform init && terraform apply   # AWS EKS
@@ -224,7 +224,7 @@ See [`deploy/railway/README.md`](deploy/railway/README.md).
 doctl apps create --spec deploy/digitalocean/app.yaml
 ```
 
-App Platform doesn't have native persistent volumes — see [`deploy/digitalocean/README.md`](deploy/digitalocean/README.md) for persistence options.
+App Platform doesn't have native persistent volumes. See [`deploy/digitalocean/README.md`](deploy/digitalocean/README.md) for persistence options.
 </details>
 
 <details>
@@ -302,7 +302,7 @@ See [`orchestration/README.md`](orchestration/) for full details.
 
 ## 3. Declarative Serving
 
-Define your schema in Python, your routes in TOML, and run `pxt serve`. Pixeltable generates a complete API — no routers, no Pydantic models, no endpoint handlers.
+Define your schema in Python, your routes in TOML, and run `pxt serve`. Pixeltable generates a complete API with no routers, no Pydantic models, no endpoint handlers.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
@@ -325,7 +325,7 @@ uv sync
 PYTHONPATH=. uv run pxt serve pipeline    # http://localhost:8000/docs
 ```
 
-**Coming soon: `pxt deploy`** — same config, deployed to Pixeltable Cloud with auto-scaling and zero container management. See [`deploy/pixeltable-cloud/`](deploy/pixeltable-cloud/).
+**Coming soon: `pxt deploy`**. Same config, deployed to Pixeltable Cloud with auto-scaling and zero container management. See [`deploy/pixeltable-cloud/`](deploy/pixeltable-cloud/).
 
 See [`serving/README.md`](serving/) for full details.
 
@@ -335,20 +335,20 @@ See [`serving/README.md`](serving/) for full details.
 
 ### Swapping AI Providers
 
-This starter kit uses **Anthropic** (agent) and **OpenAI** (transcription). Embeddings run locally via HuggingFace. Pixeltable integrates with [20+ AI providers](https://docs.pixeltable.com/integrations/frameworks) — including [Ollama](https://docs.pixeltable.com/howto/providers/working-with-ollama), [Gemini](https://docs.pixeltable.com/howto/providers/working-with-gemini), [Bedrock](https://docs.pixeltable.com/howto/providers/working-with-bedrock), [Groq](https://docs.pixeltable.com/howto/providers/working-with-groq), [Together](https://docs.pixeltable.com/howto/providers/working-with-together), and [more](https://docs.pixeltable.com/integrations/frameworks). To swap providers, update the computed columns in `setup_pixeltable.py` — see [LLM tool calling](https://docs.pixeltable.com/howto/cookbooks/agents/llm-tool-calling) for which providers support the agent's tool-calling pattern.
+This starter kit uses **Anthropic** (agent) and **OpenAI** (transcription). Embeddings run locally via HuggingFace. Pixeltable integrates with [20+ AI providers](https://docs.pixeltable.com/integrations/frameworks), including [Ollama](https://docs.pixeltable.com/howto/providers/working-with-ollama), [Gemini](https://docs.pixeltable.com/howto/providers/working-with-gemini), [Bedrock](https://docs.pixeltable.com/howto/providers/working-with-bedrock), [Groq](https://docs.pixeltable.com/howto/providers/working-with-groq), [Together](https://docs.pixeltable.com/howto/providers/working-with-together), and [more](https://docs.pixeltable.com/integrations/frameworks). To swap providers, update the computed columns in `setup_pixeltable.py`. See [LLM tool calling](https://docs.pixeltable.com/howto/cookbooks/agents/llm-tool-calling) for which providers support the agent's tool-calling pattern.
 
 ### Developing with AI Tools
 
 Pixeltable is designed to work well with AI coding assistants. See [Building with LLMs](https://docs.pixeltable.com/overview/building-pixeltable-with-llms) for setup instructions, or jump straight to:
 
-- **[llms.txt](https://docs.pixeltable.com/llms.txt)** — full documentation in LLM-readable format
-- **[MCP Server](https://github.com/pixeltable/mcp-server-pixeltable-developer)** — interactive Pixeltable exploration (tables, queries, Python REPL)
-- **[Claude Code Skill](https://github.com/pixeltable/pixeltable-skill)** — deep Pixeltable expertise for Claude
-- **[AGENTS.md](AGENTS.md)** — architecture guide for AI agents working with this codebase
+- **[llms.txt](https://docs.pixeltable.com/llms.txt)**: full documentation in LLM-readable format
+- **[MCP Server](https://github.com/pixeltable/mcp-server-pixeltable-developer)**: interactive Pixeltable exploration (tables, queries, Python REPL)
+- **[Claude Code Skill](https://github.com/pixeltable/pixeltable-skill)**: deep Pixeltable expertise for Claude
+- **[AGENTS.md](AGENTS.md)**: architecture guide for AI agents working with this codebase
 
 ### Dev Container
 
-Open this repo in [VS Code Dev Containers](https://containers.dev/), [GitHub Codespaces](https://github.com/features/codespaces), or any tool supporting the [Dev Container spec](https://containers.dev/). The `.devcontainer/` config auto-installs Python 3.12, Node 20, uv, and all dependencies — zero local setup.
+Open this repo in [VS Code Dev Containers](https://containers.dev/), [GitHub Codespaces](https://github.com/features/codespaces), or any tool supporting the [Dev Container spec](https://containers.dev/). The `.devcontainer/` config auto-installs Python 3.12, Node 20, uv, and all dependencies. Zero local setup.
 
 ```bash
 # VS Code: Cmd+Shift+P → "Dev Containers: Reopen in Container"

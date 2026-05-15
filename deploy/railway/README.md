@@ -1,4 +1,4 @@
-# Railway — Pixeltable Starter Kit
+# Railway: Pixeltable Starter Kit
 
 Deploy the Pixeltable Starter Kit on [Railway](https://railway.app). Includes a [`railway.json`](https://docs.railway.com/reference/config-as-code) config for build settings and health checks.
 
@@ -16,7 +16,7 @@ Deploy the Pixeltable Starter Kit on [Railway](https://railway.app). Includes a 
 3. In your service → **Settings** → **Config as Code**, set the config file path to `/deploy/railway/railway.json`
 4. Redeploy to pick up the config
 
-No need to copy files to the repo root — Railway supports [custom config file paths](https://docs.railway.com/guides/config-as-code#using-a-custom-config-as-code-file).
+No need to copy files to the repo root: Railway supports [custom config file paths](https://docs.railway.com/guides/config-as-code#using-a-custom-config-as-code-file).
 
 ### Option 2: Railway CLI
 

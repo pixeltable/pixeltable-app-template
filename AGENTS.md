@@ -6,10 +6,10 @@ Instructions for AI coding agents working with the Pixeltable Starter Kit.
 
 Before modifying this codebase, familiarize yourself with Pixeltable:
 
-- **Core AGENTS.md** — [pixeltable/pixeltable/AGENTS.md](https://github.com/pixeltable/pixeltable/blob/main/AGENTS.md) covers the full SDK: tables, computed columns, views, iterators, UDFs, embedding indexes, and all AI provider integrations.
-- **Claude Code Skill** — [pixeltable/pixeltable-skill](https://github.com/pixeltable/pixeltable-skill) gives Claude deep Pixeltable expertise via progressive disclosure (`SKILL.md` → `API_REFERENCE.md`).
-- **MCP Server** — [pixeltable/mcp-server-pixeltable-developer](https://github.com/pixeltable/mcp-server-pixeltable-developer) exposes Pixeltable as an MCP server for interactive exploration (tables, queries, Python REPL).
-- **Docs** — [docs.pixeltable.com](https://docs.pixeltable.com/) · [SDK Reference](https://docs.pixeltable.com/sdk/latest/pixeltable)
+- **Core AGENTS.md**: [pixeltable/pixeltable/AGENTS.md](https://github.com/pixeltable/pixeltable/blob/main/AGENTS.md) covers the full SDK: tables, computed columns, views, iterators, UDFs, embedding indexes, and all AI provider integrations.
+- **Claude Code Skill**: [pixeltable/pixeltable-skill](https://github.com/pixeltable/pixeltable-skill) gives Claude deep Pixeltable expertise via progressive disclosure (`SKILL.md` → `API_REFERENCE.md`).
+- **MCP Server**: [pixeltable/mcp-server-pixeltable-developer](https://github.com/pixeltable/mcp-server-pixeltable-developer) exposes Pixeltable as an MCP server for interactive exploration (tables, queries, Python REPL).
+- **Docs**: [docs.pixeltable.com](https://docs.pixeltable.com/) · [SDK Reference](https://docs.pixeltable.com/sdk/latest/pixeltable)
 
 ## What This Template Is
 
@@ -69,7 +69,7 @@ deploy/
 ├── fly/                     Fly.io (fly.toml + persistent volume)
 ├── render/                  Render (Blueprint render.yaml)
 ├── railway/                 Railway (railway.json + Dockerfile)
-├── vercel/                  Vercel (frontend only — proxies /api to backend)
+├── vercel/                  Vercel (frontend only, proxies /api to backend)
 ├── digitalocean/            DigitalOcean App Platform (app.yaml spec)
 ├── pixeltable-cloud/        Pixeltable Cloud via pxt deploy (coming soon)
 ├── helm/                    Helm chart (any existing K8s cluster)
@@ -101,7 +101,7 @@ cd frontend
 npm install && npm run dev    # http://localhost:5173
 ```
 
-Production: `cd frontend && npm run build` then `cd ../backend && python main.py` — serves everything at `:8000`.
+Production: `cd frontend && npm run build` then `cd ../backend && python main.py`. Serves everything at `:8000`.
 
 ## Architectural Decisions
 
@@ -121,35 +121,35 @@ All FastAPI endpoints use `def`, not `async def`. Pixeltable operations are sync
 
 ### Schema-as-code
 
-`setup_pixeltable.py` is a flat module — no wrapper function. Importing it creates tables, views, computed columns, embedding indexes, and the agent pipeline (Python's import system guarantees this runs exactly once). Agent-internal `@pxt.query` functions are defined at module level between the tables they reference. Router-facing queries live in each router file, co-located with the `add_query_route` calls that expose them. Every schema call uses `if_exists="ignore"` (with explicit `idx_name`), so re-running never destroys data. Set `RESET_SCHEMA=true` to wipe and recreate. The schema defines:
+`setup_pixeltable.py` is a flat module with no wrapper function. Importing it creates tables, views, computed columns, embedding indexes, and the agent pipeline (Python's import system guarantees this runs exactly once). Agent-internal `@pxt.query` functions are defined at module level between the tables they reference. Router-facing queries live in each router file, co-located with the `add_query_route` calls that expose them. Every schema call uses `if_exists="ignore"` (with explicit `idx_name`), so re-running never destroys data. Set `RESET_SCHEMA=true` to wipe and recreate. The schema defines:
 
-1. **Document pipeline** — table → `DocumentSplitter` view → sentence-transformer embedding index
-2. **Image pipeline** — table → thumbnail computed column → CLIP embedding index
-3. **Video pipeline** — table → `FrameIterator` view (keyframes + CLIP) → audio extraction → Whisper transcription → `StringSplitter` view → embedding index
-4. **Chat history** — table with embedding index for two-tier memory: conversation-scoped recent history + cross-conversation semantic recall
-5. **Agent pipeline** — 11 computed columns: initial LLM call with tools (web search, document search, transcript search) → tool execution → parallel RAG retrieval (docs, images, video frames, chat memory) → conversation-scoped history → context assembly → final LLM call → answer extraction
+1. **Document pipeline**: table → `DocumentSplitter` view → sentence-transformer embedding index
+2. **Image pipeline**: table → thumbnail computed column → CLIP embedding index
+3. **Video pipeline**: table → `FrameIterator` view (keyframes + CLIP) → audio extraction → Whisper transcription → `StringSplitter` view → embedding index
+4. **Chat history**: table with embedding index for two-tier memory: conversation-scoped recent history + cross-conversation semantic recall
+5. **Agent pipeline**: 11 computed columns: initial LLM call with tools (web search, document search, transcript search) → tool execution → parallel RAG retrieval (docs, images, video frames, chat memory) → conversation-scoped history → context assembly → final LLM call → answer extraction
 
 ### Integrated `FastAPIRouter` (v0.6+)
 
 All three routers use Pixeltable's `FastAPIRouter` (a subclass of FastAPI's `APIRouter`). `main.py` imports `setup_pixeltable` (triggering schema init) before importing routers. Each router calls `pxt.get_table()` and defines its own `@pxt.query` functions co-located with `add_query_route` registrations. Only **1 of 20 endpoints** is hand-written:
 
-**`data.py`** — no hand-written endpoints (12 routes):
+**`data.py`**: no hand-written endpoints (12 routes):
 
 | Route | Method | Notes |
 |-------|--------|-------|
-| `/api/data/upload/{document,video}` | `add_insert_route` | `background=True` — returns job handle, client polls `/jobs/{id}` |
+| `/api/data/upload/{document,video}` | `add_insert_route` | `background=True`, returns job handle, client polls `/jobs/{id}` |
 | `/api/data/upload/image` | `add_insert_route` | Synchronous (thumbnail + CLIP is fast) |
 | `/api/data/delete/{document,image,video}` | `add_delete_route` | Match by primary key (uuid) |
 | `/api/data/chunks`, `/frames`, `/transcription` | `add_query_route` (POST) | Detail queries accepting `file_uuid` |
 | `/api/data/list/{documents,images,videos}` | `add_query_route` (GET) | Per-table listing |
 
-**`search.py`** — no hand-written endpoints (4 routes):
+**`search.py`**: no hand-written endpoints (4 routes):
 
 | Route | Method | Notes |
 |-------|--------|-------|
 | `/api/search/{documents,images,video-frames,transcripts}` | `add_query_route` (POST) | One per embedding index, accepts `query_text` |
 
-**`agent.py`** — 3 declarative + 1 hand-written:
+**`agent.py`**: 3 declarative + 1 hand-written:
 
 | Route | Method | Notes |
 |-------|--------|-------|
@@ -162,15 +162,15 @@ The frontend (`api.ts`) handles aggregation that was previously done server-side
 
 ### Minimal Pydantic models
 
-`models.py` contains only the models needed by the single hand-written endpoint (`POST /api/agent/query`): `ToolAgentRow` and `ChatHistoryRow` (row schemas for `table.insert()`), `AgentResult` (validates the dict from `return_rows=True` with `extra="ignore"` to extract only the fields the endpoint needs), and `QueryRequest`/`QueryResponse` (API contract). `QueryRequest` accepts optional `temperature`, `max_tokens`, and `system_prompt` for per-request personalization. All other endpoints are declarative — `FastAPIRouter` auto-generates request/response schemas from table columns and `@pxt.query` return types. Query endpoints return `{ "rows": [...] }` automatically.
+`models.py` contains only the models needed by the single hand-written endpoint (`POST /api/agent/query`): `ToolAgentRow` and `ChatHistoryRow` (row schemas for `table.insert()`), `AgentResult` (validates the dict from `return_rows=True` with `extra="ignore"` to extract only the fields the endpoint needs), and `QueryRequest`/`QueryResponse` (API contract). `QueryRequest` accepts optional `temperature`, `max_tokens`, and `system_prompt` for per-request personalization. All other endpoints are declarative. `FastAPIRouter` auto-generates request/response schemas from table columns and `@pxt.query` return types. Query endpoints return `{ "rows": [...] }` automatically.
 
 ### Disentangled schema vs. serving
 
-`setup_pixeltable.py` is **pure schema** — a flat module that creates tables, views, indexes, and agent-internal queries on import. Router files are **pure serving** — each gets table references via `pxt.get_table()` and defines `@pxt.query` functions locally, then wires them to `add_query_route`. No cross-file query imports, no wrapper functions, no global state.
+`setup_pixeltable.py` is **pure schema**: a flat module that creates tables, views, indexes, and agent-internal queries on import. Router files are **pure serving**: each gets table references via `pxt.get_table()` and defines `@pxt.query` functions locally, then wires them to `add_query_route`. No cross-file query imports, no wrapper functions, no global state.
 
 ### `@pxt.udf` and `@pxt.query` for logic
 
-Business logic lives in Pixeltable functions, not endpoint handlers. `@pxt.udf` (in `functions.py`) for custom transforms like web search and context assembly. `@pxt.query` functions are defined **in each router file** next to the `add_query_route` calls that expose them — they retrieve table references via `pxt.get_table()` at module level. Agent-internal queries (used only by computed columns) live in `setup_pixeltable.py` at module level. The only hand-written endpoint (`POST /api/agent/query`) exists because it performs multi-table inserts with conditional logic that can't be expressed declaratively.
+Business logic lives in Pixeltable functions, not endpoint handlers. `@pxt.udf` (in `functions.py`) for custom transforms like web search and context assembly. `@pxt.query` functions are defined **in each router file** next to the `add_query_route` calls that expose them. They retrieve table references via `pxt.get_table()` at module level. Agent-internal queries (used only by computed columns) live in `setup_pixeltable.py` at module level. The only hand-written endpoint (`POST /api/agent/query`) exists because it performs multi-table inserts with conditional logic that can't be expressed declaratively.
 
 ### Agent pipeline as computed columns
 
@@ -178,23 +178,23 @@ The entire tool-calling agent is a chain of `add_computed_column()` calls on the
 
 ### Typed frontend
 
-TypeScript interfaces in `types/index.ts` mirror the backend Pydantic models. `lib/api.ts` is a generic typed fetch wrapper — no code generation, no heavy HTTP client. Intentionally simple for a template.
+TypeScript interfaces in `types/index.ts` mirror the backend Pydantic models. `lib/api.ts` is a generic typed fetch wrapper with no code generation, no heavy HTTP client. Intentionally simple for a template.
 
 ### Containerized deployment
 
 A multi-stage `Dockerfile` builds the frontend and Python runtime into a single image. `docker-compose.yml` runs it locally with named volumes for Pixeltable data. Deployment options live in `deploy/`:
 
-- **`deploy/fly/`** — [Fly.io](https://fly.io): `fly.toml` with persistent volume, auto-scaling, scale-to-zero. Simplest path to production.
-- **`deploy/render/`** — [Render](https://render.com): Blueprint (`render.yaml`) for one-click deploy with persistent disk.
-- **`deploy/railway/`** — [Railway](https://railway.app): `railway.json` for build/deploy config. Add a volume at `/data/pixeltable`.
-- **`deploy/vercel/`** — [Vercel](https://vercel.com): **frontend only** — deploys the React app with `/api` rewrites to a backend on another platform. Vercel is serverless-only and cannot run Pixeltable's embedded Postgres.
-- **`deploy/digitalocean/`** — [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform): `app.yaml` spec with Docker builder. For persistence, use managed Postgres or deploy to a Droplet with Docker Compose.
-- **`deploy/pixeltable-cloud/`** — **Coming soon.** `pxt deploy` deploys the same `serving/` config to Pixeltable Cloud — managed compute, storage, auto-scaling, no Dockerfile. Same schema, same routes, one command. See [PR #1319](https://github.com/pixeltable/pixeltable/pull/1319) and [PR #1331](https://github.com/pixeltable/pixeltable/pull/1331).
-- **`deploy/helm/`** — Helm chart for deploying on **any existing K8s cluster**. Creates Secret, PVC, schema init Job (Helm hook), Deployment with health checks, and LoadBalancer Service. No infra provisioning — just `helm install`.
-- **`deploy/terraform-k8s/`** — Provisions full AWS stack from scratch: VPC, EKS cluster, ECR, plus K8s resources. Pixeltable data on 50Gi EBS.
-- **`deploy/terraform-gke/`** — Same pattern for GCP: VPC, GKE cluster, Artifact Registry. 50Gi Persistent Disk.
-- **`deploy/terraform-aks/`** — Same pattern for Azure: Resource Group, AKS cluster, ACR. 50Gi Managed Disk.
-- **`deploy/aws-cdk/`** — ECS Fargate behind ALB with EFS for persistent storage. Auto-scales 1–4 tasks.
+- **`deploy/fly/`**: [Fly.io](https://fly.io): `fly.toml` with persistent volume, auto-scaling, scale-to-zero. Simplest path to production.
+- **`deploy/render/`**: [Render](https://render.com): Blueprint (`render.yaml`) for one-click deploy with persistent disk.
+- **`deploy/railway/`**: [Railway](https://railway.app): `railway.json` for build/deploy config. Add a volume at `/data/pixeltable`.
+- **`deploy/vercel/`**: [Vercel](https://vercel.com): **frontend only**. Deploys the React app with `/api` rewrites to a backend on another platform. Vercel is serverless-only and cannot run Pixeltable's embedded Postgres.
+- **`deploy/digitalocean/`**: [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform): `app.yaml` spec with Docker builder. For persistence, use managed Postgres or deploy to a Droplet with Docker Compose.
+- **`deploy/pixeltable-cloud/`**: **Coming soon.** `pxt deploy` deploys the same `serving/` config to Pixeltable Cloud: managed compute, storage, auto-scaling, no Dockerfile. Same schema, same routes, one command. See [PR #1319](https://github.com/pixeltable/pixeltable/pull/1319) and [PR #1331](https://github.com/pixeltable/pixeltable/pull/1331).
+- **`deploy/helm/`**: Helm chart for deploying on **any existing K8s cluster**. Creates Secret, PVC, schema init Job (Helm hook), Deployment with health checks, and LoadBalancer Service. No infra provisioning, just `helm install`.
+- **`deploy/terraform-k8s/`**: Provisions full AWS stack from scratch: VPC, EKS cluster, ECR, plus K8s resources. Pixeltable data on 50Gi EBS.
+- **`deploy/terraform-gke/`**: Same pattern for GCP: VPC, GKE cluster, Artifact Registry. 50Gi Persistent Disk.
+- **`deploy/terraform-aks/`**: Same pattern for Azure: Resource Group, AKS cluster, ACR. 50Gi Managed Disk.
+- **`deploy/aws-cdk/`**: ECS Fargate behind ALB with EFS for persistent storage. Auto-scales 1–4 tasks.
 
 All configure `PIXELTABLE_HOME=/data/pixeltable` pointing to persistent storage. For large media workloads, set `PIXELTABLE_INPUT_MEDIA_DEST` and `PIXELTABLE_OUTPUT_MEDIA_DEST` to S3/GCS/Azure Blob URIs (see [Pixeltable Configuration](https://docs.pixeltable.com/platform/configuration.md)).
 
@@ -212,19 +212,19 @@ This section maps enterprise orchestration concepts to Pixeltable primitives. Ev
 
 ### Orchestration Layer
 
-The computed column chain IS the orchestration engine. `setup_pixeltable.py` defines the orchestration schema — inserting a row triggers the full DAG automatically. No Airflow, no Temporal, no explicit workflow engine.
+The computed column chain IS the orchestration engine. `setup_pixeltable.py` defines the orchestration schema. Inserting a row triggers the full DAG automatically. No Airflow, no Temporal, no explicit workflow engine.
 
 ### Memory Management
 
 Two tiers are implemented:
-- **Short-term (conversation-scoped)** — `_get_recent_chat_history(conversation_id)` retrieves recent turns from the current thread.
-- **Long-term (semantic recall)** — `_search_chat_history(query_text)` searches across ALL past conversations by embedding similarity.
+- **Short-term (conversation-scoped)**: `_get_recent_chat_history(conversation_id)` retrieves recent turns from the current thread.
+- **Long-term (semantic recall)**: `_search_chat_history(query_text)` searches across ALL past conversations by embedding similarity.
 
-To add a **knowledge bank** (user preferences, facts, persistent notes), add another table with an embedding index and register its search query as a tool — see [agents-memory-mcp.md](https://github.com/pixeltable/pixeltable-skill/blob/main/references/agents-memory-mcp.md).
+To add a **knowledge bank** (user preferences, facts, persistent notes), add another table with an embedding index and register its search query as a tool. See [agents-memory-mcp.md](https://github.com/pixeltable/pixeltable-skill/blob/main/references/agents-memory-mcp.md).
 
 ### Agent Discovery / Routing
 
-The LLM chooses which tools to call based on the query — this IS agent discovery. The tool registry (`pxt.tools(web_search, _search_documents, _search_video_transcripts)`) maps directly to the "Agent Discovery" concept: matching task requirements to capabilities at runtime.
+The LLM chooses which tools to call based on the query. This IS agent discovery. The tool registry (`pxt.tools(web_search, _search_documents, _search_video_transcripts)`) maps directly to the "Agent Discovery" concept: matching task requirements to capabilities at runtime.
 
 For explicit intent routing (classify → dispatch to specialized handlers), use a computed column:
 
@@ -251,7 +251,7 @@ agent.add_computed_column(
 
 ### Multi-Agent / Orchestrator-Worker (A2A)
 
-Pixeltable's `pxt.udf(table, return_value=...)` wraps an entire pipeline table as a callable function — this is the "AI Agents Marketplace" concept. Each worker table is a specialized agent:
+Pixeltable's `pxt.udf(table, return_value=...)` wraps an entire pipeline table as a callable function. This is the "AI Agents Marketplace" concept. Each worker table is a specialized agent:
 
 ```python
 # Worker A: summarizer pipeline
@@ -269,7 +269,7 @@ orchestrator.add_computed_column(summary=summarize_fn(text=orchestrator.article)
 orchestrator.add_computed_column(fact_check=fact_check_fn(claim=orchestrator.article), ...)
 ```
 
-Independent computed columns run in parallel automatically — no `asyncio.gather`, no explicit threading.
+Independent computed columns run in parallel automatically. No `asyncio.gather`, no explicit threading.
 
 ### MCP Protocol Integration
 
@@ -285,10 +285,10 @@ MCP tools are called via `invoke_tools()` exactly like local UDFs. See the comme
 ### Privacy & Security Guardrails
 
 The starter kit implements:
-- **Input validation** — length limits and sanitization in the `/api/agent/query` endpoint
-- **CORS restrictions** — configurable origin allowlist (`config.CORS_ORIGINS`)
-- **Container hardening** — non-root user, dropped capabilities in Helm deployment
-- **Secrets management** — API keys via environment variables / K8s Secrets
+- **Input validation**: length limits and sanitization in the `/api/agent/query` endpoint
+- **CORS restrictions**: configurable origin allowlist (`config.CORS_ORIGINS`)
+- **Container hardening**: non-root user, dropped capabilities in Helm deployment
+- **Secrets management**: API keys via environment variables / K8s Secrets
 
 For LLM-based guardrails (content filtering, prompt injection detection), add a computed column before the initial LLM call:
 
@@ -304,7 +304,7 @@ agent.add_computed_column(
 
 ### Response Personalization
 
-The agent accepts per-request `temperature`, `max_tokens`, and `system_prompt` via the API. The frontend Settings panel exposes these controls. For deeper personalization (user profiles, personas), add a `personas` table and look up persona settings before insert — see how [Pixelbot](https://github.com/pixeltable/pixelbot) implements `user_personas`.
+The agent accepts per-request `temperature`, `max_tokens`, and `system_prompt` via the API. The frontend Settings panel exposes these controls. For deeper personalization (user profiles, personas), add a `personas` table and look up persona settings before insert. See how [Pixelbot](https://github.com/pixeltable/pixelbot) implements `user_personas`.
 
 ## Key Patterns to Follow
 
@@ -363,9 +363,9 @@ result = AgentResult.model_validate(status.rows[0])  # typed access to computed 
 
 If you're new to this codebase, read in this order:
 
-1. `setup_pixeltable.py` — the core. Defines the entire data model and agent pipeline (no router queries).
-2. `routers/data.py` — `FastAPIRouter` + co-located `@pxt.query` (shows `add_insert_route`, `add_delete_route`, `add_query_route`).
-3. `routers/search.py` — `FastAPIRouter` + co-located `@pxt.query` (4 similarity search endpoints).
-4. `routers/agent.py` — mixed: declarative routes + 1 hand-written endpoint (shows when you *must* keep custom code).
-5. `functions.py` — `@pxt.udf` definitions used by the agent pipeline.
-6. `frontend/src/lib/api.ts` + `types/index.ts` — how the frontend consumes PXT routes with client-side aggregation.
+1. `setup_pixeltable.py`: the core. Defines the entire data model and agent pipeline (no router queries).
+2. `routers/data.py`: `FastAPIRouter` + co-located `@pxt.query` (shows `add_insert_route`, `add_delete_route`, `add_query_route`).
+3. `routers/search.py`: `FastAPIRouter` + co-located `@pxt.query` (4 similarity search endpoints).
+4. `routers/agent.py`: mixed: declarative routes + 1 hand-written endpoint (shows when you *must* keep custom code).
+5. `functions.py`: `@pxt.udf` definitions used by the agent pipeline.
+6. `frontend/src/lib/api.ts` + `types/index.ts`: how the frontend consumes PXT routes with client-side aggregation.

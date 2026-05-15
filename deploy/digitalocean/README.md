@@ -1,4 +1,4 @@
-# DigitalOcean App Platform — Pixeltable Starter Kit
+# DigitalOcean App Platform: Pixeltable Starter Kit
 
 Deploy the Pixeltable Starter Kit on [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform) using the included app spec.
 
@@ -93,6 +93,6 @@ In the App dashboard → **Settings** → **Domains**, add your custom domain. D
 
 ## See Also
 
-- [`deploy/fly/`](../fly/) — Fly.io (persistent volumes, scale-to-zero)
-- [`deploy/render/`](../render/) — Render (persistent disk included)
-- [`deploy/railway/`](../railway/) — Railway (NVMe volumes)
+- [`deploy/fly/`](../fly/): Fly.io (persistent volumes, scale-to-zero)
+- [`deploy/render/`](../render/): Render (persistent disk included)
+- [`deploy/railway/`](../railway/): Railway (NVMe volumes)
