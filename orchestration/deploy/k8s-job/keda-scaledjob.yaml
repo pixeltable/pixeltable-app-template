@@ -1,0 +1,48 @@
+# KEDA ScaledJob — triggers a Kubernetes Job for each message on a queue.
+# Requires KEDA installed: https://keda.sh/docs/deploy/
+#
+# This example uses AWS SQS. Replace the trigger with your queue:
+#   - Redis: https://keda.sh/docs/scalers/redis-lists/
+#   - Pub/Sub: https://keda.sh/docs/scalers/gcp-pub-sub/
+#   - RabbitMQ: https://keda.sh/docs/scalers/rabbitmq-queue/
+
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: pixeltable-pipeline-worker
+spec:
+  jobTargetRef:
+    backoffLimit: 3
+    template:
+      spec:
+        restartPolicy: Never
+        containers:
+          - name: pipeline
+            image: pixeltable-pipeline:latest
+            env:
+              - name: PIXELTABLE_HOME
+                value: /tmp/pixeltable
+              - name: SERVING_DB_URL
+                valueFrom:
+                  secretKeyRef:
+                    name: pixeltable-pipeline-secrets
+                    key: serving-db-url
+            resources:
+              requests:
+                cpu: "1"
+                memory: 2Gi
+              limits:
+                cpu: "2"
+                memory: 4Gi
+  pollingInterval: 30
+  maxReplicaCount: 10
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 5
+  triggers:
+    - type: aws-sqs-queue
+      metadata:
+        queueURL: https://sqs.us-east-1.amazonaws.com/123456789/pixeltable-batches
+        queueLength: "1"
+        awsRegion: us-east-1
+      authenticationRef:
+        name: aws-credentials

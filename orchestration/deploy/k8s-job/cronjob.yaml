@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: pixeltable-pipeline-daily
+  labels:
+    app: pixeltable-pipeline
+spec:
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 3
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app: pixeltable-pipeline
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: pipeline
+              image: pixeltable-pipeline:latest
+              env:
+                - name: PIXELTABLE_HOME
+                  value: /tmp/pixeltable
+                - name: SERVING_DB_URL
+                  valueFrom:
+                    secretKeyRef:
+                      name: pixeltable-pipeline-secrets
+                      key: serving-db-url
+                - name: OPENAI_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: pixeltable-pipeline-secrets
+                      key: openai-api-key
+                      optional: true
+              resources:
+                requests:
+                  cpu: "1"
+                  memory: 2Gi
+                limits:
+                  cpu: "2"
+                  memory: 4Gi

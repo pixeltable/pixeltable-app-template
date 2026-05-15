@@ -119,68 +119,66 @@ export_sql(
 
 ## Production Deployment
 
-This pattern runs as a **job** (finite task), not a **service** (HTTP server). Every major cloud has first-class support for this.
+This pattern runs as a **job** (finite task), not a **service** (HTTP server). Every major cloud has first-class support for this. Ready-to-use configs live in `deploy/`:
+
+| Platform | Config | Runtime | Best for |
+|---|---|---|---|
+| [**Google Cloud Run Jobs**](deploy/cloud-run/) | `cloudbuild.yaml` | Up to 24h, 8 vCPU, 32 GiB | GCP users, cron/Pub/Sub triggers |
+| [**Kubernetes Job**](deploy/k8s-job/) | `job.yaml`, `cronjob.yaml`, `keda-scaledjob.yaml` | Unlimited | Any K8s cluster, queue-driven scaling |
+| [**AWS ECS Fargate**](deploy/ecs-fargate/) | `task-definition.json` | Unlimited | AWS users, Spot pricing (~70% cheaper) |
+| [**AWS Lambda**](deploy/lambda/) | `Dockerfile`, `handler.py` | Up to 15 min, 10 GiB | Small batches, event-driven |
+| **AWS Batch** | (use ECS task def) | Unlimited | Managed queue, auto instance selection |
+| **Azure Container Apps Jobs** | (use K8s Job pattern) | Unlimited | Azure, consumption billing |
+
+Each folder has a README with full deploy commands. Quick summary:
 
 ### Google Cloud Run Jobs
 
-```
-Cloud Scheduler / Pub/Sub / Eventarc → Cloud Run Job
-```
-
 ```bash
+cd orchestration
+docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest .
+docker push $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest
 gcloud run jobs create pixeltable-pipeline \
-  --image <your-registry>/pixeltable-pipeline:latest \
-  --set-env-vars PIXELTABLE_HOME=/tmp/pixeltable \
-  --set-env-vars SERVING_DB_URL=postgresql+psycopg://... \
-  --memory 4Gi --cpu 2 --task-timeout 3600s --max-retries 3
-
+  --image $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest \
+  --memory 4Gi --cpu 2 --task-timeout 3600s --max-retries 3 \
+  --set-env-vars PIXELTABLE_HOME=/tmp/pixeltable
 gcloud run jobs execute pixeltable-pipeline
 ```
 
-- Scale-to-zero billing (pay only during execution)
-- Up to 24h runtime per task, 4 vCPU, 32 GiB RAM
-- Trigger from Cloud Scheduler (cron), Pub/Sub, Eventarc, or Workflows
+See [`deploy/cloud-run/`](deploy/cloud-run/) for CI/CD via Cloud Build, cron scheduling, and Pub/Sub triggers.
 
-### ECS Fargate Spot + SQS
+### Kubernetes Job
 
+```bash
+docker build -t pixeltable-pipeline:latest .
+kubectl apply -f deploy/k8s-job/job.yaml        # one-shot
+kubectl apply -f deploy/k8s-job/cronjob.yaml     # scheduled (daily)
+kubectl apply -f deploy/k8s-job/keda-scaledjob.yaml  # queue-driven (requires KEDA)
 ```
-SQS Queue → EventBridge Rule → ECS Fargate Spot Task
+
+See [`deploy/k8s-job/`](deploy/k8s-job/) for minikube testing and KEDA setup.
+
+### AWS ECS Fargate
+
+```bash
+docker build -t pixeltable-pipeline:latest .
+# Push to ECR, then:
+aws ecs run-task --task-definition pixeltable-pipeline --launch-type FARGATE \
+  --capacity-provider-strategy capacityProvider=FARGATE_SPOT,weight=1 ...
 ```
 
-- Pay only when processing (~70% cheaper with Spot)
-- Scale to zero when idle
-- Pass batch payload via environment variable or S3 pointer
+See [`deploy/ecs-fargate/`](deploy/ecs-fargate/) for task definition, secrets, and SQS triggers via EventBridge Pipes.
 
 ### AWS Lambda (small batches)
 
-```
-S3 event / SQS message / EventBridge → Lambda
-```
-
-- Up to 15 min / 10 GiB — suitable for smaller batches
-- Set `PIXELTABLE_HOME=/tmp/pixeltable`
-- Package as a container image for larger dependencies
-
-### Kubernetes Job + KEDA
-
-```
-Queue (SQS/Redis/Pub/Sub) → KEDA ScaledJob → K8s Job (Spot nodes)
+```bash
+docker build -f deploy/lambda/Dockerfile -t pixeltable-pipeline-lambda:latest .
+# Push to ECR, then:
+aws lambda create-function --function-name pixeltable-pipeline \
+  --package-type Image --timeout 900 --memory-size 4096 ...
 ```
 
-### AWS Batch
-
-- Submit jobs to a managed queue
-- Auto-provisions optimal instance types
-- Native Spot support with automatic retries
-
-### Azure Container Apps Jobs
-
-```
-Azure Queue Storage / Service Bus → Container Apps Job
-```
-
-- Event-driven or scheduled execution
-- Scale to zero, consumption billing
+See [`deploy/lambda/`](deploy/lambda/) for the handler, SQS event source mapping, and schedule triggers.
 
 ## See Also
 
@@ -191,10 +189,26 @@ Azure Queue Storage / Service Bus → Container Apps Job
 
 ```
 orchestration/
-├── schema.py           Tables, views, embedding indexes, computed columns
-├── pipeline.py         Batch ingest → compute → export_sql → exit
-├── sample_batch.json   Example JSON input
-├── pyproject.toml      Dependencies (uv)
-├── Dockerfile          Ephemeral container (PIXELTABLE_HOME=/tmp)
-└── docker-compose.yml  Local testing
+├── schema.py               Tables, views, embedding indexes, computed columns
+├── pipeline.py             Batch ingest → compute → export_sql → exit
+├── sample_batch.json       Example JSON input
+├── pyproject.toml          Dependencies (uv)
+├── Dockerfile              Ephemeral container (PIXELTABLE_HOME=/tmp)
+├── docker-compose.yml      Local testing
+└── deploy/
+    ├── cloud-run/           Google Cloud Run Job + Cloud Build CI
+    │   ├── cloudbuild.yaml
+    │   └── README.md
+    ├── k8s-job/             Kubernetes Job, CronJob, KEDA ScaledJob
+    │   ├── job.yaml
+    │   ├── cronjob.yaml
+    │   ├── keda-scaledjob.yaml
+    │   └── README.md
+    ├── ecs-fargate/         AWS ECS Fargate task definition
+    │   ├── task-definition.json
+    │   └── README.md
+    └── lambda/              AWS Lambda container image
+        ├── Dockerfile
+        ├── handler.py
+        └── README.md
 ```

@@ -1,0 +1,44 @@
+# Cloud Build config for the Pixeltable batch pipeline.
+# Builds the container, pushes to Artifact Registry, and updates the Cloud Run Job.
+#
+# Usage:
+#   gcloud builds submit --config orchestration/deploy/cloud-run/cloudbuild.yaml orchestration/
+#
+# Required substitutions (set via --substitution-var or trigger config):
+#   _REGION: GCP region (default: us-central1)
+#   _REPO: Artifact Registry repo name (default: pixeltable)
+
+substitutions:
+  _REGION: us-central1
+  _REPO: pixeltable
+
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/pipeline:${SHORT_SHA}
+      - -t
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/pipeline:latest
+      - .
+
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - --all-tags
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/pipeline
+
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - jobs
+      - update
+      - pixeltable-pipeline
+      - --image
+      - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/pipeline:${SHORT_SHA}
+      - --region
+      - ${_REGION}
+
+images:
+  - ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO}/pipeline

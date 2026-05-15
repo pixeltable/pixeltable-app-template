@@ -52,7 +52,12 @@ orchestration/                   Batch processing (no HTTP server, no FastAPI)
 ├── schema.py                    Tables, views, embedding indexes, computed columns
 ├── pipeline.py                  Script: ingest → compute → export_sql → exit
 ├── Dockerfile                   Ephemeral container (Cloud Run Job, ECS Task, K8s Job)
-└── docker-compose.yml           Local testing
+├── docker-compose.yml           Local testing
+└── deploy/
+    ├── cloud-run/               Cloud Run Job + Cloud Build CI (cloudbuild.yaml)
+    ├── k8s-job/                 K8s Job, CronJob, KEDA ScaledJob (job.yaml, cronjob.yaml)
+    ├── ecs-fargate/             ECS Fargate task definition (task-definition.json)
+    └── lambda/                  Lambda container image (Dockerfile, handler.py)
 
 serving/                         Declarative API serving (zero Python web code)
 ├── schema.py                    Tables, views, indexes, @pxt.query functions

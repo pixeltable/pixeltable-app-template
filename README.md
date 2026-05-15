@@ -270,11 +270,12 @@ frontend/src/
 ├── lib/api.ts              Typed fetch wrapper + client-side aggregation/fan-in
 └── types/index.ts          Shared interfaces (PxtQueryResponse<T> for generic query responses)
 
-orchestration/                  Ephemeral batch processing pattern
+orchestration/                  Batch processing (no HTTP server, no FastAPI)
 ├── schema.py                   Tables, views, embedding indexes, computed columns
-├── pipeline.py                 Batch: ingest → compute → export_sql → exit
-├── Dockerfile                  Ephemeral container (PIXELTABLE_HOME=/tmp)
-└── docker-compose.yml          Local testing
+├── pipeline.py                 Script: ingest → compute → export_sql → exit
+├── Dockerfile                  Ephemeral container
+├── docker-compose.yml          Local testing
+└── deploy/                     Cloud Run Job, K8s Job/CronJob/KEDA, ECS Fargate, Lambda
 
 serving/                        Declarative API serving (zero Python web code)
 ├── schema.py                   Tables, views, indexes, @pxt.query functions
