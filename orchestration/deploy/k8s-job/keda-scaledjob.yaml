@@ -1,4 +1,4 @@
-# KEDA ScaledJob — triggers a Kubernetes Job for each message on a queue.
+# KEDA ScaledJob: triggers a Kubernetes Job for each message on a queue.
 # Requires KEDA installed: https://keda.sh/docs/deploy/
 #
 # This example uses AWS SQS. Replace the trigger with your queue:

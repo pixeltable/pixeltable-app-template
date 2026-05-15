@@ -69,6 +69,61 @@ gcloud eventarc triggers create pixeltable-pubsub-trigger \
   --transport-topic projects/$PROJECT_ID/topics/batch-requests
 ```
 
+## Trigger from Webhook
+
+Cloud Run Jobs can't receive HTTP directly (they're not services). The standard pattern is: webhook -> Pub/Sub -> Eventarc -> Job. This reuses the Pub/Sub trigger you already set up above.
+
+### Option 1: Webhook -> Pub/Sub (recommended)
+
+Point the webhook source at a Pub/Sub push endpoint. Any HTTP POST publishes a message, which triggers the job via Eventarc.
+
+```bash
+# 1. Create a Pub/Sub topic (if not done already)
+gcloud pubsub topics create batch-requests
+
+# 2. Set up Eventarc trigger (same as "Trigger from Pub/Sub" above)
+gcloud eventarc triggers create pixeltable-pubsub-trigger \
+  --location $REGION \
+  --destination-run-service pixeltable-pipeline \
+  --destination-run-region $REGION \
+  --event-filters "type=google.cloud.pubsub.topic.v1.messagePublished" \
+  --transport-topic projects/$PROJECT_ID/topics/batch-requests
+
+# 3. Send a webhook payload (from any HTTP client or external service)
+curl -X POST \
+  "https://pubsub.googleapis.com/v1/projects/$PROJECT_ID/topics/batch-requests:publish" \
+  -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+  -H "Content-Type: application/json" \
+  -d '{"messages": [{"data": "'$(echo -n '{"title":"New doc","body":"Content"}' | base64)'"}]}'
+```
+
+### Option 2: Cloud Function as webhook receiver
+
+For external webhooks (GitHub, Stripe, etc.) that POST to a fixed URL, deploy a small Cloud Function that validates the payload and triggers the job:
+
+```bash
+# Deploy a lightweight function that calls the Jobs API
+gcloud functions deploy pixeltable-webhook \
+  --gen2 --runtime python312 --region $REGION \
+  --entry-point handle_webhook \
+  --trigger-http --allow-unauthenticated \
+  --set-env-vars PROJECT_ID=$PROJECT_ID,REGION=$REGION,JOB_NAME=pixeltable-pipeline \
+  --source - <<'PYEOF'
+import functions_framework
+from google.cloud import run_v2
+import os
+
+@functions_framework.http
+def handle_webhook(request):
+    client = run_v2.JobsClient()
+    job_name = f"projects/{os.environ['PROJECT_ID']}/locations/{os.environ['REGION']}/jobs/{os.environ['JOB_NAME']}"
+    operation = client.run_job(name=job_name)
+    return {"status": "triggered", "operation": operation.name}, 200
+PYEOF
+```
+
+The function URL becomes your webhook endpoint. Add signature validation for production use.
+
 ## Custom Input
 
 Pass arguments via the `--args` flag or override the entrypoint:

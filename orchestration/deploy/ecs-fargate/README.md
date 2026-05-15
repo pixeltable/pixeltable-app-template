@@ -73,6 +73,82 @@ aws pipes create-pipe \
   --role-arn arn:aws:iam::ACCOUNT_ID:role/pipes-execution-role
 ```
 
+## Trigger from Webhook
+
+ECS tasks can't receive HTTP directly. Use API Gateway to accept the webhook, then route to ECS via EventBridge or a Lambda proxy.
+
+### Option 1: API Gateway -> EventBridge -> ECS RunTask
+
+EventBridge can start an ECS task directly from an API Gateway request, no Lambda needed:
+
+```bash
+# 1. Create an EventBridge API Destination (for logging/tracing)
+# 2. Create an HTTP API with EventBridge integration
+API_ID=$(aws apigatewayv2 create-api \
+  --name pixeltable-webhook \
+  --protocol-type HTTP \
+  --query ApiId --output text)
+
+# 3. Create an EventBridge rule that starts the ECS task
+aws events put-rule --name pixeltable-webhook-rule \
+  --event-pattern '{
+    "source": ["apigateway"],
+    "detail-type": ["webhook"]
+  }'
+
+aws events put-targets --rule pixeltable-webhook-rule \
+  --targets '[{
+    "Id": "ecs-target",
+    "Arn": "arn:aws:ecs:us-east-1:ACCOUNT_ID:cluster/your-cluster",
+    "RoleArn": "arn:aws:iam::ACCOUNT_ID:role/eventbridge-ecs-role",
+    "EcsParameters": {
+      "TaskDefinitionArn": "arn:aws:ecs:us-east-1:ACCOUNT_ID:task-definition/pixeltable-pipeline",
+      "LaunchType": "FARGATE",
+      "NetworkConfiguration": {
+        "awsvpcConfiguration": {
+          "Subnets": ["subnet-xxx"],
+          "AssignPublicIp": "ENABLED"
+        }
+      }
+    }
+  }]'
+```
+
+### Option 2: API Gateway -> Lambda -> ECS RunTask
+
+If you need to validate the webhook payload or pass data to the task, use a small Lambda function as glue:
+
+```bash
+# Lambda that starts an ECS task (Python snippet)
+# import boto3
+# ecs = boto3.client("ecs")
+# def handler(event, context):
+#     ecs.run_task(
+#         cluster="your-cluster",
+#         taskDefinition="pixeltable-pipeline",
+#         launchType="FARGATE",
+#         networkConfiguration={...},
+#         overrides={"containerOverrides": [{
+#             "name": "pixeltable-pipeline",
+#             "environment": [{"name": "INPUT_SOURCE", "value": event["body"]}]
+#         }]}
+#     )
+
+aws lambda create-function \
+  --function-name pixeltable-webhook-trigger \
+  --runtime python3.12 --handler index.handler \
+  --role arn:aws:iam::ACCOUNT_ID:role/lambda-ecs-trigger-role \
+  --zip-file fileb://webhook_trigger.zip
+
+# Attach API Gateway
+aws apigatewayv2 create-api \
+  --name pixeltable-webhook \
+  --protocol-type HTTP \
+  --target arn:aws:lambda:us-east-1:ACCOUNT_ID:function:pixeltable-webhook-trigger
+```
+
+Option 2 is more flexible: you can validate signatures, transform the payload, and pass environment variable overrides to the ECS task.
+
 ## Spot Pricing
 
 Use `FARGATE_SPOT` capacity provider for ~70% cost reduction. Tasks may be interrupted, but the pipeline is idempotent. Re-run safely on retry.

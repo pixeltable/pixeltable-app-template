@@ -121,14 +121,14 @@ export_sql(
 
 This pattern runs as a **job** (finite task), not a **service** (HTTP server). Every major cloud has first-class support for this. Ready-to-use configs live in `deploy/`:
 
-| Platform | Config | Runtime | Best for |
-|---|---|---|---|
-| [**Google Cloud Run Jobs**](deploy/cloud-run/) | `cloudbuild.yaml` | Up to 24h, 8 vCPU, 32 GiB | GCP users, cron/Pub/Sub triggers |
-| [**Kubernetes Job**](deploy/k8s-job/) | `job.yaml`, `cronjob.yaml`, `keda-scaledjob.yaml` | Unlimited | Any K8s cluster, queue-driven scaling |
-| [**AWS ECS Fargate**](deploy/ecs-fargate/) | `task-definition.json` | Unlimited | AWS users, Spot pricing (~70% cheaper) |
-| [**AWS Lambda**](deploy/lambda/) | `Dockerfile`, `handler.py` | Up to 15 min, 10 GiB | Small batches, event-driven |
-| **AWS Batch** | (use ECS task def) | Unlimited | Managed queue, auto instance selection |
-| **Azure Container Apps Jobs** | (use K8s Job pattern) | Unlimited | Azure, consumption billing |
+| Platform | Config | Runtime | Triggers | Best for |
+|---|---|---|---|---|
+| [**Google Cloud Run Jobs**](deploy/cloud-run/) | `cloudbuild.yaml` | Up to 24h, 8 vCPU, 32 GiB | Cron, Pub/Sub, webhook (via Cloud Function) | GCP users |
+| [**Kubernetes Job**](deploy/k8s-job/) | `job.yaml`, `cronjob.yaml`, `keda-scaledjob.yaml` | Unlimited | CronJob, queue (KEDA), webhook (via receiver) | Any K8s cluster |
+| [**AWS ECS Fargate**](deploy/ecs-fargate/) | `task-definition.json` | Unlimited | SQS, EventBridge, webhook (via API Gateway) | AWS users, Spot (~70% cheaper) |
+| [**AWS Lambda**](deploy/lambda/) | `Dockerfile`, `handler.py` | Up to 15 min, 10 GiB | SQS, schedule, **webhook (native Function URL)** | Small batches, event-driven |
+| **AWS Batch** | (use ECS task def) | Unlimited | SQS, schedule | Managed queue, auto instance selection |
+| **Azure Container Apps Jobs** | (use K8s Job pattern) | Unlimited | Queue, schedule | Azure, consumption billing |
 
 Each folder has a README with full deploy commands. Quick summary:
 
