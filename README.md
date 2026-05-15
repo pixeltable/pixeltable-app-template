@@ -42,7 +42,6 @@ deploy/                        Deployment configs for the full backend + fronten
 ├── railway/                   Railway (railway.json + Dockerfile)
 ├── vercel/                    Vercel (frontend only, proxies /api to backend)
 ├── digitalocean/              DigitalOcean App Platform (app.yaml spec)
-├── pixeltable-cloud/          Pixeltable Cloud via pxt deploy (coming soon)
 ├── helm/                      Helm chart (any existing K8s cluster)
 ├── terraform-k8s/             Terraform + AWS EKS
 ├── terraform-gke/             Terraform + GCP GKE
@@ -63,7 +62,9 @@ serving/
 ├── schema.py                  Tables, views, indexes, @pxt.query functions
 ├── pyproject.toml             Dependencies + route config ([tool.pixeltable])
 ├── Dockerfile                 Long-running container
-└── docker-compose.yml         Local testing
+├── docker-compose.yml         Local testing
+└── deploy/
+    └── pixeltable-cloud/      Pixeltable Cloud via pxt deploy (coming soon)
 ```
 
 ---
@@ -329,7 +330,7 @@ uv sync
 PYTHONPATH=. uv run pxt serve pipeline    # http://localhost:8000/docs
 ```
 
-**Coming soon: `pxt deploy`**. Same config, deployed to Pixeltable Cloud with auto-scaling and zero container management. See [`deploy/pixeltable-cloud/`](deploy/pixeltable-cloud/).
+**Coming soon: `pxt deploy`**. Same config, deployed to Pixeltable Cloud with auto-scaling and zero container management. See [`serving/deploy/pixeltable-cloud/`](serving/deploy/pixeltable-cloud/).
 
 See [`serving/README.md`](serving/) for full details.
 
