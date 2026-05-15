@@ -1,0 +1,32 @@
+# Pixeltable service + deployment configuration.
+#
+# Local dev:   PYTHONPATH=. pxt serve openai_demo
+# Deploy:      pxt deploy openai_demo
+
+[[service]]
+name    = "openai_demo"
+modules = ["app"]
+
+# Upload an image → returns job_url; poll job to get description.
+[[service.routes]]
+type              = "compute"
+table             = "pipeline.images"
+path              = "/image"
+uploadfile_inputs = ["image"]
+outputs           = ["description"]
+background        = true
+
+# Submit text → summary via gpt-4o-mini.
+[[service.routes]]
+type    = "compute"
+table   = "pipeline.documents"
+path    = "/document"
+inputs  = ["body"]
+outputs = ["summary"]
+
+[[deployment]]
+name    = "openai_demo"
+service = "openai_demo"
+env     = "dev"
+workers = 3
+exclude = ["__pycache__", "*.pyc", ".git", ".env", "*.egg-info", ".venv"]

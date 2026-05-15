@@ -1,0 +1,12 @@
+[project]
+name = "pixeltable-cloud-media"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pixeltable",
+    "pillow>=10.0",
+    "openai>=1.0",
+]
+
+[tool.uv.sources]
+pixeltable = { git = "https://github.com/amithadke/pixeltable.git", branch = "amit-pxt-deploy" }
