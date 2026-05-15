@@ -14,8 +14,6 @@ This repo demonstrates three ways to use Pixeltable. Pick the one that matches y
 
 Pixeltable itself is not an HTTP framework. It's a data engine. The starter kit wraps it in FastAPI because that demo needs a web UI, but **if your workload is batch processing, you don't need FastAPI at all**. `orchestration/` is a plain Python script that inserts data, lets computed columns process it, exports results, and exits. Run it as a Cloud Run Job, ECS Task, Kubernetes Job, Lambda, or a cron'd container.
 
-> For a more complete example, see **[Pixelbot](https://github.com/pixeltable/pixelbot)**.
-
 ### Project Structure
 
 ```
