@@ -24,7 +24,7 @@ For longer-running jobs, use [Cloud Run Jobs](../cloud-run/), [ECS Fargate](../e
 
 ```bash
 # 1. Build the Lambda container image
-cd orchestration
+cd batch
 docker build -f deploy/lambda/Dockerfile -t pixeltable-pipeline-lambda:latest .
 
 # 2. Push to ECR

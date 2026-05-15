@@ -2307,7 +2307,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pixeltable-orchestration"
+name = "pixeltable-batch"
 version = "0.2.0"
 source = { virtual = "." }
 dependencies = [

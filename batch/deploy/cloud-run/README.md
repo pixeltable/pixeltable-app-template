@@ -26,7 +26,7 @@ gcloud artifacts repositories create pixeltable \
   --repository-format=docker --location=$REGION
 
 # 4. Build and push
-cd orchestration
+cd batch
 docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest .
 docker push $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest
 

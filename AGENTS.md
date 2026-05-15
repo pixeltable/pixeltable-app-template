@@ -17,7 +17,7 @@ A production-ready starter kit demonstrating three ways to deploy Pixeltable. Th
 
 - **Need a web app?** → `backend/` (FastAPI + React)
 - **Need an API with zero web code?** → `serving/` (`pxt serve` generates routes from TOML)
-- **Need batch/background processing?** → `orchestration/` (pure Python script, no HTTP server)
+- **Need batch/background processing?** → `batch/` (pure Python script, no HTTP server)
 
 The starter kit's three-tab UI demonstrates interactive patterns via FastAPI:
 
@@ -48,7 +48,7 @@ frontend/src/
 ├── lib/api.ts               Typed fetch wrapper + client-side aggregation/fan-in
 └── types/index.ts           TypeScript interfaces (PxtQueryResponse<T> + app-specific types)
 
-orchestration/                   Batch processing (no HTTP server, no FastAPI)
+batch/                           Batch processing (no HTTP server, no FastAPI)
 ├── schema.py                    Tables, views, embedding indexes, computed columns
 ├── pipeline.py                  Script: ingest → compute → export_sql → exit
 ├── Dockerfile                   Ephemeral container (Cloud Run Job, ECS Task, K8s Job)

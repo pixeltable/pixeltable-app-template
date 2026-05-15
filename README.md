@@ -9,10 +9,10 @@ This repo demonstrates three ways to use Pixeltable. Pick the one that matches y
 | Question | Pattern | Folder |
 |---|---|---|
 | I need a web app with a frontend | **Full Backend**: FastAPI + React | [`backend/`](backend/) + [`frontend/`](frontend/) |
-| I need batch/background processing (cron, queue, Cloud Run Job) | **Batch Processing**: pure Python script, no HTTP server | [`orchestration/`](orchestration/) |
+| I need batch/background processing (cron, queue, Cloud Run Job) | **Batch Processing**: pure Python script, no HTTP server | [`batch/`](batch/) |
 | I want an API with zero web code | **Declarative Serving**: `pxt serve` generates routes from TOML | [`serving/`](serving/) |
 
-Pixeltable itself is not an HTTP framework. It's a data engine. The starter kit wraps it in FastAPI because that demo needs a web UI, but **if your workload is batch processing, you don't need FastAPI at all**. `orchestration/` is a plain Python script that inserts data, lets computed columns process it, exports results, and exits. Run it as a Cloud Run Job, ECS Task, Kubernetes Job, Lambda, or a cron'd container.
+Pixeltable itself is not an HTTP framework. It's a data engine. The starter kit wraps it in FastAPI because that demo needs a web UI, but **if your workload is batch processing, you don't need FastAPI at all**. `batch/` is a plain Python script that inserts data, lets computed columns process it, exports results, and exits. Run it as a Cloud Run Job, ECS Task, Kubernetes Job, Lambda, or a cron'd container.
 
 ### Project Structure
 
@@ -50,7 +50,7 @@ deploy/                        Deployment configs for the full backend + fronten
 
 # ── Pattern 2: Batch Processing (no HTTP server) ────────────
 
-orchestration/
+batch/
 ├── schema.py                  Tables, views, embedding indexes, computed columns
 ├── pipeline.py                Script: ingest → compute → export_sql → exit
 ├── Dockerfile                 Ephemeral container
@@ -285,23 +285,23 @@ graph TD
 ### Quick Start
 
 ```bash
-cd orchestration
+cd batch
 uv sync
 PIXELTABLE_HOME=/tmp/pxt uv run python pipeline.py
 ```
 
 ### Deploy
 
-Ready-to-use configs in [`orchestration/deploy/`](orchestration/deploy/):
+Ready-to-use configs in [`batch/deploy/`](batch/deploy/):
 
 | Platform | Config | Runtime | Best for |
 |---|---|---|---|
-| [**Cloud Run Jobs**](orchestration/deploy/cloud-run/) | `cloudbuild.yaml` | Up to 24h | GCP, cron/Pub/Sub triggers |
-| [**Kubernetes Job**](orchestration/deploy/k8s-job/) | `job.yaml`, `cronjob.yaml`, `keda-scaledjob.yaml` | Unlimited | Any K8s, queue-driven scaling |
-| [**ECS Fargate**](orchestration/deploy/ecs-fargate/) | `task-definition.json` | Unlimited | AWS, Spot pricing (~70% cheaper) |
-| [**Lambda**](orchestration/deploy/lambda/) | `Dockerfile`, `handler.py` | Up to 15 min | Small batches, event-driven |
+| [**Cloud Run Jobs**](batch/deploy/cloud-run/) | `cloudbuild.yaml` | Up to 24h | GCP, cron/Pub/Sub triggers |
+| [**Kubernetes Job**](batch/deploy/k8s-job/) | `job.yaml`, `cronjob.yaml`, `keda-scaledjob.yaml` | Unlimited | Any K8s, queue-driven scaling |
+| [**ECS Fargate**](batch/deploy/ecs-fargate/) | `task-definition.json` | Unlimited | AWS, Spot pricing (~70% cheaper) |
+| [**Lambda**](batch/deploy/lambda/) | `Dockerfile`, `handler.py` | Up to 15 min | Small batches, event-driven |
 
-See [`orchestration/README.md`](orchestration/) for full details.
+See [`batch/README.md`](batch/) for full details.
 
 ---
 

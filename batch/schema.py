@@ -1,4 +1,4 @@
-"""Pixeltable schema for the orchestration pipeline.
+"""Pixeltable schema for the batch pipeline.
 
 Defines tables, views, embedding indexes, and computed columns.
 Idempotent: safe to import or run multiple times.

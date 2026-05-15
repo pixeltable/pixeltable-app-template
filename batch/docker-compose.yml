@@ -1,5 +1,5 @@
 services:
-  orchestration:
+  batch:
     build: .
     environment:
       PIXELTABLE_HOME: /tmp/pixeltable

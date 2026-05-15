@@ -36,7 +36,7 @@ Cron / Queue / Webhook
 ## Quick Start
 
 ```bash
-cd orchestration
+cd batch
 uv sync
 PIXELTABLE_HOME=/tmp/pxt uv run python pipeline.py
 ```
@@ -127,7 +127,7 @@ Each folder has a README with full deploy commands. Quick summary:
 ### Google Cloud Run Jobs
 
 ```bash
-cd orchestration
+cd batch
 docker build -t $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest .
 docker push $REGION-docker.pkg.dev/$PROJECT_ID/pixeltable/pipeline:latest
 gcloud run jobs create pixeltable-pipeline \
@@ -180,7 +180,7 @@ See [`deploy/lambda/`](deploy/lambda/) for the handler, SQS event source mapping
 ## Files
 
 ```
-orchestration/
+batch/
 ├── schema.py               Tables, views, embedding indexes, computed columns
 ├── pipeline.py             Batch ingest → compute → export_sql → exit
 ├── sample_batch.json       Example JSON input

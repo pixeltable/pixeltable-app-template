@@ -7,9 +7,9 @@ Serve Pixeltable tables and queries as a REST API with **zero Python web code**.
 - You want automatic CRUD + search endpoints without writing FastAPI code
 - Insert routes should trigger computed columns and return results in real time
 
-**When NOT to use this:** If your workload is batch processing (cron jobs, queue consumers, long-running data pipelines), you don't need an HTTP server. Use [`orchestration/`](../orchestration/) instead (pure Python script, no web framework).
+**When NOT to use this:** If your workload is batch processing (cron jobs, queue consumers, long-running data pipelines), you don't need an HTTP server. Use [`batch/`](../batch/) instead (pure Python script, no web framework).
 
-This is the complement to the [starter kit](../README.md) (full custom backend with a frontend) and [`orchestration/`](../orchestration/) (batch processing with no HTTP server).
+This is the complement to the [starter kit](../README.md) (full custom backend with a frontend) and [`batch/`](../batch/) (batch processing with no HTTP server).
 
 ```
 Schema (Python)          Routes (TOML)                    Runtime
@@ -68,7 +68,7 @@ docker compose up --build    # long-running service on :8000
 
 ### Schema as code (`schema.py`)
 
-Same schema pattern as `orchestration/`. One file defines tables, views, computed columns, embedding indexes, and `@pxt.query` functions:
+Same schema pattern as `batch/`. One file defines tables, views, computed columns, embedding indexes, and `@pxt.query` functions:
 
 - **Documents:** table → sentence chunking view → embedding index → `search_documents` query
 - **Images:** table → thumbnail + metadata computed columns → `list_images` query
@@ -146,7 +146,7 @@ This starter kit demonstrates three ways to deploy Pixeltable:
 | Pattern | Folder | When to use |
 |---|---|---|
 | **Full Backend** | [`backend/`](../backend/) | You need custom endpoints, a frontend, hand-written logic |
-| **Ephemeral Orchestration** | [`orchestration/`](../orchestration/) | Sidecar to your existing stack; batch ingest, `export_sql`, exit |
+| **Batch Processing** | [`batch/`](../batch/) | Sidecar to your existing stack; batch ingest, `export_sql`, exit |
 | **Declarative Serving** | `serving/` (this) | Zero-code API: schema + TOML config, `pxt serve` generates everything |
 
 ### Coming soon: `pxt deploy`

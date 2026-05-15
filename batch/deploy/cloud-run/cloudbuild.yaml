@@ -2,7 +2,7 @@
 # Builds the container, pushes to Artifact Registry, and updates the Cloud Run Job.
 #
 # Usage:
-#   gcloud builds submit --config orchestration/deploy/cloud-run/cloudbuild.yaml orchestration/
+#   gcloud builds submit --config batch/deploy/cloud-run/cloudbuild.yaml batch/
 #
 # Required substitutions (set via --substitution-var or trigger config):
 #   _REGION: GCP region (default: us-central1)

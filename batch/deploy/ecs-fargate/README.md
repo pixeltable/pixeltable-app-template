@@ -20,7 +20,7 @@ Run the Pixeltable batch pipeline as an ECS Fargate task. Serverless containers 
 ```bash
 # 1. Create ECR repo and push image
 aws ecr create-repository --repository-name pixeltable-pipeline
-cd orchestration
+cd batch
 docker build -t pixeltable-pipeline:latest .
 
 aws ecr get-login-password | docker login --username AWS --password-stdin ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com
