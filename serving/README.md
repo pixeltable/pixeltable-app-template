@@ -1,8 +1,15 @@
 # Pixeltable Declarative Serving
 
-Serve Pixeltable tables and queries as a REST API with **zero Python web code**. Define your schema in Python, your routes in TOML, and run `pxt serve`. Pixeltable generates the FastAPI app for you.
+Serve Pixeltable tables and queries as a REST API with **zero Python web code**. Define your schema in Python, your routes in TOML, and run `pxt serve`.
 
-This is the complement to the [starter kit](../README.md) (full custom backend) and [`orchestration/`](../orchestration/) (ephemeral batch). Here Pixeltable IS the server — no hand-written endpoints, no routers, no Pydantic models.
+**When to use this pattern:**
+- You need an API (clients will make HTTP requests)
+- You want automatic CRUD + search endpoints without writing FastAPI code
+- Insert routes should trigger computed columns and return results in real time
+
+**When NOT to use this:** If your workload is batch processing — cron jobs, queue consumers, long-running data pipelines — you don't need an HTTP server. Use [`orchestration/`](../orchestration/) instead (pure Python script, no web framework).
+
+This is the complement to the [starter kit](../README.md) (full custom backend with a frontend) and [`orchestration/`](../orchestration/) (batch processing with no HTTP server).
 
 ```
 Schema (Python)          Routes (TOML)                    Runtime

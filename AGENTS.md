@@ -13,7 +13,13 @@ Before modifying this codebase, familiarize yourself with Pixeltable:
 
 ## What This Template Is
 
-A production-ready starter kit demonstrating how to put Pixeltable in production with FastAPI + Pydantic + TypeScript. Three tabs show three interaction patterns:
+A production-ready starter kit demonstrating three ways to deploy Pixeltable. The choice depends on whether you need an API:
+
+- **Need a web app?** → `backend/` (FastAPI + React)
+- **Need an API with zero web code?** → `serving/` (`pxt serve` generates routes from TOML)
+- **Need batch/background processing?** → `orchestration/` (pure Python script, no HTTP server)
+
+The starter kit's three-tab UI demonstrates interactive patterns via FastAPI:
 
 | Tab | Pattern | Key Pixeltable Features |
 |-----|---------|------------------------|
@@ -42,10 +48,10 @@ frontend/src/
 ├── lib/api.ts               Typed fetch wrapper + client-side aggregation/fan-in
 └── types/index.ts           TypeScript interfaces (PxtQueryResponse<T> + app-specific types)
 
-orchestration/                   Ephemeral batch processing pattern
+orchestration/                   Batch processing (no HTTP server, no FastAPI)
 ├── schema.py                    Tables, views, embedding indexes, computed columns
-├── pipeline.py                  Batch: ingest → compute → export_sql → exit
-├── Dockerfile                   Ephemeral container (PIXELTABLE_HOME=/tmp)
+├── pipeline.py                  Script: ingest → compute → export_sql → exit
+├── Dockerfile                   Ephemeral container (Cloud Run Job, ECS Task, K8s Job)
 └── docker-compose.yml           Local testing
 
 serving/                         Declarative API serving (zero Python web code)

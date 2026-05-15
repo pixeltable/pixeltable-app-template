@@ -36,12 +36,12 @@ graph TD
     AP -.->|"@pxt.query"| EI
 ```
 
-2. **[Ephemeral Orchestration](orchestration/)** — Pixeltable as **ephemeral processing engine**: spin up, ingest text and media, let computed columns process everything, [`export_sql`](https://docs.pixeltable.com/howto/cookbooks/data/data-export-sql) structured results to a serving DB, and route generated media (thumbnails, audio, etc.) directly to a cloud bucket via the [`destination`](https://docs.pixeltable.com/sdk/latest/table) parameter on `add_computed_column`. No persistent infrastructure — the container shuts down when done.
+2. **[Ephemeral Orchestration](orchestration/)** — Pixeltable as **batch processing engine** with no HTTP server: a Python script that ingests data, lets computed columns process it, [`export_sql`](https://docs.pixeltable.com/howto/cookbooks/data/data-export-sql)s results to a serving DB, and exits. Run it as a [Cloud Run Job](https://cloud.google.com/run/docs/create-jobs), ECS Fargate Task, Kubernetes Job, Lambda, or a cron'd container. No FastAPI, no endpoints — just data in, results out.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
 graph TD
-    Trigger["<b>SQS · Cron · Webhook</b>"]
+    Trigger["<b>Cron · Queue · Webhook</b><br/>Cloud Scheduler · SQS · Pub/Sub"]
 
     subgraph Container["Ephemeral Container · Pixeltable"]
         Schema["<b>Create Schema</b><br/>tables + computed columns"]
@@ -71,6 +71,16 @@ graph TD
     TOML --> Serve
     Serve --> API
 ```
+
+### Choosing a Pattern
+
+| Question | → Pattern |
+|---|---|
+| I need a web app with a frontend | **Starter Kit** — full FastAPI + React |
+| I need to process data in the background (batch, cron, queue) | **[Ephemeral Orchestration](orchestration/)** — pure Python script, no HTTP server |
+| I want an API with zero web code | **[Declarative Serving](serving/)** — `pxt serve` generates routes from TOML |
+
+Pixeltable itself is not an HTTP framework. It's a data engine. The starter kit wraps it in FastAPI because that demo needs a web UI, but **if your workload is batch processing, you don't need FastAPI at all** — `orchestration/` is a plain Python script that inserts data, lets computed columns process it, exports results, and exits. Run it as a Cloud Run Job, ECS Task, Kubernetes Job, Lambda, or a cron'd Docker container.
 
 These patterns extend to any use case — [ML data wrangling](https://docs.pixeltable.com/use-cases/ml-data-wrangling), [RAG applications](https://docs.pixeltable.com/use-cases/ai-applications), [agentic workflows](https://docs.pixeltable.com/use-cases/agents-mcp), and more. If you're migrating from an existing stack, see how Pixeltable maps to [DIY data pipelines](https://docs.pixeltable.com/migrate/from-diy-data-pipeline), [RDBMS + vector DBs](https://docs.pixeltable.com/migrate/from-rdbms-vectordbs), or [agent frameworks](https://docs.pixeltable.com/migrate/from-agent-frameworks).
 

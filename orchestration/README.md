@@ -1,11 +1,18 @@
-# Pixeltable Ephemeral Orchestration
+# Pixeltable Batch Processing
 
-Use Pixeltable as an **ephemeral processing engine**: spin up a container, ingest text and media, let computed columns do the work, export structured results to a serving database via [`export_sql`](https://docs.pixeltable.com/howto/cookbooks/data/data-export-sql), and route generated media directly to a cloud bucket via the [`destination`](https://docs.pixeltable.com/sdk/v0.5.9/table) parameter. No persistent infrastructure — the container shuts down when done.
+Use Pixeltable as a **batch processing engine** — no HTTP server, no FastAPI, no endpoints. A Python script that ingests data, lets computed columns do the work, exports structured results to a serving database via [`export_sql`](https://docs.pixeltable.com/howto/cookbooks/data/data-export-sql), and routes generated media directly to a cloud bucket via the [`destination`](https://docs.pixeltable.com/sdk/latest/table) parameter. The container shuts down when done.
 
-This is the complement to the [starter kit](../README.md) (long-running server) and [`serving/`](../serving/) (`pxt serve`). Here Pixeltable is a sidecar to your existing stack — it processes data and hands results back.
+**When to use this pattern:**
+- Long-running batch jobs (processing thousands of documents, hours of video)
+- Background tasks triggered by a queue, cron, or webhook
+- Sidecar to your existing stack — you already have a serving layer and just need processing
+- You don't need an HTTP API at all
+
+This is the complement to the [starter kit](../README.md) (interactive web app with FastAPI) and [`serving/`](../serving/) (declarative API via `pxt serve`). If you need an API, use those instead. If you just need to process data and export results, this is the right pattern.
 
 ```
-SQS / Cron / Webhook
+Cron / Queue / Webhook
+(Cloud Scheduler, SQS, Pub/Sub, EventBridge)
         │
         ▼
   Ephemeral Container
@@ -112,7 +119,29 @@ export_sql(
 
 ## Production Deployment
 
-### ECS Fargate Spot + SQS (cheapest)
+This pattern runs as a **job** (finite task), not a **service** (HTTP server). Every major cloud has first-class support for this.
+
+### Google Cloud Run Jobs
+
+```
+Cloud Scheduler / Pub/Sub / Eventarc → Cloud Run Job
+```
+
+```bash
+gcloud run jobs create pixeltable-pipeline \
+  --image <your-registry>/pixeltable-pipeline:latest \
+  --set-env-vars PIXELTABLE_HOME=/tmp/pixeltable \
+  --set-env-vars SERVING_DB_URL=postgresql+psycopg://... \
+  --memory 4Gi --cpu 2 --task-timeout 3600s --max-retries 3
+
+gcloud run jobs execute pixeltable-pipeline
+```
+
+- Scale-to-zero billing (pay only during execution)
+- Up to 24h runtime per task, 4 vCPU, 32 GiB RAM
+- Trigger from Cloud Scheduler (cron), Pub/Sub, Eventarc, or Workflows
+
+### ECS Fargate Spot + SQS
 
 ```
 SQS Queue → EventBridge Rule → ECS Fargate Spot Task
@@ -122,10 +151,20 @@ SQS Queue → EventBridge Rule → ECS Fargate Spot Task
 - Scale to zero when idle
 - Pass batch payload via environment variable or S3 pointer
 
+### AWS Lambda (small batches)
+
+```
+S3 event / SQS message / EventBridge → Lambda
+```
+
+- Up to 15 min / 10 GiB — suitable for smaller batches
+- Set `PIXELTABLE_HOME=/tmp/pixeltable`
+- Package as a container image for larger dependencies
+
 ### Kubernetes Job + KEDA
 
 ```
-Queue (SQS/Redis) → KEDA ScaledJob → K8s Job (Spot nodes)
+Queue (SQS/Redis/Pub/Sub) → KEDA ScaledJob → K8s Job (Spot nodes)
 ```
 
 ### AWS Batch
@@ -133,6 +172,15 @@ Queue (SQS/Redis) → KEDA ScaledJob → K8s Job (Spot nodes)
 - Submit jobs to a managed queue
 - Auto-provisions optimal instance types
 - Native Spot support with automatic retries
+
+### Azure Container Apps Jobs
+
+```
+Azure Queue Storage / Service Bus → Container Apps Job
+```
+
+- Event-driven or scheduled execution
+- Scale to zero, consumption billing
 
 ## See Also
 
