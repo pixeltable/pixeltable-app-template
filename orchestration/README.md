@@ -44,25 +44,18 @@ PIXELTABLE_HOME=/tmp/pxt uv run python pipeline.py
 Output:
 
 ```
-Using 5 sample documents
-Inserting documents...
-Inserted 22 rows with 0 errors in 3.1 s
-Inserting images...
-Inserted 2 rows with 0 errors in 0.4 s
-Exporting results...
+Loaded sample_batch.json
+Inserting 5 documents...
+Inserting 2 images...
+Exporting...
   Documents -> sqlite:///serving.db:processed_documents
   Images    -> sqlite:///serving.db:processed_images
 
-  Serving DB — processed_documents (5 rows):
-    doc-001  Introduction to Pixeltable
-    doc-002  Computed Columns
-    ...
-
-  Search test — 'how does Pixeltable handle orchestration?' (3 hits):
+  Search: 'how does Pixeltable handle orchestration?' (3 hits)
     [0.71] This lets you use Pixeltable as a processing engine...
     [0.66] For batch workloads, Pixeltable can run in an ephemeral container...
 
-Pipeline completed in 3.3s
+Done in 3.3s
 ```
 
 ### Docker
@@ -74,8 +67,7 @@ docker compose up --build    # runs pipeline, exports to volume, exits
 ### Custom input
 
 ```bash
-uv run python pipeline.py --input batch.json
-uv run python pipeline.py --input-db 'postgresql://user:pass@host/db'
+uv run python pipeline.py --input my_batch.json
 ```
 
 ## How It Works

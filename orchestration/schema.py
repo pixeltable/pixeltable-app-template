@@ -1,7 +1,7 @@
 """Pixeltable schema for the orchestration pipeline.
 
 Defines tables, views, embedding indexes, and computed columns.
-Idempotent — safe to import or run multiple times.
+Idempotent: safe to import or run multiple times.
 
     python schema.py                # initialize schema directly
     import schema                   # used by pipeline.py

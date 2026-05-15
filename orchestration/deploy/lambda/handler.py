@@ -70,8 +70,8 @@ def lambda_handler(event, context):
     if documents:
         schema.documents.insert(documents)
     else:
-        from pipeline import SAMPLE_DOCUMENTS
-        schema.documents.insert(SAMPLE_DOCUMENTS)
+        batch = json.load(open("sample_batch.json"))
+        schema.documents.insert(batch["documents"])
 
     export_results()
 

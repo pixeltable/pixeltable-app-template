@@ -1,12 +1,41 @@
-[
-  {
-    "title": "Custom Document 1",
-    "body": "This is a custom document loaded from a JSON batch file for testing the pipeline input modes.",
-    "source_id": "batch-001"
-  },
-  {
-    "title": "Custom Document 2",
-    "body": "Another document demonstrating how you would feed data from an SQS queue, Celery task, or S3 manifest into the pipeline.",
-    "source_id": "batch-002"
-  }
-]
+{
+  "documents": [
+    {
+      "title": "Introduction to Pixeltable",
+      "body": "Pixeltable is data infrastructure for AI that replaces the patchwork of storage, ETL, vector databases, feature stores, and orchestration frameworks with a single declarative system. Tables, computed columns, and embedding indexes handle what typically requires stitching together S3, Postgres, Pinecone, Airflow, and LangChain.",
+      "source_id": "doc-001"
+    },
+    {
+      "title": "Computed Columns",
+      "body": "Computed columns in Pixeltable are declarative transformations that update incrementally. When you insert new rows, only the new data flows through the computation graph. This eliminates the need for manual orchestration, retry logic, and dependency tracking that plague traditional ML pipelines.",
+      "source_id": "doc-002"
+    },
+    {
+      "title": "Export to SQL",
+      "body": "Pixeltable's export_sql function sends processed data to any SQL database: PostgreSQL, MySQL, SQLite, Snowflake, or TigerData. Type mapping is automatic. This lets you use Pixeltable as a processing engine while keeping your existing serving infrastructure.",
+      "source_id": "doc-003"
+    },
+    {
+      "title": "Media Processing",
+      "body": "Pixeltable handles video, audio, images, and documents natively. Iterators extract frames, split audio, and chunk documents. Computed columns can run transcription, OCR, object detection, or any custom UDF. The destination parameter on add_computed_column routes generated media directly to cloud storage buckets.",
+      "source_id": "doc-004"
+    },
+    {
+      "title": "Ephemeral Deployment",
+      "body": "For batch workloads, Pixeltable can run in an ephemeral container. Schema setup is idempotent and takes seconds. Data is ingested, processed through computed columns, and exported to a serving database. The container then exits. This pattern works with ECS Fargate Spot, Kubernetes Jobs, or AWS Batch for cost-efficient processing.",
+      "source_id": "doc-005"
+    }
+  ],
+  "images": [
+    {
+      "image": "https://raw.githubusercontent.com/pixeltable/pixeltable/main/docs/resources/images/000000000036.jpg",
+      "label": "cat",
+      "source_id": "img-001"
+    },
+    {
+      "image": "https://raw.githubusercontent.com/pixeltable/pixeltable/main/docs/resources/images/000000000090.jpg",
+      "label": "scene",
+      "source_id": "img-002"
+    }
+  ]
+}
