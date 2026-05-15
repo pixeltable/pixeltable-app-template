@@ -17,7 +17,9 @@ Pixeltable itself is not an HTTP framework. It's a data engine. The starter kit 
 ### Project Structure
 
 ```
-backend/                       Full backend (FastAPI + React)
+# ── Pattern 1: Full Backend (FastAPI + React) ────────────────
+
+backend/
 ├── main.py                    FastAPI app, CORS, router init, SPA fallback
 ├── setup_pixeltable.py        Schema (tables, views, indexes, agent pipeline)
 ├── functions.py               @pxt.udf definitions (web search, context assembly)
@@ -34,19 +36,7 @@ frontend/src/
 ├── lib/api.ts                 Typed fetch wrapper + client-side aggregation
 └── types/index.ts             Shared TypeScript interfaces
 
-orchestration/                 Batch processing (no HTTP server, no FastAPI)
-├── schema.py                  Tables, views, embedding indexes, computed columns
-├── pipeline.py                Script: ingest → compute → export_sql → exit
-├── Dockerfile                 Ephemeral container
-└── deploy/                    Cloud Run Job, K8s Job/CronJob/KEDA, ECS Fargate, Lambda
-
-serving/                       Declarative API serving (pxt serve, zero web code)
-├── schema.py                  Tables, views, indexes, @pxt.query functions
-├── pyproject.toml             Dependencies + route config ([tool.pixeltable])
-├── Dockerfile                 Long-running container
-└── docker-compose.yml         Local testing
-
-deploy/                        Deployment configs for the full backend
+deploy/                        Deployment configs for the full backend + frontend
 ├── fly/                       Fly.io (fly.toml + persistent volume)
 ├── render/                    Render (Blueprint render.yaml)
 ├── railway/                   Railway (railway.json + Dockerfile)
@@ -58,6 +48,22 @@ deploy/                        Deployment configs for the full backend
 ├── terraform-gke/             Terraform + GCP GKE
 ├── terraform-aks/             Terraform + Azure AKS
 └── aws-cdk/                   AWS CDK + ECS Fargate
+
+# ── Pattern 2: Batch Processing (no HTTP server) ────────────
+
+orchestration/
+├── schema.py                  Tables, views, embedding indexes, computed columns
+├── pipeline.py                Script: ingest → compute → export_sql → exit
+├── Dockerfile                 Ephemeral container
+└── deploy/                    Cloud Run Job, K8s Job/CronJob/KEDA, ECS Fargate, Lambda
+
+# ── Pattern 3: Declarative Serving (pxt serve) ──────────────
+
+serving/
+├── schema.py                  Tables, views, indexes, @pxt.query functions
+├── pyproject.toml             Dependencies + route config ([tool.pixeltable])
+├── Dockerfile                 Long-running container
+└── docker-compose.yml         Local testing
 ```
 
 ---
