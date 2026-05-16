@@ -1,10 +1,10 @@
 """Pixeltable schema for declarative serving.
 
 Defines tables, views, embedding indexes, and @pxt.query functions.
-Imported by pxt serve via the `modules` field in pyproject.toml.
+Run this once to initialize the schema, then start the server:
 
-    python schema.py                # initialize schema directly
-    pxt serve pipeline              # imported automatically via modules = ["schema"]
+    python schema.py        # create tables, views, indexes
+    pxt serve pipeline      # start the API (reads routes from pyproject.toml)
 """
 
 import os
@@ -91,7 +91,7 @@ images.add_computed_column(height=images.image.height, if_exists="ignore")
 images.add_computed_column(mode=images.image.mode, if_exists="ignore")
 
 # ── Query functions ──────────────────────────────────────────────────────────
-# Referenced by pxt serve (pixeltable.toml) via dotted path.
+# Referenced by pxt serve via colon-separated path (e.g. schema:search_documents).
 
 
 @pxt.query

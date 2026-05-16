@@ -28,6 +28,7 @@ Schema (Python)          Routes (TOML)                    Runtime
 ```bash
 cd serving
 uv sync
+uv run python schema.py              # initialize tables, views, indexes
 PYTHONPATH=. uv run pxt serve pipeline
 ```
 

@@ -327,7 +327,8 @@ graph TD
 ```bash
 cd serving
 uv sync
-PYTHONPATH=. uv run pxt serve pipeline    # http://localhost:8000/docs
+uv run python schema.py                      # initialize tables
+PYTHONPATH=. uv run pxt serve pipeline       # http://localhost:8000/docs
 ```
 
 **Coming soon: `pxt deploy`**. Same config, deployed to Pixeltable Cloud with auto-scaling and zero container management. See [`serving/deploy/pixeltable-cloud/`](serving/deploy/pixeltable-cloud/).

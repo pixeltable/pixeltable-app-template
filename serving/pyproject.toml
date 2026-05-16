@@ -20,33 +20,32 @@ openai = ["openai>=1.0"]
 
 # ── Pixeltable service config (read by `pxt serve`) ─────────────────────────
 # Start the server:
-#   PYTHONPATH=. pxt serve pipeline
-#   PYTHONPATH=. pxt serve pipeline --port 9000
+#   pxt serve pipeline
+#   pxt serve pipeline --port 9000
 
 [[tool.pixeltable.service]]
 name = "pipeline"
 prefix = "/api"
 port = 8000
-modules = ["schema"]
 
 # ── Query routes ─────────────────────────────────────────────────────────────
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search"
-query = "schema.search_documents"
+query = "schema:search_documents"
 method = "post"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/documents"
-query = "schema.list_documents"
+query = "schema:list_documents"
 method = "get"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/images"
-query = "schema.list_images"
+query = "schema:list_images"
 method = "get"
 
 # ── Insert routes ────────────────────────────────────────────────────────────
