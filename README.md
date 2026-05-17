@@ -8,7 +8,7 @@ This repo demonstrates three ways to use Pixeltable. Pick the one that matches y
 
 | Question | Pattern | Folder |
 |---|---|---|
-| I need a web app with a frontend | **Full Backend**: FastAPI + React | [`backend/`](backend/) + [`frontend/`](frontend/) |
+| I need a headless API (no frontend) | **API Backend**: FastAPI + Pixeltable | [`backend/`](backend/) |
 | I need batch/background processing (cron, queue, Cloud Run Job) | **Batch Processing**: pure Python script, no HTTP server | [`batch/`](batch/) |
 | I want an API with zero web code | **Declarative Serving**: `pxt serve` generates routes from TOML | [`serving/`](serving/) |
 
@@ -17,7 +17,7 @@ Pixeltable itself is not an HTTP framework. It's a data engine. The starter kit 
 ### Project Structure
 
 ```
-# ── Pattern 1: Full Backend (FastAPI + React) ────────────────
+# ── Pattern 1: API Backend (FastAPI, headless) ────────────────
 
 backend/
 ├── main.py                    FastAPI app, CORS, router init, SPA fallback
@@ -69,9 +69,9 @@ serving/
 
 ---
 
-## 1. Full Backend (Starter Kit)
+## 1. API Backend
 
-A long-running FastAPI + React app with persistent storage. Three tabs demonstrate three core Pixeltable patterns: multimodal upload with automatic processing, cross-modal similarity search, and a tool-calling agent wired entirely as computed columns.
+A headless FastAPI backend with Pixeltable. Demonstrates three core patterns via API endpoints: multimodal upload with automatic processing, cross-modal similarity search, and a tool-calling agent wired entirely as computed columns. The `frontend/` directory at the repo root provides a reference React UI for development, but is **not included** when scaffolding via `uvx pixeltable-new --backend`. For a full-stack app with UI, use an [application template](#application-templates) instead.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
@@ -334,6 +334,26 @@ PYTHONPATH=. uv run pxt serve pipeline       # http://localhost:8000/docs
 **Coming soon: `pxt deploy`**. Same config, deployed to Pixeltable Cloud with auto-scaling and zero container management. See [`serving/deploy/pixeltable-cloud/`](serving/deploy/pixeltable-cloud/).
 
 See [`serving/README.md`](serving/) for full details.
+
+---
+
+## Application Templates
+
+Full-stack vertical apps that showcase what Pixeltable makes uniquely simple. Each replaces an entire category of paid SaaS with one `schema.py` file.
+
+```bash
+uvx pixeltable-new --template <name> my-app
+cd my-app && uv sync && python schema.py
+```
+
+| Template | What it replaces | Description |
+|----------|-----------------|-------------|
+| [`multimodal-rag`](templates/multimodal-rag/) | Vectara, Cohere RAG | Upload docs, images, video, audio -- one unified search across all media types |
+| [`video-intel`](templates/video-intel/) | Twelve Labs, Valossa | Declarative video pipeline: frames, scenes, transcription, object detection, temporal search |
+| [`agent`](templates/agent/) | Mem0, MemGPT | Persistent multimodal agent with durable memory, tool calling, MCP exposure |
+| [`audio-intel`](templates/audio-intel/) | Otter.ai, AssemblyAI | Audio/podcast intelligence: transcription, diarization, summarization, semantic search |
+| [`content-pipeline`](templates/content-pipeline/) | Cloudinary AI | Enterprise media processing: ingest from S3, process all modalities, export to your DB |
+| [`data-lab`](templates/data-lab/) | Labelbox, Roboflow | ML dataset engineering: auto-annotate, curate, version, export to PyTorch |
 
 ---
 

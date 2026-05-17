@@ -1,0 +1,72 @@
+# Audio & Podcast Intelligence
+
+Ingest audio files, automatically transcribe, chunk, summarize, and search across recordings. Your own Otter.ai, self-hosted.
+
+## What it replaces
+
+| Service | Cost |
+|---------|------|
+| Otter.ai | $20/mo per user |
+| Descript | $24/mo per user |
+| AssemblyAI | $0.37/min |
+| **audio-intel** | **Free + your compute** |
+
+## Use cases
+
+- **Meeting intelligence** -- transcribe and search across every meeting recording
+- **Podcast analytics** -- find every mention of a topic across hundreds of episodes
+- **Call center QA** -- search agent calls for compliance keywords in seconds
+- **Compliance search** -- full-text + semantic search over recorded conversations
+
+## Quickstart
+
+```bash
+# 1. Install
+pip install -e ".[openai]"
+python -m spacy download en_core_web_sm
+
+# 2. Set your API key
+export OPENAI_API_KEY="sk-..."
+
+# 3. Run the schema (creates tables, views, indexes)
+python schema.py
+```
+
+To use local Whisper instead of the OpenAI API:
+
+```bash
+pip install -e ".[local]"
+# Then uncomment the local whisper block in schema.py
+```
+
+## What Pixeltable handles
+
+All of the following run **automatically** when you insert a row -- zero glue code:
+
+1. **Audio splitting** -- 30-second segments with 5s overlap via `audio_splitter`
+2. **Transcription** -- OpenAI Whisper API (or local `whisper.transcribe`)
+3. **Sentence chunking** -- spaCy sentence segmentation via `string_splitter`
+4. **Embedding** -- `all-MiniLM-L6-v2` sentence embeddings, computed on insert
+5. **Indexing** -- HNSW vector index for sub-second semantic search
+6. **Summarization** -- per-chunk LLM summaries via `chat_completions`
+
+## API routes
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/api/search` | Semantic search across all transcripts |
+| `POST` | `/api/ingest` | Upload and ingest an audio file |
+| `GET` | `/api/recordings` | List all recordings |
+| `POST` | `/api/transcript` | Get full transcript for a recording |
+
+## Architecture
+
+```
+audio file
+  └─ audio_files table (audio, title, source, uuid, timestamp)
+       └─ chunks view (30s segments via audio_splitter)
+            ├─ transcription (openai.transcriptions)
+            ├─ summary (chat_completions)
+            └─ sentences view (string_splitter)
+                 └─ embedding index (all-MiniLM-L6-v2)
+```

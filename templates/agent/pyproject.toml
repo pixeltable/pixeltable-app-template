@@ -1,0 +1,57 @@
+[project]
+name = "pixeltable-agent"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pixeltable>=0.6.0",
+    "sentence-transformers>=3.0",
+    "spacy>=3.7",
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    "psycopg[binary]>=3.1",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.25"]
+
+# ── Pixeltable service config (read by `pxt serve`) ──────────────────────
+# Start the server:
+#   pxt serve agent
+#   pxt serve agent --port 9000
+
+[[tool.pixeltable.service]]
+name = "agent"
+prefix = "/api"
+port = 8000
+
+# ── Routes ────────────────────────────────────────────────────────────────
+# POST /ask inserts a prompt into agent.agent; the computed column chain
+# (memory recall → knowledge RAG → LLM + tools → context → final LLM)
+# fires automatically and the answer column is returned.
+
+[[tool.pixeltable.service.routes]]
+type = "insert"
+path = "/ask"
+table = "agent.agent"
+inputs = ["prompt", "conversation_id", "system_prompt", "max_tokens", "temperature"]
+outputs = ["answer"]
+
+[[tool.pixeltable.service.routes]]
+type = "insert"
+path = "/knowledge"
+table = "agent.knowledge"
+inputs = ["text", "title", "source"]
+outputs = ["uuid"]
+
+[[tool.pixeltable.service.routes]]
+type = "query"
+path = "/memory/search"
+query = "schema:recall_memory"
+method = "post"
+
+[[tool.pixeltable.service.routes]]
+type = "query"
+path = "/history"
+query = "schema:get_history"
+method = "get"

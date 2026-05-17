@@ -1,0 +1,50 @@
+[project]
+name = "audio-intel"
+version = "0.1.0"
+description = "Self-hosted audio & podcast intelligence -- transcription, summarization, semantic search."
+requires-python = ">=3.10"
+dependencies = [
+    "pixeltable>=0.6.0",
+    "sentence-transformers>=3.0",
+    "spacy>=3.7",
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+    "psycopg[binary]>=3.1",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "python-multipart>=0.0.9",
+]
+
+[project.optional-dependencies]
+openai = ["openai>=1.0"]
+local = ["openai-whisper>=20231117"]
+
+[[tool.pixeltable.service]]
+name = "audiointel"
+prefix = "/api"
+port = 8000
+
+[[tool.pixeltable.service.routes]]
+type = "query"
+path = "/search"
+query = "schema:search_transcripts"
+method = "post"
+
+[[tool.pixeltable.service.routes]]
+type = "insert"
+path = "/ingest"
+table = "audiointel.audio_files"
+uploadfile_inputs = ["audio"]
+inputs = ["title", "source"]
+outputs = ["uuid"]
+
+[[tool.pixeltable.service.routes]]
+type = "query"
+path = "/recordings"
+query = "schema:list_recordings"
+method = "get"
+
+[[tool.pixeltable.service.routes]]
+type = "query"
+path = "/transcript"
+query = "schema:get_transcript"
+method = "post"
