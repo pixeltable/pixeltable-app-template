@@ -7,6 +7,8 @@ from pixeltable.functions.audio import audio_splitter
 from pixeltable.functions.huggingface import sentence_transformer
 from pixeltable.functions.uuid import uuid7
 
+import functions
+
 NAMESPACE = 'pipeline'
 EMBED_MODEL = 'all-MiniLM-L6-v2'
 embed_fn = sentence_transformer.using(model_id=EMBED_MODEL)
@@ -180,13 +182,5 @@ def list_documents():
     ).order_by(documents.timestamp, asc=False)
 
 
-@pxt.udf
-def get_processing_status() -> dict:
-    """Count of items per modality."""
-    return {
-        'images': images.count(),
-        'documents': documents.count(),
-        'audio_files': audio_files.count(),
-        'media_total': media.count(),
-        'doc_chunks': doc_chunks.count(),
-    }
+
+# functions.get_processing_status is available as a UDF for the API layer

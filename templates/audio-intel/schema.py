@@ -8,6 +8,8 @@ from pixeltable.functions.huggingface import sentence_transformer
 from pixeltable.functions.string import string_splitter
 from pixeltable.functions.uuid import uuid7
 
+import functions
+
 HAVE_OPENAI = bool(os.environ.get('OPENAI_API_KEY'))
 
 if HAVE_OPENAI:
@@ -166,7 +168,5 @@ def get_summary(recording_title: str):
     )
 
 
-@pxt.udf
-def generate_full_summary(chunk_summaries: list[str]) -> str:
-    """Concatenate chunk summaries into a single episode overview (used by API layer)."""
-    return '\n\n'.join(s for s in chunk_summaries if s)
+
+# functions.generate_full_summary is available as a UDF for the API layer

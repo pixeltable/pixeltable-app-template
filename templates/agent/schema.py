@@ -9,12 +9,13 @@ are all queryable, versioned Pixeltable tables.
 
 import os
 from datetime import datetime
-from typing import Any
 
 import pixeltable as pxt
 from pixeltable.functions.huggingface import sentence_transformer
 from pixeltable.functions.string import string_splitter
 from pixeltable.functions.uuid import uuid7
+
+import functions
 
 HAS_ANTHROPIC = bool(os.getenv('ANTHROPIC_API_KEY'))
 if HAS_ANTHROPIC:
@@ -117,48 +118,14 @@ def get_history(conversation_id: str, limit: int = 10):
 
 # ── Tools ─────────────────────────────────────────────────────────────────
 
-
-@pxt.udf
-def web_search(query: str) -> str:
-    """Web search stub — replace with your preferred search API."""
-    return f'[web_search placeholder] No results for: {query}'
-
-
 # Load tools from any MCP-compliant server:
 # mcp_tools = pxt.mcp_udfs('http://localhost:8000/mcp')
-# tools = pxt.tools(web_search, search_knowledge, recall_memory, *mcp_tools)
-
-
-@pxt.udf
-def assemble_context(
-    prompt: str,
-    memory_context: list[dict[str, Any]] | None,
-    knowledge_context: list[Any] | None,
-    tool_output: list[dict[str, Any]] | None,
-) -> str:
-    """Merge memory, knowledge, and tool results into a single context block."""
-    parts = [f'QUESTION:\n{prompt}']
-    if knowledge_context:
-        items = [
-            item.get('text', str(item)) if isinstance(item, dict) else str(item)
-            for item in knowledge_context
-        ]
-        parts.append('KNOWLEDGE:\n' + '\n'.join(f'- {t}' for t in items if t))
-    if memory_context:
-        lines = [
-            f"- [{m.get('role', '?')}] {m.get('content', '')[:200]}"
-            for m in memory_context
-        ]
-        parts.append('MEMORY:\n' + '\n'.join(lines))
-    if tool_output:
-        parts.append(f'TOOL RESULTS:\n{tool_output}')
-    return '\n\n'.join(parts)
-
+# tools = pxt.tools(functions.web_search, search_knowledge, recall_memory, *mcp_tools)
 
 # ── Agent pipeline (requires ANTHROPIC_API_KEY) ──────────────────────────
 
 if HAS_ANTHROPIC:
-    tools = pxt.tools(web_search, search_knowledge, recall_memory)
+    tools = pxt.tools(functions.web_search, search_knowledge, recall_memory)
 
     agent = pxt.create_table(
         'agent.agent',
@@ -200,7 +167,7 @@ if HAS_ANTHROPIC:
         if_exists='ignore',
     )
     agent.add_computed_column(
-        context=assemble_context(
+        context=functions.assemble_context(
             agent.prompt,
             agent.memory_context,
             agent.knowledge_context,
