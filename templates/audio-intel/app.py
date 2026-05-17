@@ -1,9 +1,7 @@
 """Audio Intelligence — FastAPI application."""
 
-import os
 from pathlib import Path
 
-import pixeltable as pxt
 import uvicorn
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -51,55 +49,54 @@ class SearchInBody(BaseModel):
 
 
 @app.get('/')
-async def index():
+def index():
     return FileResponse(str(STATIC_DIR / 'index.html'))
 
 
 @app.post('/api/upload')
-async def upload(file: UploadFile = File(...)):
+def upload(file: UploadFile = File(...)):
     ext = Path(file.filename).suffix.lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail=f'Unsupported file type: {ext}')
 
     title = Path(file.filename).stem
     save_path = UPLOAD_DIR / file.filename
-    content = await file.read()
-    save_path.write_bytes(content)
+    save_path.write_bytes(file.file.read())
 
     schema.audio_files.insert([{'audio': str(save_path), 'title': title, 'source': 'upload'}])
     return {'status': 'ok', 'title': title}
 
 
 @app.get('/api/recordings')
-async def recordings():
+def recordings():
     result = schema.list_recordings()
     records = _serialize_records(result.collect().to_pandas().to_dict('records'))
     return {'recordings': records}
 
 
 @app.get('/api/transcript')
-async def transcript(title: str):
+def transcript(title: str):
     result = schema.get_transcript(title)
     records = _serialize_records(result.collect().to_pandas().to_dict('records'))
     return {'segments': records}
 
 
 @app.get('/api/summary')
-async def summary(title: str):
+def summary(title: str):
     result = schema.get_summary(title)
     records = _serialize_records(result.collect().to_pandas().to_dict('records'))
     return {'segments': records}
 
 
 @app.post('/api/search')
-async def search(body: SearchBody):
+def search(body: SearchBody):
     result = schema.search_transcripts(body.query, body.limit)
     records = _serialize_records(result.collect().to_pandas().to_dict('records'))
     return {'results': records}
 
 
 @app.post('/api/search-in')
-async def search_in(body: SearchInBody):
+def search_in(body: SearchInBody):
     result = schema.search_in_recording(body.title, body.query, body.limit)
     records = _serialize_records(result.collect().to_pandas().to_dict('records'))
     return {'results': records}

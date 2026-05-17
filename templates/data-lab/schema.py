@@ -99,7 +99,7 @@ dataset.add_computed_column(
 dataset.add_embedding_index(
     'image',
     embedding=clip_embed,
-    if_not_exists=True,
+    if_exists='ignore',
 )
 
 # ---------------------------------------------------------------------------

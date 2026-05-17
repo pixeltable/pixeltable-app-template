@@ -1,10 +1,11 @@
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 import schema
 
@@ -21,20 +22,28 @@ def _sanitize(records: list[dict]) -> list[dict]:
     return records
 
 
+class AskRequest(BaseModel):
+    question: str
+    conversation_id: str = 'default'
+
+
+class KnowledgeRequest(BaseModel):
+    text: str
+    title: str = ''
+    source: str = ''
+
+
 @app.post('/api/ask')
-async def ask(request: Request):
-    body = await request.json()
-    question = body.get('question', '')
-    conversation_id = body.get('conversation_id', 'default')
+def ask(body: AskRequest):
     try:
-        answer = schema.ask(question, conversation_id)
+        answer = schema.ask(body.question, body.conversation_id)
         return {'answer': answer}
     except Exception as e:
         return JSONResponse(status_code=500, content={'error': str(e)})
 
 
 @app.get('/api/conversations')
-async def conversations():
+def conversations():
     import pixeltable as pxt
 
     try:
@@ -47,7 +56,7 @@ async def conversations():
 
 
 @app.get('/api/history')
-async def history(conversation_id: str = 'default', limit: int = 50):
+def history(conversation_id: str = 'default', limit: int = 50):
     try:
         result = schema.get_history(conversation_id, limit)
         records = _sanitize(result.collect().to_pandas().to_dict('records'))
@@ -58,13 +67,12 @@ async def history(conversation_id: str = 'default', limit: int = 50):
 
 
 @app.post('/api/knowledge')
-async def add_knowledge(request: Request):
-    body = await request.json()
+def add_knowledge(body: KnowledgeRequest):
     try:
         schema.knowledge.insert([{
-            'text': body.get('text', ''),
-            'title': body.get('title', ''),
-            'source': body.get('source', ''),
+            'text': body.text,
+            'title': body.title,
+            'source': body.source,
         }])
         return {'status': 'ok'}
     except Exception as e:
@@ -72,7 +80,7 @@ async def add_knowledge(request: Request):
 
 
 @app.get('/api/knowledge/search')
-async def knowledge_search(q: str = ''):
+def knowledge_search(q: str = ''):
     try:
         result = schema.search_knowledge(q)
         records = _sanitize(result.collect().to_pandas().to_dict('records'))
@@ -82,7 +90,7 @@ async def knowledge_search(q: str = ''):
 
 
 @app.get('/api/memory/search')
-async def memory_search(q: str = ''):
+def memory_search(q: str = ''):
     try:
         result = schema.recall_memory(q)
         records = _sanitize(result.collect().to_pandas().to_dict('records'))
@@ -96,7 +104,7 @@ app.mount('/static', StaticFiles(directory=str(static_dir)), name='static')
 
 
 @app.get('/')
-async def index():
+def index():
     return FileResponse(str(static_dir / 'index.html'))
 
 

@@ -202,24 +202,29 @@ def ask(question: str, conversation_id: str = 'default') -> str:
 
     ts = datetime.now()
     agent_tbl = pxt.get_table('agent.agent')
-    status = agent_tbl.insert(
-        [{
-            'prompt': question,
-            'conversation_id': conversation_id,
-            'system_prompt': (
-                'You are a helpful assistant with access to tools, a knowledge base, '
-                'and conversation memory. Use tools when needed. Be concise and accurate.'
-            ),
-            'max_tokens': 1024,
-            'temperature': 0.7,
-            'timestamp': ts,
-        }],
-        return_rows=True,
+    agent_tbl.insert([{
+        'prompt': question,
+        'conversation_id': conversation_id,
+        'system_prompt': (
+            'You are a helpful assistant with access to tools, a knowledge base, '
+            'and conversation memory. Use tools when needed. Be concise and accurate.'
+        ),
+        'max_tokens': 1024,
+        'temperature': 0.7,
+        'timestamp': ts,
+    }])
+
+    result = (
+        agent_tbl.where(agent_tbl.timestamp == ts)
+        .order_by(agent_tbl.timestamp, asc=False)
+        .limit(1)
+        .select(agent_tbl.answer)
+        .collect()
     )
-    if not status.rows:
+    if not result:
         return 'Error: no response generated.'
 
-    answer = status.rows[0].get('answer', 'Error: no answer in response.')
+    answer = result[0].get('answer', 'Error: no answer in response.')
     conversations.insert([
         {
             'role': 'user',

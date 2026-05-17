@@ -55,7 +55,7 @@ images.add_computed_column(mode=images.image.mode, if_exists='ignore')
 # Optional: CLIP embedding for visual search (uncomment to enable)
 # from pixeltable.functions.huggingface import clip
 # clip_fn = clip.using(model_id='openai/clip-vit-base-patch32')
-# images.add_embedding_index('image', embedding=clip_fn, if_not_exists=True)
+# images.add_embedding_index('image', embedding=clip_fn, if_exists='ignore')
 
 # Optional: vision LLM caption (uncomment + set OPENAI_API_KEY)
 # from pixeltable.functions.openai import chat_completions
@@ -100,7 +100,7 @@ doc_chunks = pxt.create_view(
     if_exists='ignore',
 )
 
-doc_chunks.add_embedding_index('text', embedding=embed_fn, if_not_exists=True)
+doc_chunks.add_embedding_index('text', string_embed=embed_fn, if_exists='ignore')
 
 # Optional: LLM summary per document (uncomment + set OPENAI_API_KEY)
 # documents.add_computed_column(

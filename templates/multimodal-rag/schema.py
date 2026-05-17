@@ -131,7 +131,7 @@ if HAS_OPENAI:
         if_exists='ignore',
     )
     video_audio_segments.add_computed_column(
-        transcript_text=video_audio_segments.transcription.text,
+        transcript_text=video_audio_segments.transcription.text.astype(pxt.String),
         if_exists='ignore',
     )
 
@@ -176,7 +176,7 @@ if HAS_OPENAI:
         if_exists='ignore',
     )
     audio_segments.add_computed_column(
-        transcript_text=audio_segments.transcription.text,
+        transcript_text=audio_segments.transcription.text.astype(pxt.String),
         if_exists='ignore',
     )
 

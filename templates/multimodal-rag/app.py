@@ -1,6 +1,5 @@
 import base64
 import io
-import os
 from pathlib import Path
 
 import pixeltable as pxt
@@ -72,15 +71,14 @@ class AskRequest(BaseModel):
 
 
 @app.post('/api/upload')
-async def upload_file(file: UploadFile = File(...)):
+def upload_file(file: UploadFile = File(...)):
     try:
         file_type, ext = _detect_type(file.filename)
     except ValueError as exc:
         return {'status': 'error', 'message': str(exc)}
 
     save_path = UPLOAD_DIR / file.filename
-    content = await file.read()
-    save_path.write_bytes(content)
+    save_path.write_bytes(file.file.read())
     saved = str(save_path.resolve())
 
     if file_type == 'document':
@@ -96,13 +94,13 @@ async def upload_file(file: UploadFile = File(...)):
 
 
 @app.post('/api/search')
-async def search(req: SearchRequest):
+def search(req: SearchRequest):
     results = schema.search_knowledge(req.query, req.n)
     return {'results': [_serialize_row(r) for r in results]}
 
 
 @app.post('/api/ask')
-async def ask(req: AskRequest):
+def ask(req: AskRequest):
     result = schema.ask_question(req.question)
     if 'context' in result and isinstance(result['context'], list):
         result['context'] = [_serialize_row(c) if isinstance(c, dict) else c for c in result['context']]
@@ -110,7 +108,7 @@ async def ask(req: AskRequest):
 
 
 @app.get('/api/stats')
-async def stats():
+def stats():
     return {
         'documents': schema.documents.count(),
         'images': schema.images.count(),
@@ -123,7 +121,7 @@ app.mount('/static', StaticFiles(directory='static'), name='static')
 
 
 @app.get('/')
-async def index():
+def index():
     return FileResponse('static/index.html')
 
 

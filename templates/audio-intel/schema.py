@@ -82,7 +82,7 @@ if HAVE_OPENAI:
 
     sentences.add_embedding_index(
         'text',
-        embedding=EMBED_FN,
+        string_embed=EMBED_FN,
         if_exists='ignore',
     )
 
