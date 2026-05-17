@@ -16,10 +16,10 @@ from pathlib import Path
 import pixeltable as pxt
 
 import schema  # noqa: F401 -- triggers table/view creation on import
+from functions import get_processing_status
 from schema import (
     audio_files,
     documents,
-    get_processing_status,
     images,
     media,
     search_documents,

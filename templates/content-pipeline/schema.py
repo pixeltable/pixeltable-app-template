@@ -7,8 +7,6 @@ from pixeltable.functions.audio import audio_splitter
 from pixeltable.functions.huggingface import sentence_transformer
 from pixeltable.functions.uuid import uuid7
 
-import functions
-
 NAMESPACE = 'pipeline'
 EMBED_MODEL = 'all-MiniLM-L6-v2'
 embed_fn = sentence_transformer.using(model_id=EMBED_MODEL)
@@ -181,6 +179,3 @@ def list_documents():
         timestamp=documents.timestamp,
     ).order_by(documents.timestamp, asc=False)
 
-
-
-# functions.get_processing_status is available as a UDF for the API layer
