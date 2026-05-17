@@ -9,18 +9,16 @@ A durable agent where conversations, memory, knowledge, and tool traces are all 
 ## Quick Start
 
 ```bash
-cd templates/agent
-uv sync --extra anthropic
-ANTHROPIC_API_KEY=sk-... uv run python schema.py           # 1. create tables
-ANTHROPIC_API_KEY=sk-... PYTHONPATH=. uv run pxt serve agent   # 2. start API
+# 1. Install
+pip install -e ".[anthropic]"
+python -m spacy download en_core_web_sm
+
+# 2. Launch (UI + API)
+ANTHROPIC_API_KEY=sk-... python app.py
+# Open http://localhost:8000
 ```
 
-```bash
-# 3. Ask the agent
-curl -X POST http://localhost:8000/api/ask \
-  -H "Content-Type: application/json" \
-  -d '{"prompt": "What is Pixeltable?", "conversation_id": "sess-1", "max_tokens": 1024, "temperature": 0.7}'
-```
+For API-only mode (no UI): `ANTHROPIC_API_KEY=sk-... pxt serve`
 
 ## Architecture
 
@@ -108,6 +106,10 @@ tools = pxt.tools(web_search, search_knowledge, *mcp_tools)
 ```
 agent/
 ├── schema.py        Tables, views, indexes, computed columns, tools, query functions
+├── functions.py     UDFs (web_search, assemble_context)
+├── app.py           FastAPI server — API + web UI
+├── static/
+│   └── index.html   Frontend (Tailwind CSS, vanilla JS)
 ├── pyproject.toml   Dependencies + pxt serve routes
 └── README.md
 ```

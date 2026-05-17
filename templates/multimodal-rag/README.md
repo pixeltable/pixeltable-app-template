@@ -15,19 +15,18 @@ This template gives you the same multimodal retrieval pipeline in **one Python f
 ## Quickstart
 
 ```bash
-# 1. Scaffold
-pixeltable init multimodal-rag
-
-# 2. Install
+# 1. Install
 pip install -e ".[openai]"
 python -m spacy download en_core_web_sm
 
-# 3. Serve
-pixeltable serve
-# API available at http://localhost:8000/api
+# 2. Launch (UI + API)
+python app.py
+# Open http://localhost:8000
 ```
 
-Set `OPENAI_API_KEY` for Whisper transcription and chat answers. Without it, document + image + video-frame search still works; audio/video transcription search and `ask_question` are disabled.
+Set `OPENAI_API_KEY` for Whisper transcription and chat answers. Without it, document + image + video-frame search still works; audio/video transcription search and the Ask AI tab are disabled.
+
+For API-only mode (no UI): `pxt serve`
 
 ## What Pixeltable Handles Automatically
 
@@ -50,6 +49,19 @@ All indexes stay current as new data arrives. No cron jobs, no reindex scripts, 
 | POST | `/api/ingest/image` | Upload an image |
 | POST | `/api/ingest/video` | Upload a video |
 | POST | `/api/ingest/audio` | Upload an audio file |
+
+## Files
+
+```
+multimodal-rag/
+├── schema.py         Tables, views, indexes, computed columns, query functions
+├── functions.py      UDFs (merge_results)
+├── app.py            FastAPI server — API + web UI
+├── static/
+│   └── index.html    Frontend (Tailwind CSS, vanilla JS)
+├── pyproject.toml    Dependencies + pxt serve routes
+└── README.md
+```
 
 ## Next Steps
 

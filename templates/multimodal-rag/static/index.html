@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multimodal RAG</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    @keyframes fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+    @keyframes pulse-dot { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    .dot-pulse span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #818cf8; margin: 0 2px; animation: pulse-dot 1.4s infinite ease-in-out both; }
+    .dot-pulse span:nth-child(1) { animation-delay: -0.32s; }
+    .dot-pulse span:nth-child(2) { animation-delay: -0.16s; }
+  </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 font-sans flex flex-col overflow-hidden">
+
+  <header class="h-14 shrink-0 flex items-center justify-between px-5 border-b border-slate-800 bg-slate-900/80 backdrop-blur">
+    <div class="flex items-center gap-2.5">
+      <svg class="w-6 h-6 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+      <span class="font-semibold text-base tracking-tight">Multimodal RAG</span>
+    </div>
+    <div id="stats-bar" class="flex items-center gap-2 text-xs"></div>
+  </header>
+
+  <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+
+    <aside class="w-full md:w-80 shrink-0 border-b md:border-b-0 md:border-r border-slate-800 flex flex-col overflow-hidden">
+      <div class="p-4 flex flex-col gap-3 overflow-y-auto flex-1">
+        <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-400">Upload Files</h2>
+        <div id="drop-zone"
+             class="relative border-2 border-dashed border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all duration-200 hover:border-indigo-500/50 hover:bg-indigo-500/5 min-h-[140px]">
+          <input id="file-input" type="file" multiple class="hidden"
+                 accept=".pdf,.docx,.txt,.md,.jpg,.jpeg,.png,.gif,.webp,.mp4,.mov,.avi,.webm,.mp3,.wav,.m4a,.ogg,.flac">
+          <svg class="w-8 h-8 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z"/></svg>
+          <span class="text-sm text-slate-400 text-center">Drop files here or click to browse</span>
+          <span class="text-xs text-slate-500">PDF, DOCX, TXT, images, video, audio</span>
+        </div>
+
+        <div id="upload-progress" class="flex flex-col gap-2"></div>
+
+        <div id="recent-uploads" class="flex flex-col gap-1">
+          <h3 id="recent-title" class="text-xs font-semibold uppercase tracking-wider text-slate-400 mt-2 hidden">Recent Uploads</h3>
+          <div id="recent-list" class="flex flex-col gap-1"></div>
+        </div>
+      </div>
+    </aside>
+
+    <section class="flex-1 flex flex-col overflow-hidden">
+      <div class="flex items-center gap-1 px-5 pt-4">
+        <button data-tab="search" class="tab-btn px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200">Search</button>
+        <button data-tab="ask" class="tab-btn px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200">Ask AI</button>
+      </div>
+
+      <div id="panel-search" class="tab-panel flex-1 flex flex-col overflow-hidden px-5 pb-4 pt-3">
+        <div class="relative">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+          <input id="search-input" type="text" placeholder="Search across all media..."
+                 class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 transition-all duration-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none focus:border-transparent">
+        </div>
+        <div id="search-results" class="flex-1 overflow-y-auto mt-3">
+          <div id="search-empty" class="flex flex-col items-center justify-center h-full text-slate-500 gap-3">
+            <svg class="w-12 h-12 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><circle cx="11" cy="11" r="8"/><path stroke-linecap="round" d="M21 21l-4.35-4.35"/></svg>
+            <span class="text-sm">Search your knowledge base</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="panel-ask" class="tab-panel flex-1 flex flex-col overflow-hidden px-5 pb-4 pt-3 hidden">
+        <div id="chat-messages" class="flex-1 overflow-y-auto flex flex-col gap-3">
+          <div id="chat-empty" class="flex flex-col items-center justify-center h-full text-slate-500 gap-3">
+            <svg class="w-12 h-12 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25z"/></svg>
+            <span class="text-sm">Ask a question about your knowledge base</span>
+          </div>
+        </div>
+        <div class="mt-3 relative">
+          <textarea id="ask-input" rows="1" placeholder="Ask a question about your knowledge base..."
+                    class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-4 pr-12 py-2.5 text-sm text-slate-100 placeholder-slate-500 resize-none transition-all duration-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none focus:border-transparent"></textarea>
+          <button id="ask-send" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-indigo-400 hover:text-indigo-300 hover:bg-slate-700 transition-all duration-200">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+<script>
+const $ = (s, p = document) => p.querySelector(s);
+const $$ = (s, p = document) => [...p.querySelectorAll(s)];
+
+const state = { tab: 'search', recentUploads: [], searchTimeout: null, askLoading: false };
+
+function showToast(msg, type = 'error') {
+  const el = document.createElement('div');
+  el.className = `px-4 py-2.5 rounded-lg text-sm font-medium shadow-lg animate-fade-in ${
+    type === 'error' ? 'bg-red-600/90 text-white' : 'bg-emerald-600/90 text-white'
+  }`;
+  el.textContent = msg;
+  $('#toast-container').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 300); }, 4000);
+}
+
+async function api(path, opts = {}) {
+  try {
+    const res = await fetch(path, opts);
+    if (!res.ok) throw new Error(`Server error (${res.status})`);
+    return await res.json();
+  } catch (e) {
+    showToast(e.message);
+    throw e;
+  }
+}
+
+function badge(type) {
+  const map = { document: 'bg-blue-500/20 text-blue-400', image: 'bg-emerald-500/20 text-emerald-400', video: 'bg-purple-500/20 text-purple-400', audio: 'bg-orange-500/20 text-orange-400' };
+  return `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${map[type] || 'bg-slate-700 text-slate-300'}">${type}</span>`;
+}
+
+function statBadge(label, count, color) {
+  return `<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-${color}-500/10 text-${color}-400 border border-${color}-500/20">
+    <span class="font-semibold">${count}</span> ${label}
+  </span>`;
+}
+
+async function refreshStats() {
+  try {
+    const s = await api('/api/stats');
+    $('#stats-bar').innerHTML =
+      statBadge('docs', s.documents, 'blue') +
+      statBadge('images', s.images, 'emerald') +
+      statBadge('videos', s.videos, 'purple') +
+      statBadge('audio', s.audio, 'orange');
+  } catch {}
+}
+
+function switchTab(tab) {
+  state.tab = tab;
+  $$('.tab-btn').forEach(b => {
+    const active = b.dataset.tab === tab;
+    b.className = `tab-btn px-4 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+      active ? 'bg-indigo-500/20 text-indigo-300' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+    }`;
+  });
+  $$('.tab-panel').forEach(p => p.classList.add('hidden'));
+  $(`#panel-${tab}`).classList.remove('hidden');
+}
+
+const dropZone = $('#drop-zone');
+const fileInput = $('#file-input');
+
+dropZone.addEventListener('click', () => fileInput.click());
+['dragenter', 'dragover'].forEach(evt => dropZone.addEventListener(evt, e => {
+  e.preventDefault(); e.stopPropagation();
+  dropZone.classList.add('border-indigo-500', 'bg-indigo-500/10');
+  dropZone.classList.remove('border-slate-700');
+}));
+['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, e => {
+  e.preventDefault(); e.stopPropagation();
+  dropZone.classList.remove('border-indigo-500', 'bg-indigo-500/10');
+  dropZone.classList.add('border-slate-700');
+}));
+dropZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+fileInput.addEventListener('change', () => { handleFiles(fileInput.files); fileInput.value = ''; });
+
+function addProgressItem(name) {
+  const id = 'up-' + Date.now() + Math.random().toString(36).slice(2, 6);
+  const html = `<div id="${id}" class="flex items-center gap-2 bg-slate-800 rounded-lg px-3 py-2 text-xs">
+    <svg class="w-3.5 h-3.5 text-indigo-400 animate-spin shrink-0" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+    <span class="text-slate-300 truncate flex-1">${name}</span>
+  </div>`;
+  $('#upload-progress').insertAdjacentHTML('beforeend', html);
+  return id;
+}
+
+function finishProgressItem(id, success) {
+  const el = $(`#${id}`);
+  if (!el) return;
+  const icon = success
+    ? '<svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>'
+    : '<svg class="w-3.5 h-3.5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>';
+  el.querySelector('svg').outerHTML = icon;
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 2000);
+}
+
+function addRecentUpload(name, type) {
+  state.recentUploads.unshift({ name, type });
+  if (state.recentUploads.length > 10) state.recentUploads.pop();
+  renderRecent();
+}
+
+function renderRecent() {
+  if (state.recentUploads.length === 0) { $('#recent-title').classList.add('hidden'); $('#recent-list').innerHTML = ''; return; }
+  $('#recent-title').classList.remove('hidden');
+  $('#recent-list').innerHTML = state.recentUploads.map(u =>
+    `<div class="flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-slate-300">
+      ${badge(u.type)}
+      <span class="truncate">${u.name}</span>
+    </div>`
+  ).join('');
+}
+
+async function handleFiles(files) {
+  for (const file of files) {
+    const pid = addProgressItem(file.name);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await api('/api/upload', { method: 'POST', body: fd });
+      if (res.status === 'ok') {
+        finishProgressItem(pid, true);
+        addRecentUpload(res.filename, res.type);
+      } else {
+        finishProgressItem(pid, false);
+        showToast(res.message || 'Upload failed');
+      }
+    } catch {
+      finishProgressItem(pid, false);
+    }
+  }
+  refreshStats();
+}
+
+$$('.tab-btn').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+const searchInput = $('#search-input');
+searchInput.addEventListener('input', () => {
+  clearTimeout(state.searchTimeout);
+  state.searchTimeout = setTimeout(() => doSearch(searchInput.value.trim()), 300);
+});
+searchInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); clearTimeout(state.searchTimeout); doSearch(searchInput.value.trim()); }
+});
+
+function detectModality(row) {
+  if (row.doc || row.chunk_text) return 'document';
+  if (row.image || row.frame) return 'image';
+  if (row.video) return 'video';
+  if (row.audio || row.transcription) return 'audio';
+  for (const v of Object.values(row)) {
+    if (typeof v === 'string' && v.startsWith('data:image')) return 'image';
+  }
+  return 'document';
+}
+
+function extractText(row) {
+  for (const key of ['chunk_text', 'text', 'transcription', 'caption', 'answer']) {
+    if (row[key] && typeof row[key] === 'string') return row[key];
+  }
+  for (const v of Object.values(row)) {
+    if (typeof v === 'string' && v.length > 10 && !v.startsWith('data:') && !v.startsWith('/')) return v;
+  }
+  return null;
+}
+
+function extractImage(row) {
+  for (const v of Object.values(row)) {
+    if (typeof v === 'string' && v.startsWith('data:image')) return v;
+  }
+  return null;
+}
+
+function extractScore(row) {
+  for (const key of ['similarity', 'score', 'sim', 'distance']) {
+    if (typeof row[key] === 'number') return row[key];
+  }
+  return null;
+}
+
+function renderResultCard(row, idx) {
+  const mod = detectModality(row);
+  const text = extractText(row);
+  const img = extractImage(row);
+  const score = extractScore(row);
+  const delay = idx * 60;
+
+  let content = '';
+  if (img) {
+    content = `<img src="${img}" alt="" class="w-full h-32 object-cover rounded-lg">`;
+  } else if (text) {
+    content = `<p class="text-sm text-slate-300 line-clamp-4 leading-relaxed">${text.length > 300 ? text.slice(0, 300) + '…' : text}</p>`;
+  } else {
+    content = `<p class="text-xs text-slate-500 italic">No preview available</p>`;
+  }
+
+  return `<div class="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex flex-col gap-2 opacity-0 animate-fade-in" style="animation-delay:${delay}ms">
+    <div class="flex items-center justify-between">${badge(mod)}${score !== null ? `<span class="text-xs text-slate-500">${(score * 100).toFixed(1)}%</span>` : ''}</div>
+    ${content}
+  </div>`;
+}
+
+async function doSearch(query) {
+  const container = $('#search-results');
+  if (!query) { container.innerHTML = $('#search-empty').outerHTML; return; }
+
+  container.innerHTML = '<div class="flex items-center justify-center h-full"><svg class="w-6 h-6 text-indigo-400 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg></div>';
+
+  try {
+    const data = await api('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ query, n: 10 }) });
+    if (!data.results || data.results.length === 0) {
+      container.innerHTML = '<div class="flex flex-col items-center justify-center h-full text-slate-500 gap-2"><svg class="w-10 h-10 opacity-40" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg><span class="text-sm">No results found</span></div>';
+      return;
+    }
+    container.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">${data.results.map((r, i) => renderResultCard(r, i)).join('')}</div>`;
+  } catch {}
+}
+
+const chatMessages = $('#chat-messages');
+const askInput = $('#ask-input');
+const askSend = $('#ask-send');
+
+function appendMessage(role, content, context) {
+  $('#chat-empty')?.remove();
+  const wrapper = document.createElement('div');
+  wrapper.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in`;
+
+  if (role === 'user') {
+    wrapper.innerHTML = `<div class="max-w-[75%] bg-indigo-600 text-white rounded-xl rounded-br-sm px-4 py-2.5 text-sm">${content}</div>`;
+  } else {
+    let ctxHtml = '';
+    if (context && Array.isArray(context) && context.length > 0) {
+      const sources = context.map(c => {
+        const mod = typeof c === 'object' ? detectModality(c) : 'document';
+        const txt = typeof c === 'object' ? (extractText(c) || '') : String(c);
+        return `<div class="flex items-center gap-1.5">${badge(mod)}<span class="truncate text-slate-400">${txt.slice(0, 80)}${txt.length > 80 ? '…' : ''}</span></div>`;
+      }).join('');
+      ctxHtml = `<div class="mt-2 pt-2 border-t border-slate-700 flex flex-col gap-1 text-xs">${sources}</div>`;
+    }
+    wrapper.innerHTML = `<div class="flex gap-2.5 max-w-[85%]">
+      <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">AI</div>
+      <div class="bg-slate-800 border border-slate-700 rounded-xl rounded-bl-sm px-4 py-2.5 text-sm text-slate-200 leading-relaxed">
+        ${content}${ctxHtml}
+      </div>
+    </div>`;
+  }
+  chatMessages.appendChild(wrapper);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function showAskLoading() {
+  const el = document.createElement('div');
+  el.id = 'ask-loading';
+  el.className = 'flex justify-start animate-fade-in';
+  el.innerHTML = `<div class="flex gap-2.5">
+    <div class="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">AI</div>
+    <div class="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 dot-pulse"><span></span><span></span><span></span></div>
+  </div>`;
+  chatMessages.appendChild(el);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeAskLoading() {
+  $('#ask-loading')?.remove();
+}
+
+async function doAsk(question) {
+  if (!question || state.askLoading) return;
+  state.askLoading = true;
+  appendMessage('user', question);
+  showAskLoading();
+
+  try {
+    const data = await api('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question }) });
+    removeAskLoading();
+    appendMessage('ai', data.answer || 'No answer returned.', data.context);
+  } catch {
+    removeAskLoading();
+    appendMessage('ai', 'Sorry, something went wrong. Please try again.');
+  }
+  state.askLoading = false;
+}
+
+askInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); doAsk(askInput.value.trim()); askInput.value = ''; }
+});
+askSend.addEventListener('click', () => { doAsk(askInput.value.trim()); askInput.value = ''; });
+
+switchTab('search');
+refreshStats();
+</script>
+</body>
+</html>

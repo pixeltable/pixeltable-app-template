@@ -25,12 +25,12 @@ Ingest audio files, automatically transcribe, chunk, summarize, and search acros
 pip install -e ".[openai]"
 python -m spacy download en_core_web_sm
 
-# 2. Set your API key
-export OPENAI_API_KEY="sk-..."
-
-# 3. Run the schema (creates tables, views, indexes)
-python schema.py
+# 2. Launch (UI + API)
+OPENAI_API_KEY=sk-... python app.py
+# Open http://localhost:8000
 ```
+
+For API-only mode (no UI): `pxt serve`
 
 To use local Whisper instead of the OpenAI API:
 
@@ -69,4 +69,17 @@ audio file
             ├─ summary (chat_completions)
             └─ sentences view (string_splitter)
                  └─ embedding index (all-MiniLM-L6-v2)
+```
+
+## Files
+
+```
+audio-intel/
+├── schema.py         Tables, views, indexes, computed columns, query functions
+├── functions.py      UDFs (generate_full_summary)
+├── app.py            FastAPI server — API + web UI
+├── static/
+│   └── index.html    Frontend (Tailwind CSS, vanilla JS)
+├── pyproject.toml    Dependencies + pxt serve routes
+└── README.md
 ```

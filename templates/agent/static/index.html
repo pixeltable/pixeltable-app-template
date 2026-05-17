@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent — Pixeltable</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] }
+        }
+      }
+    }
+  </script>
+  <style>
+    .dot-pulse span { animation: dotPulse 1.4s infinite ease-in-out both; }
+    .dot-pulse span:nth-child(1) { animation-delay: -0.32s; }
+    .dot-pulse span:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes dotPulse {
+      0%, 80%, 100% { opacity: 0.25; transform: scale(0.8); }
+      40% { opacity: 1; transform: scale(1); }
+    }
+    .sidebar-left { transition: transform 0.3s ease; }
+    .sidebar-right { transition: transform 0.3s ease; }
+    @media (max-width: 1023px) {
+      .sidebar-left { position: fixed; top: 0; left: 0; z-index: 40; height: 100%; transform: translateX(-100%); }
+      .sidebar-left.open { transform: translateX(0); }
+      .sidebar-right { position: fixed; top: 0; right: 0; z-index: 40; height: 100%; transform: translateX(100%); }
+      .sidebar-right.open { transform: translateX(0); }
+    }
+    .backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 30; }
+    .backdrop.open { display: block; }
+    textarea { field-sizing: content; }
+  </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 font-sans">
+
+  <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2"></div>
+
+  <div id="backdrop" class="backdrop" onclick="closeSidebars()"></div>
+
+  <div class="h-full flex">
+
+    <aside id="sidebar-left" class="sidebar-left w-64 shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col">
+      <div class="p-4 border-b border-slate-800">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-sm font-bold">A</div>
+          <h1 class="text-lg font-semibold">Agent</h1>
+        </div>
+        <button onclick="newConversation()" class="w-full px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg font-medium transition-all duration-200 text-sm">
+          + New Conversation
+        </button>
+      </div>
+      <div id="conversation-list" class="flex-1 overflow-y-auto p-2 space-y-1"></div>
+    </aside>
+
+    <main class="flex-1 flex flex-col min-w-0">
+      <header class="flex items-center justify-between px-4 py-3 border-b border-slate-800 lg:hidden">
+        <button onclick="toggleLeft()" class="p-2 hover:bg-slate-800 rounded-lg transition-all duration-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <span class="font-medium text-sm text-slate-400" id="mobile-title">Agent</span>
+        <button onclick="toggleRight()" class="p-2 hover:bg-slate-800 rounded-lg transition-all duration-200">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        </button>
+      </header>
+
+      <div id="messages" class="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center">
+          <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mb-4">
+            <span class="text-3xl">🤖</span>
+          </div>
+          <h2 class="text-xl font-semibold text-slate-300 mb-2">Start a conversation</h2>
+          <p class="text-slate-500 text-sm max-w-xs">Ask a question to begin. The agent will use its knowledge base and memory to assist you.</p>
+        </div>
+      </div>
+
+      <div class="px-4 pb-4">
+        <div class="h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-4"></div>
+        <div class="flex gap-2 items-end">
+          <textarea id="chat-input"
+            rows="1"
+            placeholder="Type a message…"
+            class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 resize-none max-h-32 transition-all duration-200 focus:ring-2 focus:ring-indigo-500 focus:outline-none text-sm"
+            onkeydown="handleInputKey(event)"
+            oninput="autoGrow(this)"
+          ></textarea>
+          <button onclick="sendMessage()" id="send-btn" class="px-4 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl transition-all duration-200">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <aside id="sidebar-right" class="sidebar-right w-72 shrink-0 bg-slate-900 border-l border-slate-800 flex flex-col overflow-y-auto">
+
+      <div class="border-b border-slate-800">
+        <button onclick="toggleSection('knowledge-section')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-800/50 transition-all duration-200">
+          <span class="font-semibold text-sm">Knowledge Base</span>
+          <svg id="knowledge-section-chevron" class="w-4 h-4 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="knowledge-section" class="px-4 pb-4 space-y-3">
+          <button onclick="toggleKnowledgeForm()" id="add-knowledge-btn" class="w-full px-3 py-2 border border-dashed border-slate-600 hover:border-indigo-500 text-slate-400 hover:text-indigo-400 rounded-lg text-xs font-medium transition-all duration-200">
+            + Add Knowledge
+          </button>
+          <div id="knowledge-form" class="hidden space-y-2">
+            <input id="k-title" type="text" placeholder="Title" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <textarea id="k-text" placeholder="Content…" rows="3" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 resize-none focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+            <input id="k-source" type="text" placeholder="Source (optional)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <div class="flex gap-2">
+              <button onclick="submitKnowledge()" class="flex-1 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-medium transition-all duration-200">Save</button>
+              <button onclick="toggleKnowledgeForm()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs transition-all duration-200">Cancel</button>
+            </div>
+          </div>
+          <input id="knowledge-search" type="text" placeholder="Search knowledge…" oninput="debounceKnowledgeSearch()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          <div id="knowledge-results" class="space-y-2">
+            <p class="text-xs text-slate-500 text-center py-2">Search your knowledge base</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button onclick="toggleSection('memory-section')" class="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-800/50 transition-all duration-200">
+          <span class="font-semibold text-sm">Memory</span>
+          <svg id="memory-section-chevron" class="w-4 h-4 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="memory-section" class="px-4 pb-4 space-y-3">
+          <input id="memory-search" type="text" placeholder="Search memory…" oninput="debounceMemorySearch()" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+          <div id="memory-results" class="space-y-2">
+            <p class="text-xs text-slate-500 text-center py-2">Search the agent's memory</p>
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </div>
+
+<script>
+let activeConversation = null;
+let sending = false;
+let knowledgeTimer = null;
+let memoryTimer = null;
+
+function toast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const colors = { info: 'bg-slate-800 border-slate-700', success: 'bg-emerald-900/80 border-emerald-700', error: 'bg-red-900/80 border-red-700' };
+  const el = document.createElement('div');
+  el.className = `px-4 py-3 rounded-xl border text-sm ${colors[type] || colors.info} shadow-lg transition-all duration-300 transform translate-x-full`;
+  el.textContent = msg;
+  container.appendChild(el);
+  requestAnimationFrame(() => el.classList.remove('translate-x-full'));
+  setTimeout(() => { el.classList.add('translate-x-full'); setTimeout(() => el.remove(), 300); }, 3000);
+}
+
+function toggleLeft() {
+  document.getElementById('sidebar-left').classList.toggle('open');
+  document.getElementById('backdrop').classList.toggle('open');
+}
+
+function toggleRight() {
+  document.getElementById('sidebar-right').classList.toggle('open');
+  document.getElementById('backdrop').classList.toggle('open');
+}
+
+function closeSidebars() {
+  document.getElementById('sidebar-left').classList.remove('open');
+  document.getElementById('sidebar-right').classList.remove('open');
+  document.getElementById('backdrop').classList.remove('open');
+}
+
+function toggleSection(id) {
+  const section = document.getElementById(id);
+  const chevron = document.getElementById(id + '-chevron');
+  section.classList.toggle('hidden');
+  chevron.style.transform = section.classList.contains('hidden') ? 'rotate(-90deg)' : '';
+}
+
+function toggleKnowledgeForm() {
+  document.getElementById('knowledge-form').classList.toggle('hidden');
+}
+
+function autoGrow(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 128) + 'px';
+}
+
+function handleInputKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function scrollToBottom() {
+  const container = document.getElementById('messages');
+  container.scrollTop = container.scrollHeight;
+}
+
+function formatTimestamp(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return ts;
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function renderMessage(role, content, timestamp) {
+  const container = document.getElementById('messages');
+  document.getElementById('empty-state')?.remove();
+  const wrapper = document.createElement('div');
+  wrapper.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'} group`;
+  const timeStr = formatTimestamp(timestamp);
+  if (role === 'user') {
+    wrapper.innerHTML = `
+      <div class="max-w-[80%] flex flex-col items-end">
+        <div class="bg-indigo-600 text-white rounded-2xl px-4 py-2 text-sm whitespace-pre-wrap">${escapeHtml(content)}</div>
+        <span class="text-[10px] text-slate-600 mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">${timeStr}</span>
+      </div>`;
+  } else {
+    wrapper.innerHTML = `
+      <div class="max-w-[80%] flex flex-col items-start">
+        <div class="flex items-start gap-2">
+          <span class="shrink-0 mt-1 w-5 h-5 rounded-md bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold">AI</span>
+          <div class="bg-slate-800 text-slate-100 rounded-2xl px-4 py-2 text-sm whitespace-pre-wrap">${escapeHtml(content)}</div>
+        </div>
+        <span class="text-[10px] text-slate-600 mt-1 ml-7 opacity-0 group-hover:opacity-100 transition-opacity duration-200">${timeStr}</span>
+      </div>`;
+  }
+  container.appendChild(wrapper);
+  scrollToBottom();
+}
+
+function showLoading() {
+  const container = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.id = 'loading-dots';
+  el.className = 'flex justify-start';
+  el.innerHTML = `
+    <div class="flex items-start gap-2">
+      <span class="shrink-0 mt-1 w-5 h-5 rounded-md bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold">AI</span>
+      <div class="bg-slate-800 rounded-2xl px-4 py-3 dot-pulse flex gap-1">
+        <span class="w-2 h-2 bg-slate-400 rounded-full inline-block"></span>
+        <span class="w-2 h-2 bg-slate-400 rounded-full inline-block"></span>
+        <span class="w-2 h-2 bg-slate-400 rounded-full inline-block"></span>
+      </div>
+    </div>`;
+  container.appendChild(el);
+  scrollToBottom();
+}
+
+function hideLoading() {
+  document.getElementById('loading-dots')?.remove();
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+async function loadConversations() {
+  try {
+    const res = await fetch('/api/conversations');
+    const data = await res.json();
+    const list = document.getElementById('conversation-list');
+    list.innerHTML = '';
+    if (!data.conversations || data.conversations.length === 0) {
+      list.innerHTML = '<p class="text-xs text-slate-500 text-center py-4">No conversations yet</p>';
+      return;
+    }
+    data.conversations.forEach(id => {
+      const btn = document.createElement('button');
+      const isActive = id === activeConversation;
+      btn.className = `w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 truncate ${isActive ? 'bg-indigo-500/10 text-indigo-400 border-l-2 border-indigo-500' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'}`;
+      btn.textContent = id;
+      btn.onclick = () => selectConversation(id);
+      list.appendChild(btn);
+    });
+  } catch (e) {
+    toast('Failed to load conversations', 'error');
+  }
+}
+
+async function selectConversation(id) {
+  activeConversation = id;
+  loadConversations();
+  closeSidebars();
+  const container = document.getElementById('messages');
+  container.innerHTML = '';
+  try {
+    const res = await fetch(`/api/history?conversation_id=${encodeURIComponent(id)}&limit=50`);
+    const data = await res.json();
+    if (!data.messages || data.messages.length === 0) {
+      container.innerHTML = `
+        <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center">
+          <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mb-4"><span class="text-3xl">🤖</span></div>
+          <h2 class="text-xl font-semibold text-slate-300 mb-2">Start a conversation</h2>
+          <p class="text-slate-500 text-sm max-w-xs">Ask a question to begin.</p>
+        </div>`;
+      return;
+    }
+    data.messages.forEach(m => renderMessage(m.role, m.content, m.timestamp));
+  } catch (e) {
+    toast('Failed to load history', 'error');
+  }
+}
+
+function newConversation() {
+  const id = `conv-${Date.now()}`;
+  activeConversation = id;
+  const container = document.getElementById('messages');
+  container.innerHTML = `
+    <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center">
+      <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mb-4"><span class="text-3xl">🤖</span></div>
+      <h2 class="text-xl font-semibold text-slate-300 mb-2">Start a conversation</h2>
+      <p class="text-slate-500 text-sm max-w-xs">Ask a question to begin.</p>
+    </div>`;
+  loadConversations();
+  closeSidebars();
+  document.getElementById('chat-input').focus();
+}
+
+async function sendMessage() {
+  if (sending) return;
+  const input = document.getElementById('chat-input');
+  const question = input.value.trim();
+  if (!question) return;
+  if (!activeConversation) activeConversation = `conv-${Date.now()}`;
+
+  input.value = '';
+  input.style.height = 'auto';
+  sending = true;
+  document.getElementById('send-btn').disabled = true;
+
+  renderMessage('user', question, new Date().toISOString());
+  showLoading();
+
+  try {
+    const res = await fetch('/api/ask', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, conversation_id: activeConversation })
+    });
+    const data = await res.json();
+    hideLoading();
+    if (data.error) {
+      toast(data.error, 'error');
+    } else {
+      renderMessage('assistant', data.answer, new Date().toISOString());
+    }
+    loadConversations();
+  } catch (e) {
+    hideLoading();
+    toast('Failed to send message', 'error');
+  } finally {
+    sending = false;
+    document.getElementById('send-btn').disabled = false;
+    input.focus();
+  }
+}
+
+async function submitKnowledge() {
+  const title = document.getElementById('k-title').value.trim();
+  const text = document.getElementById('k-text').value.trim();
+  const source = document.getElementById('k-source').value.trim();
+  if (!text) { toast('Content is required', 'error'); return; }
+  try {
+    const res = await fetch('/api/knowledge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, title, source })
+    });
+    const data = await res.json();
+    if (data.status === 'ok') {
+      toast('Knowledge added', 'success');
+      document.getElementById('k-title').value = '';
+      document.getElementById('k-text').value = '';
+      document.getElementById('k-source').value = '';
+      toggleKnowledgeForm();
+    } else {
+      toast(data.error || 'Failed to add knowledge', 'error');
+    }
+  } catch (e) {
+    toast('Failed to add knowledge', 'error');
+  }
+}
+
+function debounceKnowledgeSearch() {
+  clearTimeout(knowledgeTimer);
+  knowledgeTimer = setTimeout(searchKnowledge, 300);
+}
+
+async function searchKnowledge() {
+  const q = document.getElementById('knowledge-search').value.trim();
+  const container = document.getElementById('knowledge-results');
+  if (!q) { container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">Search your knowledge base</p>'; return; }
+  try {
+    const res = await fetch(`/api/knowledge/search?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) {
+      container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">No results found</p>';
+      return;
+    }
+    container.innerHTML = data.results.map(r => {
+      const score = r.sim !== undefined ? r.sim : (r.similarity !== undefined ? r.similarity : null);
+      const pct = score !== null ? Math.round(score * 100) : null;
+      const barColor = pct !== null && pct > 70 ? 'bg-emerald-500' : pct !== null && pct > 40 ? 'bg-amber-500' : 'bg-red-500';
+      return `
+        <div class="bg-slate-800 rounded-lg p-3 space-y-1">
+          <p class="text-xs font-medium text-slate-200 truncate">${escapeHtml(r.title || 'Untitled')}</p>
+          <p class="text-xs text-slate-400 line-clamp-2">${escapeHtml((r.text || '').slice(0, 120))}</p>
+          ${pct !== null ? `<div class="flex items-center gap-2"><div class="flex-1 h-1 bg-slate-700 rounded-full overflow-hidden"><div class="${barColor} h-full rounded-full" style="width:${pct}%"></div></div><span class="text-[10px] text-slate-500">${pct}%</span></div>` : ''}
+        </div>`;
+    }).join('');
+  } catch (e) {
+    container.innerHTML = '<p class="text-xs text-red-400 text-center py-2">Search failed</p>';
+  }
+}
+
+function debounceMemorySearch() {
+  clearTimeout(memoryTimer);
+  memoryTimer = setTimeout(searchMemory, 300);
+}
+
+async function searchMemory() {
+  const q = document.getElementById('memory-search').value.trim();
+  const container = document.getElementById('memory-results');
+  if (!q) { container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">Search the agent\'s memory</p>'; return; }
+  try {
+    const res = await fetch(`/api/memory/search?q=${encodeURIComponent(q)}`);
+    const data = await res.json();
+    if (!data.results || data.results.length === 0) {
+      container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">No memories found</p>';
+      return;
+    }
+    container.innerHTML = data.results.map(r => {
+      const score = r.sim !== undefined ? r.sim : (r.similarity !== undefined ? r.similarity : null);
+      const pct = score !== null ? Math.round(score * 100) : null;
+      return `
+        <div class="bg-slate-800 rounded-lg p-3 space-y-1">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] px-1.5 py-0.5 rounded font-medium ${r.role === 'user' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400'}">${escapeHtml(r.role || 'unknown')}</span>
+            ${r.conversation_id ? `<span class="text-[10px] text-slate-600 truncate">${escapeHtml(r.conversation_id)}</span>` : ''}
+          </div>
+          <p class="text-xs text-slate-300 line-clamp-2">${escapeHtml((r.content || '').slice(0, 120))}</p>
+          ${pct !== null ? `<div class="flex items-center gap-2"><div class="flex-1 h-1 bg-slate-700 rounded-full overflow-hidden"><div class="bg-indigo-500 h-full rounded-full" style="width:${pct}%"></div></div><span class="text-[10px] text-slate-500">${pct}%</span></div>` : ''}
+        </div>`;
+    }).join('');
+  } catch (e) {
+    container.innerHTML = '<p class="text-xs text-red-400 text-center py-2">Search failed</p>';
+  }
+}
+
+loadConversations();
+</script>
+</body>
+</html>
