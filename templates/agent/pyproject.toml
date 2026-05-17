@@ -47,9 +47,15 @@ outputs = ["uuid"]
 
 [[tool.pixeltable.service.routes]]
 type = "query"
+path = "/knowledge/search"
+query = "schema:search_knowledge"
+method = "get"
+
+[[tool.pixeltable.service.routes]]
+type = "query"
 path = "/memory/search"
 query = "schema:recall_memory"
-method = "post"
+method = "get"
 
 [[tool.pixeltable.service.routes]]
 type = "query"

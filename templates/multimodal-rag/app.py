@@ -1,110 +1,75 @@
-import base64
-import io
+"""Multimodal RAG — FastAPI application.
+
+Uses pixeltable.serving.FastAPIRouter for Pixeltable-native routes.
+Custom endpoints for cross-modal search and LLM Q&A.
+Run: python app.py
+"""
+
 from pathlib import Path
 
-import pixeltable as pxt
 import uvicorn
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from pixeltable.serving import FastAPIRouter
 
 import schema
 
-UPLOAD_DIR = Path('uploads')
-UPLOAD_DIR.mkdir(exist_ok=True)
-
 app = FastAPI(title='Multimodal RAG')
-
 app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_methods=['*'], allow_headers=['*'])
 
-DOCUMENT_EXTS = {'.pdf', '.docx', '.txt', '.md'}
-IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
-VIDEO_EXTS = {'.mp4', '.mov', '.avi', '.webm'}
-AUDIO_EXTS = {'.mp3', '.wav', '.m4a', '.ogg', '.flac'}
+# ── Pixeltable router (handles serialization, file uploads, media URLs) ──
 
+router = FastAPIRouter(prefix='/api', tags=['multimodal-rag'])
 
-def _detect_type(filename: str) -> tuple[str, str]:
-    ext = Path(filename).suffix.lower()
-    if ext in DOCUMENT_EXTS:
-        return 'document', ext
-    if ext in IMAGE_EXTS:
-        return 'image', ext
-    if ext in VIDEO_EXTS:
-        return 'video', ext
-    if ext in AUDIO_EXTS:
-        return 'audio', ext
-    raise ValueError(f'Unsupported file type: {ext}')
+# Per-modality inserts with file upload
+router.add_insert_route(
+    schema.documents, path='/ingest/document',
+    uploadfile_inputs=['doc'], outputs=['id'], background=True,
+)
+router.add_insert_route(
+    schema.images, path='/ingest/image',
+    uploadfile_inputs=['image'], inputs=['caption'], outputs=['id'],
+)
+router.add_insert_route(
+    schema.videos, path='/ingest/video',
+    uploadfile_inputs=['video'], outputs=['id'], background=True,
+)
+router.add_insert_route(
+    schema.audio_files, path='/ingest/audio',
+    uploadfile_inputs=['audio'], outputs=['id'], background=True,
+)
 
+# Per-modality search queries
+router.add_query_route(path='/search/documents', query=schema.search_documents, method='post')
+router.add_query_route(path='/search/images', query=schema.search_images, method='post')
+router.add_query_route(path='/search/video-frames', query=schema.search_video_frames, method='post')
 
-def _serialize_value(v):
-    try:
-        from PIL import Image as PILImage
-        if isinstance(v, PILImage.Image):
-            buf = io.BytesIO()
-            fmt = 'PNG' if v.mode == 'RGBA' else 'JPEG'
-            v.save(buf, format=fmt)
-            b64 = base64.b64encode(buf.getvalue()).decode()
-            mime = 'image/png' if fmt == 'PNG' else 'image/jpeg'
-            return f'data:{mime};base64,{b64}'
-    except ImportError:
-        pass
-    if isinstance(v, Path):
-        return str(v)
-    if isinstance(v, bytes):
-        return base64.b64encode(v).decode()
-    return v
+app.include_router(router)
 
-
-def _serialize_row(row: dict) -> dict:
-    return {k: _serialize_value(v) for k, v in row.items()}
+# ── Custom endpoints (cross-modal aggregation, LLM Q&A) ─────────────────
 
 
 class SearchRequest(BaseModel):
     query: str
-    n: int = 5
+    n: int = 20
 
 
 class AskRequest(BaseModel):
     question: str
 
 
-@app.post('/api/upload')
-def upload_file(file: UploadFile = File(...)):
-    try:
-        file_type, ext = _detect_type(file.filename)
-    except ValueError as exc:
-        return {'status': 'error', 'message': str(exc)}
-
-    save_path = UPLOAD_DIR / file.filename
-    save_path.write_bytes(file.file.read())
-    saved = str(save_path.resolve())
-
-    if file_type == 'document':
-        schema.documents.insert([{'doc': saved}])
-    elif file_type == 'image':
-        schema.images.insert([{'image': saved, 'caption': file.filename}])
-    elif file_type == 'video':
-        schema.videos.insert([{'video': saved}])
-    elif file_type == 'audio':
-        schema.audio_files.insert([{'audio': saved}])
-
-    return {'status': 'ok', 'type': file_type, 'filename': file.filename}
-
-
 @app.post('/api/search')
 def search(req: SearchRequest):
     results = schema.search_knowledge(req.query, req.n)
-    return {'results': [_serialize_row(r) for r in results]}
+    return {'results': results}
 
 
 @app.post('/api/ask')
 def ask(req: AskRequest):
-    result = schema.ask_question(req.question)
-    if 'context' in result and isinstance(result['context'], list):
-        result['context'] = [_serialize_row(c) if isinstance(c, dict) else c for c in result['context']]
-    return result
+    return schema.ask_question(req.question)
 
 
 @app.get('/api/stats')
@@ -116,6 +81,8 @@ def stats():
         'audio': schema.audio_files.count(),
     }
 
+
+# ── Static UI ────────────────────────────────────────────────────────────
 
 app.mount('/static', StaticFiles(directory='static'), name='static')
 

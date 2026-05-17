@@ -244,7 +244,7 @@
     async function loadRecordings() {
         try {
             const data = await fetchJSON('/api/recordings');
-            state.recordings = data.recordings || [];
+            state.recordings = data.rows || data.recordings || [];
             renderRecordingList();
         } catch (e) {}
     }
@@ -276,8 +276,8 @@
         content.innerHTML = '';
 
         try {
-            const data = await fetchJSON(`/api/transcript?title=${encodeURIComponent(title)}`);
-            state.transcripts[title] = data.segments || [];
+            const data = await fetchJSON(`/api/transcript?recording_title=${encodeURIComponent(title)}`);
+            state.transcripts[title] = data.rows || data.segments || [];
         } catch (e) {
             state.transcripts[title] = [];
         }
@@ -311,8 +311,8 @@
         fullSummary.classList.add('hidden');
 
         try {
-            const data = await fetchJSON(`/api/summary?title=${encodeURIComponent(title)}`);
-            state.summaries[title] = data.segments || [];
+            const data = await fetchJSON(`/api/summary?recording_title=${encodeURIComponent(title)}`);
+            state.summaries[title] = data.rows || data.segments || [];
         } catch (e) {
             state.summaries[title] = [];
         }
@@ -357,13 +357,16 @@
         progress.classList.remove('hidden');
 
         const form = new FormData();
-        form.append('file', file);
+        form.append('audio', file);
+        form.append('title', file.name.replace(/\.[^.]+$/, ''));
+        form.append('source', 'upload');
 
         try {
             const data = await fetchJSON('/api/upload', { method: 'POST', body: form });
-            showToast(`Uploaded: ${data.title}`, 'success');
+            showToast(`Uploaded: ${file.name}`, 'success');
             await loadRecordings();
-            selectRecording(data.title);
+            const title = file.name.replace(/\.[^.]+$/, '');
+            selectRecording(title);
         } catch (e) {}
 
         progress.classList.add('hidden');
@@ -378,9 +381,9 @@
             const data = await fetchJSON('/api/search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query, limit: 20 })
+                body: JSON.stringify({ query_text: query, limit: 20 })
             });
-            renderGlobalSearchResults(data.results || []);
+            renderGlobalSearchResults(data.rows || data.results || []);
         } catch (e) {}
     }
 
@@ -400,9 +403,9 @@
             const data = await fetchJSON('/api/search-in', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: state.activeRecording, query, limit: 15 })
+                body: JSON.stringify({ recording_title: state.activeRecording, query_text: query, limit: 15 })
             });
-            const items = data.results || [];
+            const items = data.rows || data.results || [];
             if (!items.length) {
                 results.innerHTML = '<p class="text-sm text-slate-500 text-center py-4">No matching segments found</p>';
             } else {

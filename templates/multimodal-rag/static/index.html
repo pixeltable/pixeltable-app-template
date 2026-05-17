@@ -212,22 +212,29 @@ function renderRecent() {
   ).join('');
 }
 
+const INGEST_ROUTES = {
+  '.pdf': ['/api/ingest/document', 'doc'], '.docx': ['/api/ingest/document', 'doc'], '.txt': ['/api/ingest/document', 'doc'], '.md': ['/api/ingest/document', 'doc'],
+  '.jpg': ['/api/ingest/image', 'image'], '.jpeg': ['/api/ingest/image', 'image'], '.png': ['/api/ingest/image', 'image'], '.gif': ['/api/ingest/image', 'image'], '.webp': ['/api/ingest/image', 'image'],
+  '.mp4': ['/api/ingest/video', 'video'], '.mov': ['/api/ingest/video', 'video'], '.avi': ['/api/ingest/video', 'video'], '.webm': ['/api/ingest/video', 'video'],
+  '.mp3': ['/api/ingest/audio', 'audio'], '.wav': ['/api/ingest/audio', 'audio'], '.m4a': ['/api/ingest/audio', 'audio'], '.ogg': ['/api/ingest/audio', 'audio'], '.flac': ['/api/ingest/audio', 'audio'],
+};
+
 async function handleFiles(files) {
   for (const file of files) {
     const pid = addProgressItem(file.name);
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    const route = INGEST_ROUTES[ext];
+    if (!route) { finishProgressItem(pid, false); showToast(`Unsupported file type: ${ext}`); continue; }
     try {
       const fd = new FormData();
-      fd.append('file', file);
-      const res = await api('/api/upload', { method: 'POST', body: fd });
-      if (res.status === 'ok') {
-        finishProgressItem(pid, true);
-        addRecentUpload(res.filename, res.type);
-      } else {
-        finishProgressItem(pid, false);
-        showToast(res.message || 'Upload failed');
-      }
-    } catch {
+      fd.append(route[1], file);
+      if (route[1] === 'image') fd.append('caption', file.name);
+      const res = await api(route[0], { method: 'POST', body: fd });
+      finishProgressItem(pid, true);
+      addRecentUpload(file.name, route[1]);
+    } catch(e) {
       finishProgressItem(pid, false);
+      showToast(e.message || 'Upload failed');
     }
   }
   refreshStats();

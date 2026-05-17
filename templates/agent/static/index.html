@@ -292,7 +292,8 @@ async function selectConversation(id) {
   try {
     const res = await fetch(`/api/history?conversation_id=${encodeURIComponent(id)}&limit=50`);
     const data = await res.json();
-    if (!data.messages || data.messages.length === 0) {
+    const messages = data.rows || data.messages || [];
+    if (messages.length === 0) {
       container.innerHTML = `
         <div id="empty-state" class="flex flex-col items-center justify-center h-full text-center">
           <div class="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mb-4"><span class="text-3xl">🤖</span></div>
@@ -301,7 +302,8 @@ async function selectConversation(id) {
         </div>`;
       return;
     }
-    data.messages.forEach(m => renderMessage(m.role, m.content, m.timestamp));
+    messages.reverse();
+    messages.forEach(m => renderMessage(m.role, m.content, m.timestamp));
   } catch (e) {
     toast('Failed to load history', 'error');
   }
@@ -397,13 +399,14 @@ async function searchKnowledge() {
   const container = document.getElementById('knowledge-results');
   if (!q) { container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">Search your knowledge base</p>'; return; }
   try {
-    const res = await fetch(`/api/knowledge/search?q=${encodeURIComponent(q)}`);
+    const res = await fetch(`/api/knowledge/search?query_text=${encodeURIComponent(q)}`);
     const data = await res.json();
-    if (!data.results || data.results.length === 0) {
+    const results = data.rows || data.results || [];
+    if (results.length === 0) {
       container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">No results found</p>';
       return;
     }
-    container.innerHTML = data.results.map(r => {
+    container.innerHTML = results.map(r => {
       const score = r.sim !== undefined ? r.sim : (r.similarity !== undefined ? r.similarity : null);
       const pct = score !== null ? Math.round(score * 100) : null;
       const barColor = pct !== null && pct > 70 ? 'bg-emerald-500' : pct !== null && pct > 40 ? 'bg-amber-500' : 'bg-red-500';
@@ -429,13 +432,14 @@ async function searchMemory() {
   const container = document.getElementById('memory-results');
   if (!q) { container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">Search the agent\'s memory</p>'; return; }
   try {
-    const res = await fetch(`/api/memory/search?q=${encodeURIComponent(q)}`);
+    const res = await fetch(`/api/memory/search?query_text=${encodeURIComponent(q)}`);
     const data = await res.json();
-    if (!data.results || data.results.length === 0) {
+    const results = data.rows || data.results || [];
+    if (results.length === 0) {
       container.innerHTML = '<p class="text-xs text-slate-500 text-center py-2">No memories found</p>';
       return;
     }
-    container.innerHTML = data.results.map(r => {
+    container.innerHTML = results.map(r => {
       const score = r.sim !== undefined ? r.sim : (r.similarity !== undefined ? r.similarity : null);
       const pct = score !== null ? Math.round(score * 100) : null;
       return `

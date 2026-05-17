@@ -1,36 +1,49 @@
+"""Pixeltable Agent — FastAPI application.
+
+Uses pixeltable.serving.FastAPIRouter for Pixeltable-native routes.
+Custom endpoints for the ask() flow and conversation listing.
+Run: python app.py
+"""
+
 from pathlib import Path
 
+import pixeltable as pxt
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from pixeltable.serving import FastAPIRouter
 
 import schema
 
 app = FastAPI(title='Pixeltable Agent')
-
 app.add_middleware(CORSMiddleware, allow_origins=['*'], allow_methods=['*'], allow_headers=['*'])
 
+# ── Pixeltable router ────────────────────────────────────────────────────
 
-def _sanitize(records: list[dict]) -> list[dict]:
-    for row in records:
-        for k, v in row.items():
-            if not isinstance(v, (str, int, float, bool, list, dict, type(None))):
-                row[k] = str(v)
-    return records
+router = FastAPIRouter(prefix='/api', tags=['agent'])
+
+router.add_insert_route(
+    schema.knowledge,
+    path='/knowledge',
+    inputs=['text', 'title', 'source'],
+    outputs=['uuid'],
+)
+
+router.add_query_route(path='/knowledge/search', query=schema.search_knowledge, method='get')
+router.add_query_route(path='/memory/search', query=schema.recall_memory, method='get')
+router.add_query_route(path='/history', query=schema.get_history, method='get')
+
+app.include_router(router)
+
+# ── Custom endpoints (not expressible as a single insert/query) ──────────
 
 
 class AskRequest(BaseModel):
     question: str
     conversation_id: str = 'default'
-
-
-class KnowledgeRequest(BaseModel):
-    text: str
-    title: str = ''
-    source: str = ''
 
 
 @app.post('/api/ask')
@@ -44,68 +57,23 @@ def ask(body: AskRequest):
 
 @app.get('/api/conversations')
 def conversations():
-    import pixeltable as pxt
-
     try:
         t = pxt.get_table('agent.conversations')
         df = t.select(t.conversation_id).group_by(t.conversation_id).collect().to_pandas()
-        ids = df['conversation_id'].tolist()
-        return {'conversations': ids}
+        return {'conversations': df['conversation_id'].tolist()}
     except Exception as e:
         return JSONResponse(status_code=500, content={'error': str(e)})
 
 
-@app.get('/api/history')
-def history(conversation_id: str = 'default', limit: int = 50):
-    try:
-        result = schema.get_history(conversation_id, limit)
-        records = _sanitize(result.collect().to_pandas().to_dict('records'))
-        records.reverse()
-        return {'messages': records}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={'error': str(e)})
+# ── Static UI ────────────────────────────────────────────────────────────
 
-
-@app.post('/api/knowledge')
-def add_knowledge(body: KnowledgeRequest):
-    try:
-        schema.knowledge.insert([{
-            'text': body.text,
-            'title': body.title,
-            'source': body.source,
-        }])
-        return {'status': 'ok'}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={'error': str(e)})
-
-
-@app.get('/api/knowledge/search')
-def knowledge_search(q: str = ''):
-    try:
-        result = schema.search_knowledge(q)
-        records = _sanitize(result.collect().to_pandas().to_dict('records'))
-        return {'results': records}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={'error': str(e)})
-
-
-@app.get('/api/memory/search')
-def memory_search(q: str = ''):
-    try:
-        result = schema.recall_memory(q)
-        records = _sanitize(result.collect().to_pandas().to_dict('records'))
-        return {'results': records}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={'error': str(e)})
-
-
-static_dir = Path(__file__).parent / 'static'
-app.mount('/static', StaticFiles(directory=str(static_dir)), name='static')
+STATIC_DIR = Path(__file__).parent / 'static'
+app.mount('/static', StaticFiles(directory=str(STATIC_DIR)), name='static')
 
 
 @app.get('/')
 def index():
-    return FileResponse(str(static_dir / 'index.html'))
+    return FileResponse(str(STATIC_DIR / 'index.html'))
 
 
 if __name__ == '__main__':
