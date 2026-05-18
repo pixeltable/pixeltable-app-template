@@ -7,6 +7,7 @@ Run: python app.py
 
 from pathlib import Path
 
+import pixeltable as pxt
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -74,7 +75,6 @@ def ask(req: AskRequest):
 
 @app.get('/api/stats')
 def stats():
-    import pixeltable as pxt
     return {
         'documents': pxt.get_table('kb.documents').count(),
         'images': pxt.get_table('kb.images').count(),
