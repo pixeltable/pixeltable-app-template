@@ -339,21 +339,21 @@ See [`serving/README.md`](serving/) for full details.
 
 ## Application Templates
 
-Full-stack vertical apps that showcase what Pixeltable makes uniquely simple. Each replaces an entire category of paid SaaS with one `schema.py` file.
+Vertical apps that showcase what Pixeltable makes uniquely simple. Each builds on one of the three structural patterns above, so you already know how it works.
 
 ```bash
 uvx pixeltable-new --template <name> my-app
 cd my-app && uv sync && python schema.py
 ```
 
-| Template | What it replaces | Description |
-|----------|-----------------|-------------|
-| [`multimodal-rag`](templates/multimodal-rag/) | Vectara, Cohere RAG | Upload docs, images, video, audio -- one unified search across all media types |
-| [`video-intel`](templates/video-intel/) | Twelve Labs, Valossa | Declarative video pipeline: frames, scenes, transcription, object detection, temporal search |
-| [`agent`](templates/agent/) | Mem0, MemGPT | Persistent multimodal agent with durable memory, tool calling, MCP exposure |
-| [`audio-intel`](templates/audio-intel/) | Otter.ai, AssemblyAI | Audio/podcast intelligence: transcription, diarization, summarization, semantic search |
-| [`content-pipeline`](templates/content-pipeline/) | Cloudinary AI | Enterprise media processing: ingest from S3, process all modalities, export to your DB |
-| [`data-lab`](templates/data-lab/) | Labelbox, Roboflow | ML dataset engineering: auto-annotate, curate, version, export to PyTorch |
+| Template | Pattern | What you get |
+|----------|---------|--------------|
+| [`multimodal-rag`](templates/multimodal-rag/) | serving + backend | Upload docs, images, video, audio; one unified search across all media types. `schema.py` + `app.py` + web UI |
+| [`video-intel`](templates/video-intel/) | serving | Declarative video pipeline: frames, transcription, object detection, temporal search. Pure `schema.py` |
+| [`agent`](templates/agent/) | serving + backend | Persistent multimodal agent with durable memory, tool calling, MCP. `schema.py` + `app.py` + web UI |
+| [`audio-intel`](templates/audio-intel/) | serving + backend | Audio/podcast intelligence: transcription, diarization, summarization, semantic search. `schema.py` + `app.py` + web UI |
+| [`content-pipeline`](templates/content-pipeline/) | batch | Enterprise media processing: ingest from S3, process all modalities, export to your DB. `schema.py` + `pipeline.py` |
+| [`data-lab`](templates/data-lab/) | batch | ML dataset engineering: auto-annotate, curate, version, export to PyTorch. `schema.py` + `export.py` |
 
 ---
 
