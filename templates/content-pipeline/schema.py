@@ -71,7 +71,7 @@ images.add_computed_column(mode=images.image.mode, if_exists='ignore')
 # )
 
 # Cloud storage: persist thumbnails to S3
-# images.add_computed_column(thumbnail=..., destination='s3://bucket/thumbnails/')
+# images.add_computed_column(thumbnail=..., media_destination='s3://bucket/thumbnails/')
 
 # ---------------------------------------------------------------------------
 # Document processing

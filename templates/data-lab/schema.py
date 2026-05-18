@@ -79,7 +79,7 @@ if os.environ.get('OPENAI_API_KEY'):
                         ],
                     }
                 ],
-            ),
+            ).choices[0].message.content,
             if_exists='ignore',
         )
     except Exception:
