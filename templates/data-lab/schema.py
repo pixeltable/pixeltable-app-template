@@ -116,16 +116,24 @@ def search_similar(query_text: str, limit: int = 10):
     )
 
 
-@pxt.query
 def find_similar_images(image_uuid: str, limit: int = 10):
-    """Find visually similar images for deduplication and curation."""
+    """Find visually similar images for deduplication and curation.
+
+    Not a @pxt.query because it needs to .collect() an intermediate result
+    to fetch the reference image before running similarity search.
+    """
     ref = dataset.where(dataset.uuid == image_uuid).select(dataset.image).collect()
     if len(ref) == 0:
-        return dataset.limit(0).select(dataset.uuid, dataset.image, dataset.label)
+        return []
     ref_img = ref['image'][0]
     sim = dataset.image.similarity(image=ref_img)
-    return dataset.order_by(sim, asc=False).limit(limit).select(
-        dataset.uuid, dataset.image, dataset.label, dataset.split, sim
+    return (
+        dataset.order_by(sim, asc=False)
+        .limit(limit)
+        .select(dataset.uuid, dataset.image, dataset.label, dataset.split, sim)
+        .collect()
+        .to_pandas()
+        .to_dict('records')
     )
 
 

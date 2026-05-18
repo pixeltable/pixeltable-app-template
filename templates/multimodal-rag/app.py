@@ -74,11 +74,12 @@ def ask(req: AskRequest):
 
 @app.get('/api/stats')
 def stats():
+    import pixeltable as pxt
     return {
-        'documents': schema.documents.count(),
-        'images': schema.images.count(),
-        'videos': schema.videos.count(),
-        'audio': schema.audio_files.count(),
+        'documents': pxt.get_table('kb.documents').count(),
+        'images': pxt.get_table('kb.images').count(),
+        'videos': pxt.get_table('kb.videos').count(),
+        'audio': pxt.get_table('kb.audio_files').count(),
     }
 
 

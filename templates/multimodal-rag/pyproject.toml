@@ -5,6 +5,7 @@ description = "Unified multimodal knowledge base -- upload docs, images, video, 
 requires-python = ">=3.10"
 dependencies = [
     "pixeltable>=0.6.2",
+    "tiktoken>=0.7",
     "sentence-transformers>=3.0",
     "open-clip-torch>=2.20",
     "pillow>=10.0",

@@ -31,13 +31,12 @@ audio_files = pxt.create_table(
         'audio': pxt.Audio,
         'title': pxt.String,
         'source': pxt.String,
-        'uuid': pxt.String,
+        'uuid': uuid7(),
         'timestamp': pxt.Timestamp,
     },
     primary_key='uuid',
     if_exists='ignore',
 )
-audio_files.add_computed_column(uuid=uuid7(), if_exists='ignore')
 
 # ---------------------------------------------------------------------------
 # Audio chunking -- 30-second segments with 5s overlap
@@ -116,57 +115,51 @@ if HAVE_OPENAI:
 # Query functions
 # ---------------------------------------------------------------------------
 @pxt.query
-def search_transcripts(query_text: str, limit: int = 10):
-    """Semantic search across all transcripts."""
-    sents = pxt.get_table('audiointel.sentences')
-    sim = sents.text.similarity(string=query_text)
-    return sents.order_by(sim, asc=False).limit(limit).select(sents.text, sim=sim)
-
-
-@pxt.query
-def search_in_recording(recording_title: str, query_text: str, limit: int = 10):
-    """Semantic search within a specific recording."""
-    sents = pxt.get_table('audiointel.sentences')
-    files = pxt.get_table('audiointel.audio_files')
-    sim = sents.text.similarity(string=query_text)
-    return (
-        sents.where(files.title == recording_title)
-        .order_by(sim, asc=False)
-        .limit(limit)
-        .select(sents.text, sim=sim)
-    )
-
-
-@pxt.query
 def list_recordings():
     """List all audio files with metadata."""
     files = pxt.get_table('audiointel.audio_files')
     return files.select(files.title, files.source, files.timestamp, files.uuid)
 
 
-@pxt.query
-def get_transcript(recording_title: str):
-    """Full transcript of a recording, ordered by segment start time."""
-    chnks = pxt.get_table('audiointel.chunks')
-    files = pxt.get_table('audiointel.audio_files')
-    return (
-        chnks.where(files.title == recording_title)
-        .order_by(chnks.segment_start)
-        .select(chnks.transcript_text, chnks.segment_start, chnks.segment_end)
-    )
+if HAVE_OPENAI:
+    @pxt.query
+    def search_transcripts(query_text: str, limit: int = 10):
+        """Semantic search across all transcripts."""
+        sents = pxt.get_table('audiointel.sentences')
+        sim = sents.text.similarity(string=query_text)
+        return sents.order_by(sim, asc=False).limit(limit).select(sents.text, sim=sim)
 
+    @pxt.query
+    def search_in_recording(recording_title: str, query_text: str, limit: int = 10):
+        """Semantic search within a specific recording."""
+        sents = pxt.get_table('audiointel.sentences')
+        files = pxt.get_table('audiointel.audio_files')
+        sim = sents.text.similarity(string=query_text)
+        return (
+            sents.where(files.title == recording_title)
+            .order_by(sim, asc=False)
+            .limit(limit)
+            .select(sents.text, sim=sim)
+        )
 
-@pxt.query
-def get_summary(recording_title: str):
-    """Per-chunk summaries for a recording, ordered by segment start time."""
-    chnks = pxt.get_table('audiointel.chunks')
-    files = pxt.get_table('audiointel.audio_files')
-    return (
-        chnks.where(files.title == recording_title)
-        .order_by(chnks.segment_start)
-        .select(chnks.summary_text, chnks.segment_start, chnks.segment_end)
-    )
+    @pxt.query
+    def get_transcript(recording_title: str):
+        """Full transcript of a recording, ordered by segment start time."""
+        chnks = pxt.get_table('audiointel.chunks')
+        files = pxt.get_table('audiointel.audio_files')
+        return (
+            chnks.where(files.title == recording_title)
+            .order_by(chnks.segment_start)
+            .select(chnks.transcript_text, chnks.segment_start, chnks.segment_end)
+        )
 
-
-
-# functions.generate_full_summary is available as a UDF for the API layer
+    @pxt.query
+    def get_summary(recording_title: str):
+        """Per-chunk summaries for a recording, ordered by segment start time."""
+        chnks = pxt.get_table('audiointel.chunks')
+        files = pxt.get_table('audiointel.audio_files')
+        return (
+            chnks.where(files.title == recording_title)
+            .order_by(chnks.segment_start)
+            .select(chnks.summary_text, chnks.segment_start, chnks.segment_end)
+        )

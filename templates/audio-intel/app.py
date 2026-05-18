@@ -32,10 +32,12 @@ router.add_insert_route(
 )
 
 router.add_query_route(path='/recordings', query=schema.list_recordings, method='get')
-router.add_query_route(path='/transcript', query=schema.get_transcript, method='get')
-router.add_query_route(path='/summary', query=schema.get_summary, method='get')
-router.add_query_route(path='/search', query=schema.search_transcripts, method='post')
-router.add_query_route(path='/search-in', query=schema.search_in_recording, method='post')
+
+if schema.HAVE_OPENAI:
+    router.add_query_route(path='/transcript', query=schema.get_transcript, method='get')
+    router.add_query_route(path='/summary', query=schema.get_summary, method='get')
+    router.add_query_route(path='/search', query=schema.search_transcripts, method='post')
+    router.add_query_route(path='/search-in', query=schema.search_in_recording, method='post')
 
 app.include_router(router)
 
