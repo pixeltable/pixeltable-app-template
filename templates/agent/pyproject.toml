@@ -21,23 +21,15 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["schema"]
+py-modules = ["schema", "functions"]
 
 # ── Pixeltable service config (read by `pxt serve`) ──────────────────────
 # Start the server:
 #   pxt serve agent
 #   pxt serve agent --port 9000
 
-[build-system]
-requires = ["setuptools>=64"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-py-modules = ["schema", "functions"]
-
 [[tool.pixeltable.service]]
 name = "agent"
-modules = ["schema"]
 prefix = "/api"
 port = 8000
 
@@ -63,17 +55,17 @@ outputs = ["uuid"]
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/knowledge/search"
-query = "schema.search_knowledge"
+query = "schema:search_knowledge"
 method = "get"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/memory/search"
-query = "schema.recall_memory"
+query = "schema:recall_memory"
 method = "get"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/history"
-query = "schema.get_history"
+query = "schema:get_history"
 method = "get"
