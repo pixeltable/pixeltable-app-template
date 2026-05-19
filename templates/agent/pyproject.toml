@@ -43,7 +43,7 @@ type = "insert"
 path = "/ask"
 table = "agent.agent"
 inputs = ["prompt", "conversation_id", "system_prompt", "max_tokens", "temperature"]
-outputs = ["answer"]
+outputs = ["uuid"]
 
 [[tool.pixeltable.service.routes]]
 type = "insert"

@@ -122,25 +122,27 @@ def get_history(conversation_id: str, limit: int = 10):
 # mcp_tools = pxt.mcp_udfs('http://localhost:8000/mcp')
 # tools = pxt.tools(functions.web_search, search_knowledge, recall_memory, *mcp_tools)
 
-# ── Agent pipeline (requires ANTHROPIC_API_KEY) ──────────────────────────
+# ── Agent table (always created so pxt serve can register routes) ─────────
+
+agent = pxt.create_table(
+    'agent.agent',
+    {
+        'prompt': pxt.String,
+        'conversation_id': pxt.String,
+        'system_prompt': pxt.String,
+        'max_tokens': pxt.Int,
+        'temperature': pxt.Float,
+        'uuid': uuid7(),
+        'timestamp': pxt.Timestamp,
+    },
+    primary_key=['uuid'],
+    if_exists='ignore',
+)
+
+# ── LLM pipeline (requires ANTHROPIC_API_KEY) ────────────────────────────
 
 if HAS_ANTHROPIC:
     tools = pxt.tools(functions.web_search, search_knowledge, recall_memory)
-
-    agent = pxt.create_table(
-        'agent.agent',
-        {
-            'prompt': pxt.String,
-            'conversation_id': pxt.String,
-            'system_prompt': pxt.String,
-            'max_tokens': pxt.Int,
-            'temperature': pxt.Float,
-            'uuid': uuid7(),
-            'timestamp': pxt.Timestamp,
-        },
-        primary_key=['uuid'],
-        if_exists='ignore',
-    )
 
     agent.add_computed_column(
         memory_context=recall_memory(agent.prompt), if_exists='ignore'

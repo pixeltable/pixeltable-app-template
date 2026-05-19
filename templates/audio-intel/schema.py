@@ -122,7 +122,9 @@ def list_recordings():
     return files.select(files.title, files.source, files.timestamp, files.uuid)
 
 
+# These require OPENAI_API_KEY (the views/columns they reference are created above)
 if HAVE_OPENAI:
+
     @pxt.query
     def search_transcripts(query_text: str, limit: int = 10):
         """Semantic search across all transcripts."""
