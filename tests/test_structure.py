@@ -1,0 +1,109 @@
+"""Test that all patterns and templates have the expected file structure."""
+
+from __future__ import annotations
+
+import ast
+
+import pytest
+
+from tests.conftest import (
+    EXPECTED_FILES,
+    EXPECTED_TEMPLATE_FILES,
+    PATTERNS,
+    ROOT,
+    TEMPLATES,
+)
+
+
+class TestPatternFiles:
+    """Each deployment pattern ships the expected files."""
+
+    @pytest.mark.parametrize("pattern", PATTERNS)
+    def test_pattern_directory_exists(self, pattern: str) -> None:
+        assert (ROOT / pattern).is_dir(), f"{pattern}/ directory missing"
+
+    @pytest.mark.parametrize("pattern", PATTERNS)
+    def test_expected_files_exist(self, pattern: str) -> None:
+        for relpath in EXPECTED_FILES[pattern]:
+            fpath = ROOT / pattern / relpath
+            assert fpath.is_file(), f"{pattern}/{relpath} missing"
+
+    @pytest.mark.parametrize("pattern", PATTERNS)
+    def test_pyproject_toml_exists(self, pattern: str) -> None:
+        assert (ROOT / pattern / "pyproject.toml").is_file()
+
+    @pytest.mark.parametrize("pattern", PATTERNS)
+    def test_uv_lock_exists(self, pattern: str) -> None:
+        assert (ROOT / pattern / "uv.lock").is_file(), f"{pattern}/uv.lock missing"
+
+
+class TestTemplateFiles:
+    """Each application template ships the expected files."""
+
+    @pytest.mark.parametrize("template", TEMPLATES)
+    def test_template_directory_exists(self, template: str) -> None:
+        assert (ROOT / "templates" / template).is_dir(), f"templates/{template}/ missing"
+
+    @pytest.mark.parametrize("template", TEMPLATES)
+    def test_expected_files_exist(self, template: str) -> None:
+        for relpath in EXPECTED_TEMPLATE_FILES[template]:
+            fpath = ROOT / "templates" / template / relpath
+            assert fpath.is_file(), f"templates/{template}/{relpath} missing"
+
+
+class TestPythonSyntax:
+    """All Python files parse without syntax errors."""
+
+    @pytest.mark.parametrize("pattern", PATTERNS)
+    def test_pattern_python_files_parse(self, pattern: str) -> None:
+        for py_file in (ROOT / pattern).rglob("*.py"):
+            if ".venv" in py_file.parts:
+                continue
+            source = py_file.read_text(encoding="utf-8")
+            try:
+                ast.parse(source, filename=str(py_file))
+            except SyntaxError as exc:
+                pytest.fail(f"Syntax error in {py_file.relative_to(ROOT)}: {exc}")
+
+    @pytest.mark.parametrize("template", TEMPLATES)
+    def test_template_python_files_parse(self, template: str) -> None:
+        for py_file in (ROOT / "templates" / template).rglob("*.py"):
+            if ".venv" in py_file.parts:
+                continue
+            source = py_file.read_text(encoding="utf-8")
+            try:
+                ast.parse(source, filename=str(py_file))
+            except SyntaxError as exc:
+                pytest.fail(f"Syntax error in {py_file.relative_to(ROOT)}: {exc}")
+
+
+class TestDocumentation:
+    """Key documentation files exist."""
+
+    @pytest.mark.parametrize(
+        "relpath",
+        ["README.md", "AGENTS.md", ".env.example", "Dockerfile", "docker-compose.yml"],
+    )
+    def test_root_docs_exist(self, relpath: str) -> None:
+        assert (ROOT / relpath).is_file(), f"{relpath} missing from repo root"
+
+    @pytest.mark.parametrize("pattern", ["serving", "batch"])
+    def test_pattern_has_readme(self, pattern: str) -> None:
+        assert (ROOT / pattern / "README.md").is_file(), f"{pattern}/README.md missing"
+
+
+class TestNoAntiPatterns:
+    """Guard against known anti-patterns we've already fixed."""
+
+    def test_no_pythonpath_references(self) -> None:
+        """PYTHONPATH was removed; make sure it doesn't creep back."""
+        hits: list[str] = []
+        skip = {".venv", ".git", "node_modules", "tests"}
+        for ext in ("*.py", "*.toml", "*.yml", "*.yaml", "*.md"):
+            for f in ROOT.rglob(ext):
+                if skip & set(f.parts):
+                    continue
+                text = f.read_text(encoding="utf-8", errors="ignore")
+                if "PYTHONPATH" in text:
+                    hits.append(str(f.relative_to(ROOT)))
+        assert hits == [], f"PYTHONPATH found in: {hits}"
