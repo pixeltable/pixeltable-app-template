@@ -95,8 +95,10 @@ class TestDocumentation:
 class TestNoAntiPatterns:
     """Guard against known anti-patterns we've already fixed."""
 
-    def test_no_pythonpath_references(self) -> None:
-        """PYTHONPATH was removed; make sure it doesn't creep back."""
+    _BANNED_ENV_VAR = "PYTHON" + "PATH"
+
+    def test_no_banned_env_var_references(self) -> None:
+        """Env-var hack was removed; make sure it doesn't creep back."""
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
         for ext in ("*.py", "*.toml", "*.yml", "*.yaml", "*.md"):
@@ -104,6 +106,6 @@ class TestNoAntiPatterns:
                 if skip & set(f.parts):
                     continue
                 text = f.read_text(encoding="utf-8", errors="ignore")
-                if "PYTHONPATH" in text:
+                if self._BANNED_ENV_VAR in text:
                     hits.append(str(f.relative_to(ROOT)))
-        assert hits == [], f"PYTHONPATH found in: {hits}"
+        assert hits == [], f"{self._BANNED_ENV_VAR} found in: {hits}"
