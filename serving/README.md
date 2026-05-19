@@ -29,7 +29,7 @@ Schema (Python)          Routes (TOML)                    Runtime
 cd serving
 uv sync
 uv run python schema.py              # initialize tables, views, indexes
-PYTHONPATH=. uv run pxt serve pipeline
+uv run pxt serve pipeline
 ```
 
 ```
@@ -137,7 +137,6 @@ Data flows in via API → computed columns process it → results land in your s
 | Variable | Default | Description |
 |---|---|---|
 | `PIXELTABLE_HOME` | `~/.pixeltable` | Persistent storage for Pixeltable data |
-| `PYTHONPATH` | | Must include the directory containing `schema.py` |
 | `OPENAI_API_KEY` | | Enables LLM summary column |
 
 ## Three Deployment Paths

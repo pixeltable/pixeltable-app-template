@@ -5,7 +5,6 @@ services:
       - "8000:8000"
     environment:
       PIXELTABLE_HOME: /data/pixeltable
-      PYTHONPATH: /app
       # OPENAI_API_KEY: ${OPENAI_API_KEY}
     volumes:
       - pxt-data:/data/pixeltable

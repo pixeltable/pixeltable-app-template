@@ -16,7 +16,7 @@ A single TOML file defines both the service (routes) and the deployment (infrast
 ```toml
 # pixeltable.toml (or [tool.pixeltable] in pyproject.toml)
 #
-# Local dev:   PYTHONPATH=. pxt serve openai_demo
+# Local dev:   pxt serve openai_demo
 # Deploy:      pxt deploy openai_demo
 
 [[service]]
