@@ -21,6 +21,13 @@ dependencies = [
 openai = ["openai>=1.0"]
 cloud = ["boto3>=1.28"]
 
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["schema"]
+
 [[tool.pixeltable.service]]
 name = "pipeline"
 prefix = "/api"

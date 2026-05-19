@@ -18,6 +18,13 @@ dependencies = [
 openai = ["openai>=1.0"]
 local = ["openai-whisper>=20231117"]
 
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["schema"]
+
 [[tool.pixeltable.service]]
 name = "audiointel"
 prefix = "/api"

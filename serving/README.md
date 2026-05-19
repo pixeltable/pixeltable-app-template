@@ -82,12 +82,11 @@ Routes live in `[tool.pixeltable]` inside `pyproject.toml` (standard Python conv
 ```toml
 [[tool.pixeltable.service]]
 name = "pipeline"
-modules = ["schema"]       # imports schema.py on startup
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search"
-query = "schema.search_documents"   # dotted path to @pxt.query
+query = "schema:search_documents"       # module:attribute path to @pxt.query
 method = "post"
 
 [[tool.pixeltable.service.routes]]
@@ -98,7 +97,7 @@ inputs = ["title", "body", "source_id"]
 outputs = ["uuid"]
 ```
 
-`pxt serve` reads this config, imports the module, resolves the query functions, and generates a complete FastAPI app with OpenAPI docs. You can also use a standalone `pixeltable.toml` file; Pixeltable checks both locations.
+`pxt serve` reads this config, resolves the query functions via `module:attribute` paths, and generates a complete FastAPI app with OpenAPI docs. You can also use a standalone `pixeltable.toml` file; Pixeltable checks both locations.
 
 ### Live SQL export on insert
 

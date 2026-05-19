@@ -2275,7 +2275,7 @@ wheels = [
 
 [[package]]
 name = "pixeltable"
-version = "0.6.1"
+version = "0.6.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -2315,7 +2315,7 @@ dependencies = [
     { name = "tzlocal" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/f9/869d3725557a4723482512fd424ddca10ddbd43227ec25b79ca2ee360b08/pixeltable-0.6.1-py3-none-any.whl", hash = "sha256:35ef9a2113234b3b54d5d48ffac706c504ec5ca4266819e456552aabd7e9a950", size = 985469, upload-time = "2026-05-06T06:47:58.012Z" },
+    { url = "https://files.pythonhosted.org/packages/2b/dd/5492f9bacf5f58088efba259b43799276d99ace2452611afc947f8139663/pixeltable-0.6.2-py3-none-any.whl", hash = "sha256:c11abeea5d552f90c05800ff3724f079c6c17936d29fb0e6bdf6ef5c954b9068", size = 1002671, upload-time = "2026-05-15T18:20:49.331Z" },
 ]
 
 [[package]]
@@ -2363,7 +2363,7 @@ wheels = [
 [[package]]
 name = "pixeltable-serving"
 version = "0.1.0"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "en-core-web-sm" },
     { name = "fastapi" },
@@ -2388,7 +2388,7 @@ requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0" },
     { name = "pillow", specifier = ">=10.0" },
-    { name = "pixeltable", specifier = ">=0.6.0" },
+    { name = "pixeltable", specifier = ">=0.6.2" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
     { name = "python-multipart", specifier = ">=0.0.9" },
     { name = "sentence-transformers", specifier = ">=3.0" },

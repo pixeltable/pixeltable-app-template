@@ -20,6 +20,13 @@ dependencies = [
 [project.optional-dependencies]
 openai = ["openai>=1.0"]
 
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["schema"]
+
 [[tool.pixeltable.service]]
 name = "kb"
 prefix = "/api"
