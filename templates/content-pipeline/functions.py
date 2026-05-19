@@ -10,5 +10,5 @@ def get_processing_status() -> dict:
         'documents': pxt.get_table('pipeline.documents').count(),
         'audio_files': pxt.get_table('pipeline.audio_files').count(),
         'media_total': pxt.get_table('pipeline.media').count(),
-        'doc_chunks': pxt.get_view('pipeline.doc_chunks').count(),
+        'doc_chunks': pxt.get_table('pipeline.doc_chunks').count(),
     }

@@ -81,6 +81,7 @@ if HAVE_OPENAI:
 
     sentences.add_embedding_index(
         'text',
+        idx_name='sentences_text_idx',
         string_embed=EMBED_FN,
         if_exists='ignore',
     )

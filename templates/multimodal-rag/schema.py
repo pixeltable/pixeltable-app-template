@@ -45,7 +45,7 @@ doc_chunks = pxt.create_view(
     iterator=document_splitter(documents.doc, separators='token_limit', limit=300),
     if_exists='ignore',
 )
-doc_chunks.add_embedding_index('text', string_embed=text_embed, metric='cosine', if_exists='ignore')
+doc_chunks.add_embedding_index('text', idx_name='doc_text_idx', string_embed=text_embed, metric='cosine', if_exists='ignore')
 
 
 @pxt.query
@@ -71,7 +71,7 @@ images.add_computed_column(
     thumbnail=pxt_image.thumbnail(images.image, size=(320, 320)),
     if_exists='ignore',
 )
-images.add_embedding_index('image', embedding=clip_embed, metric='cosine', if_exists='ignore')
+images.add_embedding_index('image', idx_name='image_clip_idx', embedding=clip_embed, metric='cosine', if_exists='ignore')
 
 
 @pxt.query
@@ -101,7 +101,7 @@ video_frames = pxt.create_view(
     iterator=frame_iterator(videos.video, fps=1.0),
     if_exists='ignore',
 )
-video_frames.add_embedding_index('frame', embedding=clip_embed, metric='cosine', if_exists='ignore')
+video_frames.add_embedding_index('frame', idx_name='frame_clip_idx', embedding=clip_embed, metric='cosine', if_exists='ignore')
 
 
 @pxt.query
@@ -141,7 +141,7 @@ if HAS_OPENAI:
         iterator=string_splitter(video_audio_segments.transcript_text, separators='sentence'),
         if_exists='ignore',
     )
-    transcript_sentences.add_embedding_index('text', string_embed=text_embed, metric='cosine', if_exists='ignore')
+    transcript_sentences.add_embedding_index('text', idx_name='video_transcript_idx', string_embed=text_embed, metric='cosine', if_exists='ignore')
 
     @pxt.query
     def search_video_transcripts(query_text: str, n: int = 10) -> pxt.Query:
@@ -187,7 +187,7 @@ if HAS_OPENAI:
         if_exists='ignore',
     )
     audio_transcript_sentences.add_embedding_index(
-        'text', string_embed=text_embed, metric='cosine', if_exists='ignore'
+        'text', idx_name='audio_transcript_idx', string_embed=text_embed, metric='cosine', if_exists='ignore'
     )
 
     @pxt.query
@@ -208,13 +208,36 @@ def search_knowledge(query_text: str, n: int = 20) -> list[dict]:
     """Search ALL modalities and return merged, ranked results."""
     results: list[dict] = []
 
-    results.extend(search_documents(query_text, n=n).collect().to_pandas().to_dict('records'))
-    results.extend(search_images(query_text, n=n).collect().to_pandas().to_dict('records'))
-    results.extend(search_video_frames(query_text, n=n).collect().to_pandas().to_dict('records'))
+    dc = pxt.get_table('kb.doc_chunks')
+    sim = dc.text.similarity(string=query_text, idx='doc_text_idx')
+    results.extend(
+        dc.order_by(sim, asc=False).limit(n).select(dc.text, source=dc.doc, sim=sim).collect().to_pandas().to_dict('records')
+    )
+
+    img = pxt.get_table('kb.images')
+    sim = img.image.similarity(string=query_text, idx='image_clip_idx')
+    results.extend(
+        img.order_by(sim, asc=False).limit(n).select(img.image, img.caption, sim=sim).collect().to_pandas().to_dict('records')
+    )
+
+    vf = pxt.get_table('kb.video_frames')
+    sim = vf.frame.similarity(string=query_text, idx='frame_clip_idx')
+    results.extend(
+        vf.order_by(sim, asc=False).limit(n).select(vf.frame, sim=sim).collect().to_pandas().to_dict('records')
+    )
 
     if HAS_OPENAI:
-        results.extend(search_video_transcripts(query_text, n=n).collect().to_pandas().to_dict('records'))
-        results.extend(search_audio_transcripts(query_text, n=n).collect().to_pandas().to_dict('records'))
+        ts_ = pxt.get_table('kb.video_transcript_sentences')
+        sim = ts_.text.similarity(string=query_text, idx='video_transcript_idx')
+        results.extend(
+            ts_.order_by(sim, asc=False).limit(n).select(ts_.text, sim=sim).collect().to_pandas().to_dict('records')
+        )
+
+        ats = pxt.get_table('kb.audio_transcript_sentences')
+        sim = ats.text.similarity(string=query_text, idx='audio_transcript_idx')
+        results.extend(
+            ats.order_by(sim, asc=False).limit(n).select(ats.text, sim=sim).collect().to_pandas().to_dict('records')
+        )
 
     results.sort(key=lambda r: r.get('sim', 0), reverse=True)
     return results[:n]

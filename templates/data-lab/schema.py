@@ -98,6 +98,7 @@ dataset.add_computed_column(
 
 dataset.add_embedding_index(
     'image',
+    idx_name='image_clip_idx',
     embedding=clip_embed,
     if_exists='ignore',
 )

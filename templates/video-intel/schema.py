@@ -10,6 +10,8 @@ DETR object detection → multi-modal search (visual, spoken, objects).
 import os
 
 import pixeltable as pxt
+
+import functions
 from pixeltable.functions import image as pxt_image
 from pixeltable.functions.audio import audio_splitter
 from pixeltable.functions.huggingface import clip, detr_for_object_detection, sentence_transformer
@@ -156,12 +158,7 @@ def search_spoken(query_text: str, limit: int = 20):
 def search_objects(label: str, limit: int = 50):
     """Filter frames containing a specific detected object label."""
     return (
-        frames.where(
-            frames.detections.label_text.apply(
-                lambda labels, _label=label: _label in (labels or []),
-                col_type=pxt.Bool,
-            )
-        )
+        frames.where(functions.has_label(frames.detections.label_text, label))
         .select(
             frames.thumbnail,
             timestamp=frames.frame_attrs.time,

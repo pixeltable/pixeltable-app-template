@@ -100,7 +100,7 @@ doc_chunks = pxt.create_view(
     if_exists='ignore',
 )
 
-doc_chunks.add_embedding_index('text', string_embed=embed_fn, if_exists='ignore')
+doc_chunks.add_embedding_index('text', idx_name='doc_text_idx', string_embed=embed_fn, if_exists='ignore')
 
 # Optional: LLM summary per document (uncomment + set OPENAI_API_KEY)
 # documents.add_computed_column(
