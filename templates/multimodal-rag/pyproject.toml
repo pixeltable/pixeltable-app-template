@@ -25,10 +25,11 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["schema"]
+py-modules = ["schema", "functions"]
 
 [[tool.pixeltable.service]]
 name = "kb"
+modules = ["schema"]
 prefix = "/api"
 port = 8000
 
@@ -68,17 +69,17 @@ outputs = ["id"]
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search/documents"
-query = "schema:search_documents"
+query = "schema.search_documents"
 method = "post"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search/images"
-query = "schema:search_images"
+query = "schema.search_images"
 method = "post"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search/video-frames"
-query = "schema:search_video_frames"
+query = "schema.search_video_frames"
 method = "post"

@@ -23,10 +23,11 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["schema"]
+py-modules = ["schema", "functions"]
 
 [[tool.pixeltable.service]]
 name = "audiointel"
+modules = ["schema"]
 prefix = "/api"
 port = 8000
 
@@ -45,29 +46,29 @@ outputs = ["uuid"]
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/recordings"
-query = "schema:list_recordings"
+query = "schema.list_recordings"
 method = "get"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/transcript"
-query = "schema:get_transcript"
+query = "schema.get_transcript"
 method = "get"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/summary"
-query = "schema:get_summary"
+query = "schema.get_summary"
 method = "get"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search"
-query = "schema:search_transcripts"
+query = "schema.search_transcripts"
 method = "post"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search-in"
-query = "schema:search_in_recording"
+query = "schema.search_in_recording"
 method = "post"

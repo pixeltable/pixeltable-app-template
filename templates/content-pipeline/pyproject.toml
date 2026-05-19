@@ -26,17 +26,18 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["schema"]
+py-modules = ["schema", "functions"]
 
 [[tool.pixeltable.service]]
 name = "pipeline"
+modules = ["schema"]
 prefix = "/api"
 port = 8000
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search"
-query = "schema:search_documents"
+query = "schema.search_documents"
 method = "post"
 
 [[tool.pixeltable.service.routes]]

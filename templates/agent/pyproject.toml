@@ -3,7 +3,7 @@ name = "pixeltable-agent"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
-    "pixeltable>=0.6.0",
+    "pixeltable>=0.6.2",
     "sentence-transformers>=3.0",
     "spacy>=3.7",
     "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
@@ -28,8 +28,16 @@ py-modules = ["schema"]
 #   pxt serve agent
 #   pxt serve agent --port 9000
 
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["schema", "functions"]
+
 [[tool.pixeltable.service]]
 name = "agent"
+modules = ["schema"]
 prefix = "/api"
 port = 8000
 
@@ -55,17 +63,17 @@ outputs = ["uuid"]
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/knowledge/search"
-query = "schema:search_knowledge"
+query = "schema.search_knowledge"
 method = "get"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/memory/search"
-query = "schema:recall_memory"
+query = "schema.recall_memory"
 method = "get"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/history"
-query = "schema:get_history"
+query = "schema.get_history"
 method = "get"

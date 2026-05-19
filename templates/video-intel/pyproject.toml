@@ -35,8 +35,16 @@ py-modules = ["schema"]
 #   pxt serve videointel
 #   pxt serve videointel --port 9000
 
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["schema", "functions"]
+
 [[tool.pixeltable.service]]
 name = "videointel"
+modules = ["schema"]
 prefix = "/api"
 port = 8000
 
@@ -45,25 +53,25 @@ port = 8000
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search/visual"
-query = "schema:search_visual"
+query = "schema.search_visual"
 method = "post"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search/spoken"
-query = "schema:search_spoken"
+query = "schema.search_spoken"
 method = "post"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search"
-query = "schema:search_all"
+query = "schema.search_all"
 method = "post"
 
 [[tool.pixeltable.service.routes]]
 type = "query"
 path = "/search/objects"
-query = "schema:search_objects"
+query = "schema.search_objects"
 method = "post"
 
 # ── Insert routes ────────────────────────────────────────────────────────────
