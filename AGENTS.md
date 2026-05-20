@@ -11,15 +11,37 @@ Before modifying this codebase, familiarize yourself with Pixeltable:
 - **MCP Server**: [pixeltable/mcp-server-pixeltable-developer](https://github.com/pixeltable/mcp-server-pixeltable-developer) exposes Pixeltable as an MCP server for interactive exploration (tables, queries, Python REPL).
 - **Docs**: [docs.pixeltable.com](https://docs.pixeltable.com/) · [SDK Reference](https://docs.pixeltable.com/sdk/latest/pixeltable)
 
-## What This Template Is
+## What This Repository Contains
 
-A production-ready starter kit demonstrating three ways to deploy Pixeltable. The choice depends on whether you need an API:
+**Three structural patterns** (API/pipeline scaffolds):
 
-- **Need a web app?** → `backend/` (FastAPI + React)
-- **Need an API with zero web code?** → `serving/` (`pxt serve` generates routes from TOML)
-- **Need batch/background processing?** → `batch/` (pure Python script, no HTTP server)
+| Pattern | Entry point | When to use |
+|---------|------------|-------------|
+| `backend/` | FastAPI + React | You need a full web app |
+| `serving/` | `pxt serve` (TOML routes) | You need an API with zero web code |
+| `batch/` | `python pipeline.py` | Cron, queue, Cloud Run Job -- no HTTP server |
 
-The starter kit's three-tab UI demonstrates interactive patterns via FastAPI:
+**Seven application templates** (scaffolded via `uvx pixeltable-new --template <name>`):
+
+| Template | Entry point | Category |
+|----------|------------|----------|
+| `multimodal-rag` | `python app.py` | **app.py template** -- has UI |
+| `agent` | `python app.py` | **app.py template** -- has UI |
+| `audio-intel` | `python app.py` | **app.py template** -- has UI |
+| `full-stack-showcase` | `python app.py` | **app.py template** -- has UI + React frontend |
+| `video-intel` | `pxt serve videointel` | **pxt-serve template** -- API only |
+| `content-pipeline` | `pxt serve pipeline` | **pxt-serve template** -- API + batch |
+| `data-lab` | `pxt serve datalab` | **pxt-serve template** -- API + batch |
+
+The two template categories matter:
+- **app.py templates** have `app.py` + `static/index.html` (or `frontend/`). `app.py` does `import schema` which triggers schema init. Running `python app.py` is the single entry point. `pxt serve` routes in `pyproject.toml` exist as an API-only alternative. They must **not** run simultaneously (same port).
+- **pxt-serve templates** have no `app.py`. Run `python schema.py` then `pxt serve <name>`.
+
+All `app.py` templates include port auto-detection: if port 8000 is taken, they probe upward. Override with `PORT` env var.
+
+`pixeltable-new` fetches templates from this repo's `main` branch at scaffold time. Changes pushed here are immediately live for all new projects.
+
+The `backend/` pattern's three-tab UI demonstrates interactive Pixeltable patterns:
 
 | Tab | Pattern | Key Pixeltable Features |
 |-----|---------|------------------------|
@@ -30,58 +52,35 @@ The starter kit's three-tab UI demonstrates interactive patterns via FastAPI:
 ## Project Structure
 
 ```
-backend/
-├── main.py                 FastAPI app (CORS, routers, SPA fallback)
-├── config.py               Environment-driven settings (models, prompts, CORS)
-├── models.py               Pydantic models (row schemas, result validation, API request/response)
-├── functions.py             @pxt.udf definitions (web search via ddgs, context assembly)
-├── setup_pixeltable.py      Declarative schema: tables, views, indexes, agent pipeline (no router queries)
-├── pyproject.toml           Dependencies managed via uv
-└── routers/
-    ├── data.py              FastAPIRouter + @pxt.query (upload, list, delete, detail queries)
-    ├── search.py            FastAPIRouter + @pxt.query (4 similarity search endpoints)
-    └── agent.py             FastAPIRouter + @pxt.query (3 declarative + 1 hand-written agent query)
+backend/                         API Backend pattern (FastAPI, headless)
+├── main.py                      FastAPI app (CORS, routers, SPA fallback)
+├── setup_pixeltable.py          Declarative schema (tables, views, indexes, agent pipeline)
+├── functions.py                 @pxt.udf definitions
+├── models.py                    Pydantic models (API contract)
+├── config.py                    Environment-driven settings
+└── routers/                     FastAPIRouter + @pxt.query per domain
 
-frontend/src/
-├── App.tsx                  Tab navigation (Data / Search / Agent)
-├── components/              Page components + shared UI (Button, Badge)
-├── lib/api.ts               Typed fetch wrapper + client-side aggregation/fan-in
-└── types/index.ts           TypeScript interfaces (PxtQueryResponse<T> + app-specific types)
+serving/                         Declarative Serving pattern (pxt serve)
+├── schema.py                    Tables, views, indexes, @pxt.query
+└── pyproject.toml               Dependencies + [tool.pixeltable] routes
 
-batch/                           Batch processing (no HTTP server, no FastAPI)
-├── schema.py                    Tables, views, embedding indexes, computed columns
-├── pipeline.py                  Script: ingest → compute → export_sql → exit
-├── Dockerfile                   Ephemeral container (Cloud Run Job, ECS Task, K8s Job)
-├── docker-compose.yml           Local testing
-└── deploy/
-    ├── cloud-run/               Cloud Run Job + Cloud Build CI (cloudbuild.yaml)
-    ├── k8s-job/                 K8s Job, CronJob, KEDA ScaledJob (job.yaml, cronjob.yaml)
-    ├── ecs-fargate/             ECS Fargate task definition (task-definition.json)
-    └── lambda/                  Lambda container image (Dockerfile, handler.py)
+batch/                           Batch Processing pattern (no HTTP server)
+├── schema.py                    Tables, views, computed columns
+└── pipeline.py                  Ingest → compute → export_sql → exit
 
-serving/                         Declarative API serving (zero Python web code)
-├── schema.py                    Tables, views, indexes, @pxt.query functions
-├── pyproject.toml               Dependencies + pxt serve config ([tool.pixeltable])
-├── Dockerfile                   Long-running container
-├── docker-compose.yml           Local testing
-└── deploy/
-    └── pixeltable-cloud/        Pixeltable Cloud via pxt deploy (coming soon)
+templates/                       Application templates (fetched by pixeltable-new)
+├── multimodal-rag/              app.py + static UI
+├── agent/                       app.py + static UI
+├── audio-intel/                 app.py + static UI
+├── full-stack-showcase/         app.py + React frontend + routers
+├── video-intel/                 pxt serve only
+├── content-pipeline/            pxt serve + pipeline.py
+└── data-lab/                    pxt serve + export.py
 
-deploy/
-├── fly/                     Fly.io (fly.toml + persistent volume)
-├── render/                  Render (Blueprint render.yaml)
-├── railway/                 Railway (railway.json + Dockerfile)
-├── vercel/                  Vercel (frontend only, proxies /api to backend)
-├── digitalocean/            DigitalOcean App Platform (app.yaml spec)
-├── helm/                    Helm chart (any existing K8s cluster)
-├── terraform-k8s/           Terraform + AWS EKS
-├── terraform-gke/           Terraform + GCP GKE
-├── terraform-aks/           Terraform + Azure AKS
-└── aws-cdk/                 CDK + ECS Fargate
-
-.devcontainer/               Dev Container for VS Code / Codespaces
-├── devcontainer.json        Python 3.12, Node 20, uv, extensions
-└── post-create.sh           Auto-installs backend + frontend deps
+frontend/src/                    React UI for the backend/ pattern
+deploy/                          Fly, Render, Railway, Vercel, Helm, Terraform, CDK
+tests/                           pytest suite (structure, config, template integrity)
+.github/workflows/               CI: lint + test
 ```
 
 ## Setup
@@ -359,13 +358,25 @@ result = AgentResult.model_validate(status.rows[0])  # typed access to computed 
 2. Add it to the `pxt.tools()` call in `setup_pixeltable.py`
 3. Re-run `python setup_pixeltable.py`
 
+## Testing
+
+```bash
+uv sync                                    # install dev deps (root pyproject.toml)
+uv run ruff check tests/ templates/        # lint
+uv run ruff format tests/ templates/ --check
+uv run python -m pytest tests/ -v          # 121 tests, ~6s
+```
+
+Tests cover: file existence, Python syntax, TOML parsing, `[build-system]` and `py-modules`, `pxt serve` route config (colon-separated queries, no `modules` field), template integrity (query routes reference existing schema functions, namespace consistency), and an anti-pattern guard ensuring banned env vars don't creep back.
+
+CI runs on every push/PR via `.github/workflows/test.yml`.
+
 ## Files to Read First
 
 If you're new to this codebase, read in this order:
 
-1. `setup_pixeltable.py`: the core. Defines the entire data model and agent pipeline (no router queries).
-2. `routers/data.py`: `FastAPIRouter` + co-located `@pxt.query` (shows `add_insert_route`, `add_delete_route`, `add_query_route`).
-3. `routers/search.py`: `FastAPIRouter` + co-located `@pxt.query` (4 similarity search endpoints).
-4. `routers/agent.py`: mixed: declarative routes + 1 hand-written endpoint (shows when you *must* keep custom code).
-5. `functions.py`: `@pxt.udf` definitions used by the agent pipeline.
-6. `frontend/src/lib/api.ts` + `types/index.ts`: how the frontend consumes PXT routes with client-side aggregation.
+1. `backend/setup_pixeltable.py`: the core. Defines the entire data model and agent pipeline.
+2. `backend/routers/data.py`: `FastAPIRouter` + co-located `@pxt.query` (shows `add_insert_route`, `add_delete_route`, `add_query_route`).
+3. `templates/multimodal-rag/`: simplest app.py template. Shows the `import schema` + `FastAPIRouter` + custom endpoints pattern.
+4. `templates/video-intel/`: simplest pxt-serve template. Shows schema.py + `pyproject.toml` routes, no app.py.
+5. `tests/conftest.py` + `tests/test_config.py`: how tests validate templates.
