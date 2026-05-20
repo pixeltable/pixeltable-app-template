@@ -23,7 +23,7 @@ backend/                       FastAPI API scaffold (headless, no frontend)
 serving/                       Declarative API from TOML config (pxt serve)
 batch/                         Batch processing script, no HTTP server
 
-# ── Application Templates (scaffolded via pixeltable-new) ────
+# ── Application Templates ─────────────────────────────────────
 
 templates/
 ├── multimodal-rag/            app.py + UI: docs, images, video, audio search
@@ -314,7 +314,7 @@ See [`serving/README.md`](serving/) for full details.
 
 ## Application Templates
 
-Vertical apps that showcase what Pixeltable makes uniquely simple. Each builds on one of the three structural patterns above, so you already know how it works.
+Scaffold a ready-to-run app with [`pixeltable-new`](https://github.com/pixeltable/pixeltable-new) (no install required -- `uvx` runs it directly):
 
 ```bash
 uvx pixeltable-new --template <name> my-app
@@ -323,6 +323,7 @@ cd my-app && uv sync
 
 Templates with a web UI (`app.py`): run `python app.py` to start the server.
 Templates without a UI: run `python schema.py` then `pxt serve <name>`.
+Run `uvx pixeltable-new --list` to see all available templates.
 
 | Template | Entry Point | What you get |
 |----------|------------|--------------|
