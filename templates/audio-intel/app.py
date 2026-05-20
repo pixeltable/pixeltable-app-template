@@ -51,5 +51,20 @@ def index():
     return FileResponse(str(STATIC_DIR / "index.html"))
 
 
+def _find_port(default: int = 8000) -> int:
+    import os
+    import socket
+
+    port = int(os.environ.get("PORT", default))
+    while port < default + 100:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            if s.connect_ex(("localhost", port)) != 0:
+                return port
+        port += 1
+    return default
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = _find_port()
+    print(f"Starting server at http://localhost:{port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
