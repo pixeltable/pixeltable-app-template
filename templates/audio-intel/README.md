@@ -21,23 +21,23 @@ Ingest audio files, automatically transcribe, chunk, summarize, and search acros
 ## Quickstart
 
 ```bash
-# 1. Install
-pip install -e ".[openai]"
-python -m spacy download en_core_web_sm
-
-# 2. Launch (UI + API)
-OPENAI_API_KEY=sk-... python app.py
+uv sync                           # install deps
+OPENAI_API_KEY=sk-... uv run python app.py
 # Open http://localhost:8000
 ```
 
-For API-only mode (no UI): `pxt serve`
+That's it. `app.py` initializes the schema and starts the server with the web UI.
 
-To use local Whisper instead of the OpenAI API:
+To use local Whisper instead of the OpenAI API, install with `uv sync --extra local` and uncomment the local whisper block in `schema.py`.
+
+### API-only mode (no UI)
 
 ```bash
-pip install -e ".[local]"
-# Then uncomment the local whisper block in schema.py
+OPENAI_API_KEY=sk-... uv run python schema.py
+OPENAI_API_KEY=sk-... uv run pxt serve audiointel
 ```
+
+Do **not** run both `pxt serve` and `app.py` at the same time -- they bind to the same port.
 
 ## What Pixeltable handles
 
@@ -80,6 +80,6 @@ audio-intel/
 ├── app.py            FastAPI server — API + web UI
 ├── static/
 │   └── index.html    Frontend (Tailwind CSS, vanilla JS)
-├── pyproject.toml    Dependencies + pxt serve routes
+├── pyproject.toml    Dependencies + pxt serve routes (API-only alternative)
 └── README.md
 ```

@@ -26,11 +26,8 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 py-modules = ["schema", "config", "functions"]
 
-# ── Pixeltable service config ─────────────────────────────────────────────────
-# Start the server:
-#   pxt serve sitewatch
-#   pxt serve sitewatch --port 9000
-
+# API-only alternative to app.py: `pxt serve sitewatch`
+# Do not run both at the same time -- they bind to the same port.
 [[tool.pixeltable.service]]
 name = "sitewatch"
 prefix = "/api"

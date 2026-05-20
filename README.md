@@ -343,18 +343,21 @@ Vertical apps that showcase what Pixeltable makes uniquely simple. Each builds o
 
 ```bash
 uvx pixeltable-new --template <name> my-app
-cd my-app && uv sync && python schema.py
+cd my-app && uv sync
 ```
 
-| Template | Pattern | What you get |
-|----------|---------|--------------|
-| [`multimodal-rag`](templates/multimodal-rag/) | serving + backend | Upload docs, images, video, audio; one unified search across all media types. `schema.py` + `app.py` + web UI |
-| [`video-intel`](templates/video-intel/) | serving | Declarative video pipeline: frames, transcription, object detection, temporal search. Pure `schema.py` |
-| [`agent`](templates/agent/) | serving + backend | Persistent multimodal agent with durable memory, tool calling, MCP. `schema.py` + `app.py` + web UI |
-| [`audio-intel`](templates/audio-intel/) | serving + backend | Audio/podcast intelligence: transcription, diarization, summarization, semantic search. `schema.py` + `app.py` + web UI |
-| [`content-pipeline`](templates/content-pipeline/) | batch | Enterprise media processing: ingest from S3, process all modalities, export to your DB. `schema.py` + `pipeline.py` |
-| [`data-lab`](templates/data-lab/) | batch | ML dataset engineering: auto-annotate, curate, version, export to PyTorch. `schema.py` + `export.py` |
-| [`full-stack-showcase`](templates/full-stack-showcase/) | serving + backend | **Complete reference app**: Gemini + DETR + Whisper, cross-modal search, React UI, dashboard, alerting. `schema.py` + `app.py` + `routers/` + `frontend/` |
+Templates with a web UI (`app.py`): run `python app.py` to start the server.
+Templates without a UI: run `python schema.py` then `pxt serve <name>`.
+
+| Template | Entry Point | What you get |
+|----------|------------|--------------|
+| [`multimodal-rag`](templates/multimodal-rag/) | `python app.py` | Upload docs, images, video, audio; unified search + Ask AI. Web UI |
+| [`agent`](templates/agent/) | `python app.py` | Persistent agent with durable memory, tool calling, MCP. Web UI |
+| [`audio-intel`](templates/audio-intel/) | `python app.py` | Audio/podcast intelligence: transcription, summarization, search. Web UI |
+| [`full-stack-showcase`](templates/full-stack-showcase/) | `python app.py` | **Complete reference app**: Gemini + DETR + Whisper, cross-modal search, React UI, dashboard, alerting |
+| [`video-intel`](templates/video-intel/) | `pxt serve videointel` | Video pipeline: frames, transcription, object detection, search. API only |
+| [`content-pipeline`](templates/content-pipeline/) | `pxt serve pipeline` | Enterprise media processing: S3 ingest, multi-modal, DB export. API only |
+| [`data-lab`](templates/data-lab/) | `pxt serve datalab` | ML dataset engineering: auto-annotate, curate, version, export. API only |
 
 ---
 

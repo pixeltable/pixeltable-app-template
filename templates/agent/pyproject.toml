@@ -23,11 +23,8 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools]
 py-modules = ["schema", "functions"]
 
-# ── Pixeltable service config (read by `pxt serve`) ──────────────────────
-# Start the server:
-#   pxt serve agent
-#   pxt serve agent --port 9000
-
+# API-only alternative to app.py: `pxt serve agent`
+# Do not run both at the same time -- they bind to the same port.
 [[tool.pixeltable.service]]
 name = "agent"
 prefix = "/api"

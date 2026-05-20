@@ -13,6 +13,7 @@ TEMPLATES: list[str] = [
     "audio-intel",
     "content-pipeline",
     "data-lab",
+    "full-stack-showcase",
     "multimodal-rag",
     "video-intel",
 ]
@@ -50,6 +51,7 @@ EXPECTED_TEMPLATE_FILES: dict[str, list[str]] = {
     "audio-intel": ["schema.py", "pyproject.toml", "app.py", "functions.py"],
     "content-pipeline": ["schema.py", "pyproject.toml", "pipeline.py", "functions.py"],
     "data-lab": ["schema.py", "pyproject.toml", "export.py"],
+    "full-stack-showcase": ["schema.py", "pyproject.toml", "app.py", "functions.py", "config.py", "models.py"],
     "multimodal-rag": ["schema.py", "pyproject.toml", "app.py", "functions.py"],
     "video-intel": ["schema.py", "pyproject.toml", "functions.py"],
 }

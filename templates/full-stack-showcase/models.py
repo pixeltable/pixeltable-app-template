@@ -2,8 +2,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
-
 # -- Video ------------------------------------------------------------------
+
 
 class VideoBase(BaseModel):
     uuid: str
@@ -42,6 +42,7 @@ class DeleteResponse(BaseModel):
 
 # -- Frame ------------------------------------------------------------------
 
+
 class FrameItem(BaseModel):
     frame: str
 
@@ -53,6 +54,7 @@ class FramesResponse(BaseModel):
 
 
 # -- Segment ----------------------------------------------------------------
+
 
 class SegmentItem(BaseModel):
     segment_start: float
@@ -68,6 +70,7 @@ class SegmentsResponse(BaseModel):
 
 # -- Scene ------------------------------------------------------------------
 
+
 class SceneItem(BaseModel):
     scene_start: float
     scene_end: float
@@ -81,6 +84,7 @@ class ScenesResponse(BaseModel):
 
 # -- Transcription ----------------------------------------------------------
 
+
 class TranscriptionResponse(BaseModel):
     uuid: str
     sentences: list[str]
@@ -88,6 +92,7 @@ class TranscriptionResponse(BaseModel):
 
 
 # -- Search -----------------------------------------------------------------
+
 
 class SearchResult(BaseModel):
     type: str
@@ -105,6 +110,7 @@ class SearchResponse(BaseModel):
 
 
 # -- Dashboard --------------------------------------------------------------
+
 
 class DashboardStats(BaseModel):
     total_videos: int = 0
@@ -141,6 +147,7 @@ class AlertsResponse(BaseModel):
 
 
 # -- Browse -----------------------------------------------------------------
+
 
 class BrowseFrameItem(BaseModel):
     uuid: str
@@ -187,6 +194,7 @@ class BrowseAudioItem(BaseModel):
 
 
 # -- Activity ---------------------------------------------------------------
+
 
 class ActivityItem(BaseModel):
     type: str

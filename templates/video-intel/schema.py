@@ -9,9 +9,8 @@ DETR object detection → multi-modal search (visual, spoken, objects).
 
 import os
 
-import pixeltable as pxt
-
 import functions
+import pixeltable as pxt
 from pixeltable.functions import image as pxt_image
 from pixeltable.functions.audio import audio_splitter
 from pixeltable.functions.huggingface import clip, detr_for_object_detection, sentence_transformer
@@ -20,102 +19,100 @@ from pixeltable.functions.uuid import uuid7
 from pixeltable.functions.video import extract_audio, frame_iterator
 from pixeltable.functions.whisper import transcribe as whisper_transcribe
 
-pxt.create_dir('videointel', if_exists='ignore')
+pxt.create_dir("videointel", if_exists="ignore")
 
-clip_embed = clip.using(model_id='openai/clip-vit-base-patch32')
-text_embed = sentence_transformer.using(model_id='all-MiniLM-L6-v2')
+clip_embed = clip.using(model_id="openai/clip-vit-base-patch32")
+text_embed = sentence_transformer.using(model_id="all-MiniLM-L6-v2")
 
 # ── Videos table ─────────────────────────────────────────────────────────────
 
 videos = pxt.create_table(
-    'videointel.videos',
-    {'video': pxt.Video, 'title': pxt.String, 'uuid': uuid7(), 'timestamp': pxt.Timestamp},
-    primary_key=['uuid'],
-    if_exists='ignore',
+    "videointel.videos",
+    {"video": pxt.Video, "title": pxt.String, "uuid": uuid7(), "timestamp": pxt.Timestamp},
+    primary_key=["uuid"],
+    if_exists="ignore",
 )
 
 # ── Frame extraction ─────────────────────────────────────────────────────────
 
 frames = pxt.create_view(
-    'videointel.frames',
+    "videointel.frames",
     videos,
     iterator=frame_iterator(video=videos.video, fps=1.0),
-    if_exists='ignore',
+    if_exists="ignore",
 )
 
 frames.add_computed_column(
     thumbnail=pxt_image.b64_encode(pxt_image.thumbnail(frames.frame, size=(320, 320))),
-    if_exists='ignore',
+    if_exists="ignore",
 )
 
-frames.add_embedding_index(
-    column='frame', idx_name='frames_clip_idx', embedding=clip_embed, if_exists='ignore'
-)
+frames.add_embedding_index(column="frame", idx_name="frames_clip_idx", embedding=clip_embed, if_exists="ignore")
 
 # ── Object detection (optional — requires timm) ─────────────────────────────
 
 try:
     frames.add_computed_column(
-        detections=detr_for_object_detection(
-            frames.frame, model_id='facebook/detr-resnet-50', threshold=0.7
-        ),
-        if_exists='ignore',
+        detections=detr_for_object_detection(frames.frame, model_id="facebook/detr-resnet-50", threshold=0.7),
+        if_exists="ignore",
     )
 except Exception as exc:
-    print(f'Skipping DETR object detection: {exc}')
+    print(f"Skipping DETR object detection: {exc}")
 
 # ── Audio extraction + transcription ─────────────────────────────────────────
 
-videos.add_computed_column(
-    audio=extract_audio(videos.video, format='mp3'), if_exists='ignore'
-)
+videos.add_computed_column(audio=extract_audio(videos.video, format="mp3"), if_exists="ignore")
 
 audio_chunks = pxt.create_view(
-    'videointel.audio_chunks',
+    "videointel.audio_chunks",
     videos,
     iterator=audio_splitter(audio=videos.audio, duration=30.0),
-    if_exists='ignore',
+    if_exists="ignore",
 )
 
 audio_chunks.add_computed_column(
-    transcription=whisper_transcribe(audio_chunks.audio_segment, model='base.en'),
-    if_exists='ignore',
+    transcription=whisper_transcribe(audio_chunks.audio_segment, model="base.en"),
+    if_exists="ignore",
 )
 
 # ── Transcript sentences + text search ───────────────────────────────────────
 
 transcript_sentences = pxt.create_view(
-    'videointel.transcript_sentences',
+    "videointel.transcript_sentences",
     audio_chunks.where(audio_chunks.transcription != None),  # noqa: E711
-    iterator=string_splitter(text=audio_chunks.transcription.text, separators='sentence'),
-    if_exists='ignore',
+    iterator=string_splitter(text=audio_chunks.transcription.text, separators="sentence"),
+    if_exists="ignore",
 )
 
 transcript_sentences.add_embedding_index(
-    column='text', idx_name='transcript_text_idx', string_embed=text_embed, if_exists='ignore'
+    column="text", idx_name="transcript_text_idx", string_embed=text_embed, if_exists="ignore"
 )
 
 # ── Scene descriptions (optional — requires OPENAI_API_KEY) ─────────────────
 
-if os.getenv('OPENAI_API_KEY'):
+if os.getenv("OPENAI_API_KEY"):
     try:
         from pixeltable.functions.openai import chat_completions
 
         frames.add_computed_column(
             scene_description=chat_completions(
-                messages=[{
-                    'role': 'user',
-                    'content': [
-                        {'type': 'image_url', 'image_url': {'url': frames.frame}},
-                        {'type': 'text', 'text': 'Describe this video frame in one sentence.'},
-                    ],
-                }],
-                model='gpt-4o-mini',
-            ).choices[0].message.content,
-            if_exists='ignore',
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "image_url", "image_url": {"url": frames.frame}},
+                            {"type": "text", "text": "Describe this video frame in one sentence."},
+                        ],
+                    }
+                ],
+                model="gpt-4o-mini",
+            )
+            .choices[0]
+            .message.content,
+            if_exists="ignore",
         )
     except Exception as exc:
-        print(f'Skipping LLM scene descriptions: {exc}')
+        print(f"Skipping LLM scene descriptions: {exc}")
 
 # ── Query functions ──────────────────────────────────────────────────────────
 
@@ -187,5 +184,5 @@ def search_all(query_text: str, limit: int = 10):
     )
 
 
-if __name__ == '__main__':
-    print('Video intelligence schema initialized.')
+if __name__ == "__main__":
+    print("Schema initialized. Run: pxt serve videointel")

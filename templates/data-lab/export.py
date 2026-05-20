@@ -6,15 +6,15 @@ import pixeltable as pxt
 from pixeltable.io import export_parquet
 
 
-def export_to_parquet(output_path: str = 'exports/dataset.parquet') -> None:
+def export_to_parquet(output_path: str = "exports/dataset.parquet") -> None:
     """Export the full dataset to Parquet format."""
-    dataset = pxt.get_table('datalab.dataset')
+    dataset = pxt.get_table("datalab.dataset")
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     export_parquet(dataset, output_path)
-    print(f'Exported to {output_path}')
+    print(f"Exported to {output_path}")
 
 
-def export_to_pytorch(split: str = 'train', image_format: str = 'pt'):
+def export_to_pytorch(split: str = "train", image_format: str = "pt"):
     """Return a PyTorch IterableDataset for the given split.
 
     Args:
@@ -24,12 +24,12 @@ def export_to_pytorch(split: str = 'train', image_format: str = 'pt'):
     Returns:
         A torch IterableDataset ready for DataLoader.
     """
-    dataset = pxt.get_table('datalab.dataset')
+    dataset = pxt.get_table("datalab.dataset")
     query = dataset.where(dataset.split == split).select(dataset.image, dataset.label)
     return query.to_pytorch_dataset(image_format=image_format)
 
 
-def export_to_coco(output_dir: str = 'exports/coco') -> Path:
+def export_to_coco(output_dir: str = "exports/coco") -> Path:
     """Export object detections in COCO format.
 
     Requires the `detections` computed column (DETR) to be present.
@@ -39,10 +39,10 @@ def export_to_coco(output_dir: str = 'exports/coco') -> Path:
     """
     from pixeltable.functions.huggingface import detr_to_coco
 
-    dataset = pxt.get_table('datalab.dataset')
+    dataset = pxt.get_table("datalab.dataset")
     query = dataset.select(detr_to_coco(dataset.image, dataset.detections))
     coco_path = query.to_coco_dataset()
-    print(f'COCO dataset written to {coco_path}')
+    print(f"COCO dataset written to {coco_path}")
     return coco_path
 
 
@@ -55,14 +55,14 @@ def export_to_pandas(split: str | None = None):
     Returns:
         A pandas DataFrame with image paths, labels, and metadata.
     """
-    dataset = pxt.get_table('datalab.dataset')
+    dataset = pxt.get_table("datalab.dataset")
     query = dataset if split is None else dataset.where(dataset.split == split)
     df = query.select(dataset.uuid, dataset.image, dataset.label, dataset.split, dataset.source).collect().to_pandas()
-    print(f'Collected {len(df)} samples')
+    print(f"Collected {len(df)} samples")
     return df
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     import schema  # noqa: F401 -- ensure tables exist
 
     export_to_parquet()

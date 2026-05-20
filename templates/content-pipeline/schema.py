@@ -2,55 +2,55 @@
 
 import pixeltable as pxt
 from pixeltable.functions import image as pxt_image
-from pixeltable.functions.document import document_splitter
 from pixeltable.functions.audio import audio_splitter
+from pixeltable.functions.document import document_splitter
 from pixeltable.functions.huggingface import sentence_transformer
 from pixeltable.functions.uuid import uuid7
 
-NAMESPACE = 'pipeline'
-EMBED_MODEL = 'all-MiniLM-L6-v2'
+NAMESPACE = "pipeline"
+EMBED_MODEL = "all-MiniLM-L6-v2"
 embed_fn = sentence_transformer.using(model_id=EMBED_MODEL)
 
-pxt.create_dir(NAMESPACE, if_exists='ignore')
+pxt.create_dir(NAMESPACE, if_exists="ignore")
 
 # ---------------------------------------------------------------------------
 # Media ingest table -- central registry of all incoming media
 # ---------------------------------------------------------------------------
 media = pxt.create_table(
-    f'{NAMESPACE}.media',
+    f"{NAMESPACE}.media",
     {
-        'url': pxt.String,
-        'media_type': pxt.String,  # 'image' | 'document' | 'audio' | 'video'
-        'tags': pxt.Json,
-        'uuid': uuid7(),
-        'timestamp': pxt.Timestamp,
+        "url": pxt.String,
+        "media_type": pxt.String,  # 'image' | 'document' | 'audio' | 'video'
+        "tags": pxt.Json,
+        "uuid": uuid7(),
+        "timestamp": pxt.Timestamp,
     },
-    primary_key=['uuid'],
-    if_exists='ignore',
+    primary_key=["uuid"],
+    if_exists="ignore",
 )
 
 # ---------------------------------------------------------------------------
 # Image processing
 # ---------------------------------------------------------------------------
 images = pxt.create_table(
-    f'{NAMESPACE}.images',
+    f"{NAMESPACE}.images",
     {
-        'image': pxt.Image,
-        'source_url': pxt.String,
-        'uuid': uuid7(),
-        'timestamp': pxt.Timestamp,
+        "image": pxt.Image,
+        "source_url": pxt.String,
+        "uuid": uuid7(),
+        "timestamp": pxt.Timestamp,
     },
-    primary_key=['uuid'],
-    if_exists='ignore',
+    primary_key=["uuid"],
+    if_exists="ignore",
 )
 
 images.add_computed_column(
     thumbnail=pxt_image.b64_encode(pxt_image.thumbnail(images.image, size=(320, 320))),
-    if_exists='ignore',
+    if_exists="ignore",
 )
-images.add_computed_column(width=images.image.width, if_exists='ignore')
-images.add_computed_column(height=images.image.height, if_exists='ignore')
-images.add_computed_column(mode=images.image.mode, if_exists='ignore')
+images.add_computed_column(width=images.image.width, if_exists="ignore")
+images.add_computed_column(height=images.image.height, if_exists="ignore")
+images.add_computed_column(mode=images.image.mode, if_exists="ignore")
 
 # Optional: CLIP embedding for visual search (uncomment to enable)
 # from pixeltable.functions.huggingface import clip
@@ -77,30 +77,30 @@ images.add_computed_column(mode=images.image.mode, if_exists='ignore')
 # Document processing
 # ---------------------------------------------------------------------------
 documents = pxt.create_table(
-    f'{NAMESPACE}.documents',
+    f"{NAMESPACE}.documents",
     {
-        'document': pxt.Document,
-        'title': pxt.String,
-        'uuid': uuid7(),
-        'timestamp': pxt.Timestamp,
+        "document": pxt.Document,
+        "title": pxt.String,
+        "uuid": uuid7(),
+        "timestamp": pxt.Timestamp,
     },
-    primary_key=['uuid'],
-    if_exists='ignore',
+    primary_key=["uuid"],
+    if_exists="ignore",
 )
 
 doc_chunks = pxt.create_view(
-    f'{NAMESPACE}.doc_chunks',
+    f"{NAMESPACE}.doc_chunks",
     documents,
     iterator=document_splitter(
         documents.document,
-        separators='sentence,token_limit',
+        separators="sentence,token_limit",
         limit=300,
-        metadata='page',
+        metadata="page",
     ),
-    if_exists='ignore',
+    if_exists="ignore",
 )
 
-doc_chunks.add_embedding_index('text', idx_name='doc_text_idx', string_embed=embed_fn, if_exists='ignore')
+doc_chunks.add_embedding_index("text", idx_name="doc_text_idx", string_embed=embed_fn, if_exists="ignore")
 
 # Optional: LLM summary per document (uncomment + set OPENAI_API_KEY)
 # documents.add_computed_column(
@@ -115,22 +115,22 @@ doc_chunks.add_embedding_index('text', idx_name='doc_text_idx', string_embed=emb
 # Audio processing
 # ---------------------------------------------------------------------------
 audio_files = pxt.create_table(
-    f'{NAMESPACE}.audio_files',
+    f"{NAMESPACE}.audio_files",
     {
-        'audio': pxt.Audio,
-        'title': pxt.String,
-        'uuid': uuid7(),
-        'timestamp': pxt.Timestamp,
+        "audio": pxt.Audio,
+        "title": pxt.String,
+        "uuid": uuid7(),
+        "timestamp": pxt.Timestamp,
     },
-    primary_key=['uuid'],
-    if_exists='ignore',
+    primary_key=["uuid"],
+    if_exists="ignore",
 )
 
 audio_chunks = pxt.create_view(
-    f'{NAMESPACE}.audio_chunks',
+    f"{NAMESPACE}.audio_chunks",
     audio_files,
     iterator=audio_splitter(audio_files.audio, duration=30.0),
-    if_exists='ignore',
+    if_exists="ignore",
 )
 
 # Optional: transcription (uncomment + install whisper or set OPENAI_API_KEY)
@@ -151,8 +151,8 @@ audio_chunks = pxt.create_view(
 def search_documents(query_text: str, limit: int = 10):
     """Semantic search over document chunks."""
     sim = doc_chunks.text.similarity(string=query_text)
-    return doc_chunks.order_by(sim, asc=False).limit(limit).select(
-        text=doc_chunks.text, score=sim, page=doc_chunks.page
+    return (
+        doc_chunks.order_by(sim, asc=False).limit(limit).select(text=doc_chunks.text, score=sim, page=doc_chunks.page)
     )
 
 
@@ -179,3 +179,6 @@ def list_documents():
         timestamp=documents.timestamp,
     ).order_by(documents.timestamp, asc=False)
 
+
+if __name__ == "__main__":
+    print("Schema initialized. Run: pxt serve pipeline")

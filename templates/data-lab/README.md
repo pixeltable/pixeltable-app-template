@@ -28,8 +28,8 @@ datalab.dataset table
 ### 1. Install
 
 ```bash
-pip install -e ".[detection,export]"
-# Optional: pip install -e ".[openai]" for vision LLM annotations
+uv sync --extra detection --extra export
+# Optional: uv sync --extra openai for vision LLM annotations
 ```
 
 ### 2. Initialize & Ingest
@@ -80,7 +80,8 @@ export_to_coco()
 ## API Server
 
 ```bash
-uvicorn pixeltable.service:app --port 8000
+uv run python schema.py           # initialize tables
+uv run pxt serve datalab           # http://localhost:8000/docs
 ```
 
 | Method | Endpoint | Description |

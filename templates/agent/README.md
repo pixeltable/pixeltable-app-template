@@ -9,16 +9,21 @@ A durable agent where conversations, memory, knowledge, and tool traces are all 
 ## Quick Start
 
 ```bash
-# 1. Install
-pip install -e ".[anthropic]"
-python -m spacy download en_core_web_sm
-
-# 2. Launch (UI + API)
-ANTHROPIC_API_KEY=sk-... python app.py
+uv sync                           # install deps
+ANTHROPIC_API_KEY=sk-... uv run python app.py
 # Open http://localhost:8000
 ```
 
-For API-only mode (no UI): `ANTHROPIC_API_KEY=sk-... pxt serve`
+That's it. `app.py` initializes the schema and starts the server with the web UI.
+
+### API-only mode (no UI)
+
+```bash
+ANTHROPIC_API_KEY=sk-... uv run python schema.py
+ANTHROPIC_API_KEY=sk-... uv run pxt serve agent
+```
+
+Do **not** run both `pxt serve` and `app.py` at the same time -- they bind to the same port.
 
 ## Architecture
 
@@ -110,6 +115,6 @@ agent/
 ├── app.py           FastAPI server — API + web UI
 ├── static/
 │   └── index.html   Frontend (Tailwind CSS, vanilla JS)
-├── pyproject.toml   Dependencies + pxt serve routes
+├── pyproject.toml   Dependencies + pxt serve routes (API-only alternative)
 └── README.md
 ```

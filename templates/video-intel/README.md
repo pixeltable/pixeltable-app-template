@@ -51,25 +51,16 @@ Ingest video, automatically extract frames, transcribe audio, detect objects, an
 ### 1. Install
 
 ```bash
-pip install -e .
-# For object detection:
-pip install -e ".[detection]"
-# For LLM scene descriptions:
-pip install -e ".[openai]"
+uv sync
+# For object detection: uv sync --extra detection
+# For LLM scene descriptions: uv sync --extra openai
 ```
 
-### 2. Initialize schema
+### 2. Initialize & serve
 
 ```bash
-python schema.py
-```
-
-This creates tables, views, embedding indexes, and computed columns. Every subsequent run is idempotent.
-
-### 3. Start the API
-
-```bash
-pxt serve videointel
+uv run python schema.py           # create tables, views, indexes (idempotent)
+uv run pxt serve videointel       # http://localhost:8000/docs
 ```
 
 The server starts at `http://localhost:8000`. Upload a video:

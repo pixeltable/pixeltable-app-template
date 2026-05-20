@@ -3,71 +3,66 @@
 Replaces Mem0/MemGPT: conversations, memory, knowledge, and tool traces
 are all queryable, versioned Pixeltable tables.
 
-    python schema.py        # create tables, views, indexes
-    pxt serve agent         # start the API
+    python app.py           # start the server with web UI
+    # or API-only: python schema.py && pxt serve agent
 """
 
 import os
 from datetime import datetime
 
+import functions
 import pixeltable as pxt
 from pixeltable.functions.huggingface import sentence_transformer
 from pixeltable.functions.string import string_splitter
 from pixeltable.functions.uuid import uuid7
 
-import functions
-
-HAS_ANTHROPIC = bool(os.getenv('ANTHROPIC_API_KEY'))
+HAS_ANTHROPIC = bool(os.getenv("ANTHROPIC_API_KEY"))
 if HAS_ANTHROPIC:
     from pixeltable.functions.anthropic import invoke_tools, messages
 
-pxt.create_dir('agent', if_exists='ignore')
+pxt.create_dir("agent", if_exists="ignore")
 
-embed_fn = sentence_transformer.using(model_id='all-MiniLM-L6-v2')
+embed_fn = sentence_transformer.using(model_id="all-MiniLM-L6-v2")
 
 # ── Knowledge base ────────────────────────────────────────────────────────
 
 knowledge = pxt.create_table(
-    'agent.knowledge',
+    "agent.knowledge",
     {
-        'text': pxt.String,
-        'title': pxt.String,
-        'source': pxt.String,
-        'uuid': uuid7(),
-        'timestamp': pxt.Timestamp,
+        "text": pxt.String,
+        "title": pxt.String,
+        "source": pxt.String,
+        "uuid": uuid7(),
+        "timestamp": pxt.Timestamp,
     },
-    primary_key=['uuid'],
-    if_exists='ignore',
+    primary_key=["uuid"],
+    if_exists="ignore",
 )
 
 sentences = pxt.create_view(
-    'agent.sentences',
+    "agent.sentences",
     knowledge,
-    iterator=string_splitter(text=knowledge.text, separators='sentence'),
-    if_exists='ignore',
+    iterator=string_splitter(text=knowledge.text, separators="sentence"),
+    if_exists="ignore",
 )
-sentences.add_embedding_index(
-    'text', idx_name='knowledge_embed', string_embed=embed_fn, if_exists='ignore'
-)
+sentences.add_embedding_index("text", idx_name="knowledge_embed", string_embed=embed_fn, if_exists="ignore")
 
 # ── Conversations / memory ────────────────────────────────────────────────
 
 conversations = pxt.create_table(
-    'agent.conversations',
+    "agent.conversations",
     {
-        'role': pxt.String,
-        'content': pxt.String,
-        'conversation_id': pxt.String,
-        'user_id': pxt.String,
-        'uuid': uuid7(),
-        'timestamp': pxt.Timestamp,
+        "role": pxt.String,
+        "content": pxt.String,
+        "conversation_id": pxt.String,
+        "user_id": pxt.String,
+        "uuid": uuid7(),
+        "timestamp": pxt.Timestamp,
     },
-    primary_key=['uuid'],
-    if_exists='ignore',
+    primary_key=["uuid"],
+    if_exists="ignore",
 )
-conversations.add_embedding_index(
-    'content', idx_name='conversations_embed', string_embed=embed_fn, if_exists='ignore'
-)
+conversations.add_embedding_index("content", idx_name="conversations_embed", string_embed=embed_fn, if_exists="ignore")
 
 # ── Query functions ───────────────────────────────────────────────────────
 
@@ -125,18 +120,18 @@ def get_history(conversation_id: str, limit: int = 10):
 # ── Agent table (always created so pxt serve can register routes) ─────────
 
 agent = pxt.create_table(
-    'agent.agent',
+    "agent.agent",
     {
-        'prompt': pxt.String,
-        'conversation_id': pxt.String,
-        'system_prompt': pxt.String,
-        'max_tokens': pxt.Int,
-        'temperature': pxt.Float,
-        'uuid': uuid7(),
-        'timestamp': pxt.Timestamp,
+        "prompt": pxt.String,
+        "conversation_id": pxt.String,
+        "system_prompt": pxt.String,
+        "max_tokens": pxt.Int,
+        "temperature": pxt.Float,
+        "uuid": uuid7(),
+        "timestamp": pxt.Timestamp,
     },
-    primary_key=['uuid'],
-    if_exists='ignore',
+    primary_key=["uuid"],
+    if_exists="ignore",
 )
 
 # ── LLM pipeline (requires ANTHROPIC_API_KEY) ────────────────────────────
@@ -144,29 +139,25 @@ agent = pxt.create_table(
 if HAS_ANTHROPIC:
     tools = pxt.tools(functions.web_search, search_knowledge, recall_memory)
 
-    agent.add_computed_column(
-        memory_context=recall_memory(agent.prompt), if_exists='ignore'
-    )
-    agent.add_computed_column(
-        knowledge_context=search_knowledge(agent.prompt), if_exists='ignore'
-    )
+    agent.add_computed_column(memory_context=recall_memory(agent.prompt), if_exists="ignore")
+    agent.add_computed_column(knowledge_context=search_knowledge(agent.prompt), if_exists="ignore")
     agent.add_computed_column(
         initial_response=messages(
-            model='claude-sonnet-4-20250514',
-            messages=[{'role': 'user', 'content': agent.prompt}],
+            model="claude-sonnet-4-20250514",
+            messages=[{"role": "user", "content": agent.prompt}],
             tools=tools,
             tool_choice=tools.choice(required=True),
             max_tokens=agent.max_tokens,
             model_kwargs={
-                'system': agent.system_prompt,
-                'temperature': agent.temperature,
+                "system": agent.system_prompt,
+                "temperature": agent.temperature,
             },
         ),
-        if_exists='ignore',
+        if_exists="ignore",
     )
     agent.add_computed_column(
         tool_output=invoke_tools(tools, agent.initial_response),
-        if_exists='ignore',
+        if_exists="ignore",
     )
     agent.add_computed_column(
         context=functions.assemble_context(
@@ -175,46 +166,48 @@ if HAS_ANTHROPIC:
             agent.knowledge_context,
             agent.tool_output,
         ),
-        if_exists='ignore',
+        if_exists="ignore",
     )
     agent.add_computed_column(
         final_response=messages(
-            model='claude-sonnet-4-20250514',
-            messages=[{'role': 'user', 'content': agent.context}],
+            model="claude-sonnet-4-20250514",
+            messages=[{"role": "user", "content": agent.context}],
             max_tokens=agent.max_tokens,
             model_kwargs={
-                'system': agent.system_prompt,
-                'temperature': agent.temperature,
+                "system": agent.system_prompt,
+                "temperature": agent.temperature,
             },
         ),
-        if_exists='ignore',
+        if_exists="ignore",
     )
-    agent.add_computed_column(
-        answer=agent.final_response.content[0].text, if_exists='ignore'
-    )
+    agent.add_computed_column(answer=agent.final_response.content[0].text, if_exists="ignore")
 
 
 # ── Main agent endpoint ──────────────────────────────────────────────────
 
 
-def ask(question: str, conversation_id: str = 'default') -> str:
+def ask(question: str, conversation_id: str = "default") -> str:
     """Insert prompt → computed column chain → answer. Saves to conversation history."""
     if not HAS_ANTHROPIC:
-        return 'Error: set ANTHROPIC_API_KEY to enable the agent pipeline.'
+        return "Error: set ANTHROPIC_API_KEY to enable the agent pipeline."
 
     ts = datetime.now()
-    agent_tbl = pxt.get_table('agent.agent')
-    agent_tbl.insert([{
-        'prompt': question,
-        'conversation_id': conversation_id,
-        'system_prompt': (
-            'You are a helpful assistant with access to tools, a knowledge base, '
-            'and conversation memory. Use tools when needed. Be concise and accurate.'
-        ),
-        'max_tokens': 1024,
-        'temperature': 0.7,
-        'timestamp': ts,
-    }])
+    agent_tbl = pxt.get_table("agent.agent")
+    agent_tbl.insert(
+        [
+            {
+                "prompt": question,
+                "conversation_id": conversation_id,
+                "system_prompt": (
+                    "You are a helpful assistant with access to tools, a knowledge base, "
+                    "and conversation memory. Use tools when needed. Be concise and accurate."
+                ),
+                "max_tokens": 1024,
+                "temperature": 0.7,
+                "timestamp": ts,
+            }
+        ]
+    )
 
     result = (
         agent_tbl.where(agent_tbl.timestamp == ts)
@@ -224,27 +217,29 @@ def ask(question: str, conversation_id: str = 'default') -> str:
         .collect()
     )
     if not result:
-        return 'Error: no response generated.'
+        return "Error: no response generated."
 
-    answer = result[0].get('answer', 'Error: no answer in response.')
-    conversations.insert([
-        {
-            'role': 'user',
-            'content': question,
-            'conversation_id': conversation_id,
-            'user_id': 'default',
-            'timestamp': ts,
-        },
-        {
-            'role': 'assistant',
-            'content': answer,
-            'conversation_id': conversation_id,
-            'user_id': 'system',
-            'timestamp': datetime.now(),
-        },
-    ])
+    answer = result[0].get("answer", "Error: no answer in response.")
+    conversations.insert(
+        [
+            {
+                "role": "user",
+                "content": question,
+                "conversation_id": conversation_id,
+                "user_id": "default",
+                "timestamp": ts,
+            },
+            {
+                "role": "assistant",
+                "content": answer,
+                "conversation_id": conversation_id,
+                "user_id": "system",
+                "timestamp": datetime.now(),
+            },
+        ]
+    )
     return answer
 
 
-if __name__ == '__main__':
-    print('Schema initialized.')
+if __name__ == "__main__":
+    print("Schema initialized. Run: python app.py")

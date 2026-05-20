@@ -15,16 +15,16 @@ Ingest media from S3/URLs, auto-process across modalities, export structured res
 ## Quickstart
 
 ```bash
-# 1. Install
-pip install -e .
-python -m spacy download en_core_web_sm
+uv sync                           # install deps
+uv run python schema.py           # initialize tables
+uv run pxt serve pipeline         # http://localhost:8000/docs
+```
 
-# 2. Start the API server (reads routes from pyproject.toml)
-pxt serve pipeline
+Or run batch processing instead:
 
-# 3. Or run batch processing
-python pipeline.py --urls path/to/image.png path/to/report.pdf path/to/audio.mp3
-python pipeline.py --status
+```bash
+uv run python pipeline.py --urls path/to/image.png path/to/report.pdf path/to/audio.mp3
+uv run python pipeline.py --status
 ```
 
 ## Two Modes

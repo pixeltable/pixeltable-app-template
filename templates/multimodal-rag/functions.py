@@ -12,10 +12,10 @@ def merge_results(*result_lists: list[dict]) -> list[dict]:
         if results is None:
             continue
         for r in results:
-            text_key = str(r.get('text', r.get('caption', '')))[:200]
+            text_key = str(r.get("text", r.get("caption", "")))[:200]
             if text_key and text_key in seen_texts:
                 continue
             seen_texts.add(text_key)
             merged.append(r)
-    merged.sort(key=lambda r: r.get('sim', 0), reverse=True)
+    merged.sort(key=lambda r: r.get("sim", 0), reverse=True)
     return merged

@@ -15,18 +15,24 @@ This template gives you the same multimodal retrieval pipeline in **one Python f
 ## Quickstart
 
 ```bash
-# 1. Install
-pip install -e ".[openai]"
-python -m spacy download en_core_web_sm
-
-# 2. Launch (UI + API)
-python app.py
-# Open http://localhost:8000
+uv sync                           # install deps
+uv run python app.py              # http://localhost:8000
 ```
 
-Set `OPENAI_API_KEY` for Whisper transcription and chat answers. Without it, document + image + video-frame search still works; audio/video transcription search and the Ask AI tab are disabled.
+That's it. `app.py` initializes the schema and starts the server with the web UI.
 
-For API-only mode (no UI): `pxt serve`
+Set `OPENAI_API_KEY` for Whisper transcription and the Ask AI tab. Without it, document + image + video-frame search still works.
+
+### API-only mode (no UI)
+
+If you only need the REST API without the web UI:
+
+```bash
+uv run python schema.py           # initialize tables
+uv run pxt serve kb               # http://localhost:8000/docs
+```
+
+Do **not** run both `pxt serve` and `app.py` at the same time -- they bind to the same port.
 
 ## What Pixeltable Handles Automatically
 
@@ -59,7 +65,7 @@ multimodal-rag/
 ├── app.py            FastAPI server — API + web UI
 ├── static/
 │   └── index.html    Frontend (Tailwind CSS, vanilla JS)
-├── pyproject.toml    Dependencies + pxt serve routes
+├── pyproject.toml    Dependencies + pxt serve routes (API-only alternative)
 └── README.md
 ```
 
