@@ -354,6 +354,7 @@ cd my-app && uv sync && python schema.py
 | [`audio-intel`](templates/audio-intel/) | serving + backend | Audio/podcast intelligence: transcription, diarization, summarization, semantic search. `schema.py` + `app.py` + web UI |
 | [`content-pipeline`](templates/content-pipeline/) | batch | Enterprise media processing: ingest from S3, process all modalities, export to your DB. `schema.py` + `pipeline.py` |
 | [`data-lab`](templates/data-lab/) | batch | ML dataset engineering: auto-annotate, curate, version, export to PyTorch. `schema.py` + `export.py` |
+| [`full-stack-showcase`](templates/full-stack-showcase/) | serving + backend | **Complete reference app**: Gemini + DETR + Whisper, cross-modal search, React UI, dashboard, alerting. `schema.py` + `app.py` + `routers/` + `frontend/` |
 
 ---
 

@@ -1,0 +1,75 @@
+[project]
+name = "full-stack-showcase"
+version = "0.1.0"
+description = "Full-stack video intelligence platform — Pixeltable showcase with Gemini, DETR, Whisper, and cross-modal search."
+requires-python = ">=3.10"
+dependencies = [
+    "pixeltable>=0.6.2",
+    "google-genai",
+    "transformers>=4.30",
+    "timm>=0.9",
+    "torch>=2.0",
+    "pillow>=10.0",
+    "scenedetect[opencv]",
+    "openai-whisper>=20231117",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+    "python-dotenv",
+    "psycopg[binary]>=3.1",
+]
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["schema", "config", "functions"]
+
+# ── Pixeltable service config ─────────────────────────────────────────────────
+# Start the server:
+#   pxt serve sitewatch
+#   pxt serve sitewatch --port 9000
+
+[[tool.pixeltable.service]]
+name = "sitewatch"
+prefix = "/api"
+port = 8000
+
+# ── Insert routes ─────────────────────────────────────────────────────────────
+
+[[tool.pixeltable.service.routes]]
+type = "insert"
+path = "/ingest"
+table = "sitewatch.videos"
+uploadfile_inputs = ["video"]
+inputs = ["site_name", "camera_id", "location", "asset_id", "gps_lat", "gps_lon", "tags"]
+outputs = ["uuid"]
+
+# ── Query routes ──────────────────────────────────────────────────────────────
+
+[[tool.pixeltable.service.routes]]
+type = "query"
+path = "/videos"
+query = "schema:list_videos"
+method = "get"
+
+# Uncomment after setting GEMINI_API_KEY and re-running schema.py
+
+# [[tool.pixeltable.service.routes]]
+# type = "query"
+# path = "/search/frames"
+# query = "schema:search_frames"
+# method = "post"
+#
+# [[tool.pixeltable.service.routes]]
+# type = "query"
+# path = "/search/segments"
+# query = "schema:search_segments"
+# method = "post"
+#
+# [[tool.pixeltable.service.routes]]
+# type = "query"
+# path = "/search/transcripts"
+# query = "schema:search_transcripts"
+# method = "post"
