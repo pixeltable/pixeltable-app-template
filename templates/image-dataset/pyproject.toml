@@ -1,5 +1,5 @@
 [project]
-name = "data-lab"
+name = "image-dataset"
 version = "0.1.0"
 description = "ML dataset engineering -- import, auto-annotate, curate, version, and export."
 requires-python = ">=3.10"

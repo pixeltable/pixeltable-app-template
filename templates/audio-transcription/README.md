@@ -9,7 +9,7 @@ Ingest audio files, automatically transcribe, chunk, summarize, and search acros
 | Otter.ai | $20/mo per user |
 | Descript | $24/mo per user |
 | AssemblyAI | $0.37/min |
-| **audio-intel** | **Free + your compute** |
+| **audio-transcription** | **Free + your compute** |
 
 ## Use cases
 
@@ -74,7 +74,7 @@ audio file
 ## Files
 
 ```
-audio-intel/
+audio-transcription/
 ├── schema.py         Tables, views, indexes, computed columns, query functions
 ├── functions.py      UDFs (generate_full_summary)
 ├── app.py            FastAPI server — API + web UI

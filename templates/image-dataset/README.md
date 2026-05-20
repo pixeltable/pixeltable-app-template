@@ -105,7 +105,7 @@ All annotations run automatically on insert -- no manual labeling step.
 ## Project Structure
 
 ```
-data-lab/
+image-dataset/
 ├── schema.py        # Table definitions, computed columns, query functions
 ├── export.py        # PyTorch, Parquet, COCO export helpers
 ├── pyproject.toml   # Dependencies and service routes

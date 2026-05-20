@@ -117,7 +117,7 @@ All of this is defined declaratively in `schema.py`. No orchestration code, no D
 ## Project Structure
 
 ```
-video-intel/
+video-search/
 ├── schema.py          Declarative pipeline: tables, views, indexes, queries
 ├── pyproject.toml     Dependencies + pxt serve route config
 └── README.md          This file

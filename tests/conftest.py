@@ -9,13 +9,13 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 PATTERNS: list[str] = ["backend", "serving", "batch"]
 
 TEMPLATES: list[str] = [
-    "agent",
-    "audio-intel",
-    "content-pipeline",
-    "data-lab",
+    "audio-transcription",
+    "chat-agent",
     "full-stack-showcase",
-    "multimodal-rag",
-    "video-intel",
+    "image-dataset",
+    "knowledge-base",
+    "media-indexing",
+    "video-search",
 ]
 
 EXPECTED_FILES: dict[str, list[str]] = {
@@ -47,11 +47,11 @@ EXPECTED_FILES: dict[str, list[str]] = {
 }
 
 EXPECTED_TEMPLATE_FILES: dict[str, list[str]] = {
-    "agent": ["schema.py", "pyproject.toml", "app.py"],
-    "audio-intel": ["schema.py", "pyproject.toml", "app.py", "functions.py"],
-    "content-pipeline": ["schema.py", "pyproject.toml", "pipeline.py", "functions.py"],
-    "data-lab": ["schema.py", "pyproject.toml", "export.py"],
-    "full-stack-showcase": ["schema.py", "pyproject.toml", "app.py", "functions.py", "config.py", "models.py"],
-    "multimodal-rag": ["schema.py", "pyproject.toml", "app.py", "functions.py"],
-    "video-intel": ["schema.py", "pyproject.toml", "functions.py"],
+    "audio-transcription": ["schema.py", "pyproject.toml", "app.py", "functions.py"],
+    "chat-agent": ["schema.py", "pyproject.toml", "app.py"],
+    "full-stack-showcase": ["schema.py", "pyproject.toml", "app.py", "config.py", "functions.py"],
+    "image-dataset": ["schema.py", "pyproject.toml", "export.py"],
+    "knowledge-base": ["schema.py", "pyproject.toml", "app.py", "functions.py"],
+    "media-indexing": ["schema.py", "pyproject.toml", "pipeline.py", "functions.py"],
+    "video-search": ["schema.py", "pyproject.toml", "functions.py"],
 }

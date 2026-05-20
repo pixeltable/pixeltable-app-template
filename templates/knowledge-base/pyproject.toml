@@ -1,5 +1,5 @@
 [project]
-name = "multimodal-rag"
+name = "knowledge-base"
 version = "0.1.0"
 description = "Unified multimodal knowledge base -- upload docs, images, video, audio and search across all modalities."
 requires-python = ">=3.10"

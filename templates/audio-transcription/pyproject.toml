@@ -1,5 +1,5 @@
 [project]
-name = "audio-intel"
+name = "audio-transcription"
 version = "0.1.0"
 description = "Self-hosted audio & podcast intelligence -- transcription, summarization, semantic search."
 requires-python = ">=3.10"

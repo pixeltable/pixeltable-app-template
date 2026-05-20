@@ -1,4 +1,4 @@
-"""Custom UDFs for the video-intel template."""
+"""Custom UDFs for the video-search template."""
 
 import pixeltable as pxt
 

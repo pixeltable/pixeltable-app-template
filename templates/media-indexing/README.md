@@ -93,7 +93,7 @@ python pipeline.py --export-parquet output/
 ## Project Structure
 
 ```
-content-pipeline/
+media-indexing/
 ├── schema.py        -- tables, views, computed columns, query functions
 ├── pipeline.py      -- batch runner (CLI alternative to pxt serve)
 ├── pyproject.toml   -- dependencies + pxt serve route config

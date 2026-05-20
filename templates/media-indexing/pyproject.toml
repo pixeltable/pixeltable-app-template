@@ -1,5 +1,5 @@
 [project]
-name = "content-pipeline"
+name = "media-indexing"
 version = "0.1.0"
 description = "Enterprise media processing pipeline -- ingest, process, search across modalities"
 requires-python = ">=3.10"

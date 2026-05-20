@@ -59,7 +59,7 @@ All indexes stay current as new data arrives. No cron jobs, no reindex scripts, 
 ## Files
 
 ```
-multimodal-rag/
+knowledge-base/
 ├── schema.py         Tables, views, indexes, computed columns, query functions
 ├── functions.py      UDFs (merge_results)
 ├── app.py            FastAPI server — API + web UI
