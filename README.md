@@ -17,54 +17,29 @@ Pixeltable itself is not an HTTP framework. It's a data engine. The starter kit 
 ### Project Structure
 
 ```
-# ── Pattern 1: API Backend (FastAPI, headless) ────────────────
+# ── Structural Patterns ──────────────────────────────────────
 
-backend/
-├── main.py                    FastAPI app, CORS, router init, SPA fallback
-├── setup_pixeltable.py        Schema (tables, views, indexes, agent pipeline)
-├── functions.py               @pxt.udf definitions (web search, context assembly)
-├── models.py                  Pydantic models (row schemas, API contract)
-├── config.py                  Model IDs, system prompts, env overrides
-└── routers/
-    ├── data.py                Upload, list, delete, detail queries
-    ├── search.py              4 similarity search endpoints
-    └── agent.py               3 declarative + 1 hand-written agent query
+backend/                       FastAPI API scaffold (headless, no frontend)
+serving/                       Declarative API from TOML config (pxt serve)
+batch/                         Batch processing script, no HTTP server
 
-frontend/src/
-├── App.tsx                    Tab navigation (Data / Search / Agent)
-├── components/                Page components + shared UI
-├── lib/api.ts                 Typed fetch wrapper + client-side aggregation
-└── types/index.ts             Shared TypeScript interfaces
+# ── Application Templates ─────────────────────────────────────
 
-deploy/                        Deployment configs for the full backend + frontend
-├── fly/                       Fly.io (fly.toml + persistent volume)
-├── render/                    Render (Blueprint render.yaml)
-├── railway/                   Railway (railway.json + Dockerfile)
-├── vercel/                    Vercel (frontend only, proxies /api to backend)
-├── digitalocean/              DigitalOcean App Platform (app.yaml spec)
-├── helm/                      Helm chart (any existing K8s cluster)
-├── terraform-k8s/             Terraform + AWS EKS
-├── terraform-gke/             Terraform + GCP GKE
-├── terraform-aks/             Terraform + Azure AKS
-└── aws-cdk/                   AWS CDK + ECS Fargate
+templates/
+├── knowledge-base/            app.py + UI: docs, images, video, audio search
+├── chat-agent/                app.py + UI: persistent agent with memory + tools
+├── audio-transcription/       app.py + UI: transcription, summarization, search
+├── full-stack-showcase/       app.py + React: Gemini, DETR, Whisper, dashboard
+├── video-search/              pxt serve: frames, transcription, detection
+├── media-indexing/            pxt serve + batch: S3 ingest, multi-modal, export
+└── image-dataset/             pxt serve + batch: auto-annotate, curate, export
 
-# ── Pattern 2: Batch Processing (no HTTP server) ────────────
+# ── Shared ───────────────────────────────────────────────────
 
-batch/
-├── schema.py                  Tables, views, embedding indexes, computed columns
-├── pipeline.py                Script: ingest → compute → export_sql → exit
-├── Dockerfile                 Ephemeral container
-└── deploy/                    Cloud Run Job, K8s Job/CronJob/KEDA, ECS Fargate, Lambda
-
-# ── Pattern 3: Declarative Serving (pxt serve) ──────────────
-
-serving/
-├── schema.py                  Tables, views, indexes, @pxt.query functions
-├── pyproject.toml             Dependencies + route config ([tool.pixeltable])
-├── Dockerfile                 Long-running container
-├── docker-compose.yml         Local testing
-└── deploy/
-    └── pixeltable-cloud/      Pixeltable Cloud via pxt deploy (coming soon)
+frontend/src/                  React UI for the backend/ pattern
+deploy/                        Fly, Render, Railway, Vercel, DO, Helm, Terraform, CDK
+tests/                         pytest suite (structure, config, template integrity)
+.github/workflows/             CI: lint + test on push/PR
 ```
 
 ---
@@ -339,7 +314,7 @@ See [`serving/README.md`](serving/) for full details.
 
 ## Application Templates
 
-Vertical apps that showcase what Pixeltable makes uniquely simple. Each builds on one of the three structural patterns above, so you already know how it works.
+Scaffold a ready-to-run app with [`pixeltable-new`](https://github.com/pixeltable/pixeltable-new) (no install required -- `uvx` runs it directly):
 
 ```bash
 uvx pixeltable-new --template <name> my-app
