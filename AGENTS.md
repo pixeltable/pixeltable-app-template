@@ -25,13 +25,13 @@ Before modifying this codebase, familiarize yourself with Pixeltable:
 
 | Template | Entry point | Category |
 |----------|------------|----------|
-| `multimodal-rag` | `python app.py` | **app.py template** -- has UI |
-| `agent` | `python app.py` | **app.py template** -- has UI |
-| `audio-intel` | `python app.py` | **app.py template** -- has UI |
+| `knowledge-base` | `python app.py` | **app.py template** -- has UI |
+| `chat-agent` | `python app.py` | **app.py template** -- has UI |
+| `audio-transcription` | `python app.py` | **app.py template** -- has UI |
 | `full-stack-showcase` | `python app.py` | **app.py template** -- has UI + React frontend |
-| `video-intel` | `pxt serve videointel` | **pxt-serve template** -- API only |
-| `content-pipeline` | `pxt serve pipeline` | **pxt-serve template** -- API + batch |
-| `data-lab` | `pxt serve datalab` | **pxt-serve template** -- API + batch |
+| `video-search` | `pxt serve videointel` | **pxt-serve template** -- API only |
+| `media-indexing` | `pxt serve pipeline` | **pxt-serve template** -- API + batch |
+| `image-dataset` | `pxt serve datalab` | **pxt-serve template** -- API + batch |
 
 The two template categories matter:
 - **app.py templates** have `app.py` + `static/index.html` (or `frontend/`). `app.py` does `import schema` which triggers schema init. Running `python app.py` is the single entry point. `pxt serve` routes in `pyproject.toml` exist as an API-only alternative. They must **not** run simultaneously (same port).
@@ -69,13 +69,13 @@ batch/                           Batch Processing pattern (no HTTP server)
 └── pipeline.py                  Ingest → compute → export_sql → exit
 
 templates/                       Application templates (fetched by pixeltable-new)
-├── multimodal-rag/              app.py + static UI
-├── agent/                       app.py + static UI
-├── audio-intel/                 app.py + static UI
+├── knowledge-base/              app.py + static UI
+├── chat-agent/                  app.py + static UI
+├── audio-transcription/         app.py + static UI
 ├── full-stack-showcase/         app.py + React frontend + routers
-├── video-intel/                 pxt serve only
-├── content-pipeline/            pxt serve + pipeline.py
-└── data-lab/                    pxt serve + export.py
+├── video-search/               pxt serve only
+├── media-indexing/             pxt serve + pipeline.py
+└── image-dataset/              pxt serve + export.py
 
 frontend/src/                    React UI for the backend/ pattern
 deploy/                          Fly, Render, Railway, Vercel, Helm, Terraform, CDK
@@ -377,6 +377,6 @@ If you're new to this codebase, read in this order:
 
 1. `backend/setup_pixeltable.py`: the core. Defines the entire data model and agent pipeline.
 2. `backend/routers/data.py`: `FastAPIRouter` + co-located `@pxt.query` (shows `add_insert_route`, `add_delete_route`, `add_query_route`).
-3. `templates/multimodal-rag/`: simplest app.py template. Shows the `import schema` + `FastAPIRouter` + custom endpoints pattern.
-4. `templates/video-intel/`: simplest pxt-serve template. Shows schema.py + `pyproject.toml` routes, no app.py.
+3. `templates/knowledge-base/`: simplest app.py template. Shows the `import schema` + `FastAPIRouter` + custom endpoints pattern.
+4. `templates/video-search/`: simplest pxt-serve template. Shows schema.py + `pyproject.toml` routes, no app.py.
 5. `tests/conftest.py` + `tests/test_config.py`: how tests validate templates.

@@ -29,14 +29,14 @@ CI runs automatically on push/PR via `.github/workflows/test.yml`.
 
 ### Two categories
 
-Templates with `app.py` (multimodal-rag, agent, audio-intel, full-stack-showcase):
+Templates with `app.py` (knowledge-base, chat-agent, audio-transcription, full-stack-showcase):
 - `app.py` does `import schema` which triggers schema init on import
 - `python app.py` is the **single entry point** -- no separate `schema.py` step
 - Port auto-detection: probes from 8000 upward, respects `PORT` env var
 - `pxt serve` routes in `pyproject.toml` are an API-only alternative (same port, don't run both)
 - `schema.py __main__` should print: `Schema initialized. Run: python app.py`
 
-Templates without `app.py` (video-intel, content-pipeline, data-lab):
+Templates without `app.py` (video-search, media-indexing, image-dataset):
 - Entry point: `python schema.py` then `pxt serve <name>`
 - `schema.py __main__` should print: `Schema initialized. Run: pxt serve <name>`
 

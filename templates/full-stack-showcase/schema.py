@@ -200,20 +200,19 @@ if HAVE_GEMINI:
 @pxt.query
 def list_videos():
     """All videos with metadata."""
-    v = pxt.get_table(f"{config.NAMESPACE}.videos")
-    return v.select(
-        v.uuid,
-        v.site_name,
-        v.camera_id,
-        v.location,
-        v.asset_id,
-        v.gps_lat,
-        v.gps_lon,
-        v.duration,
-        v.recorded_at,
-        v.timestamp,
-        v.tags,
-    ).order_by(v.timestamp, asc=False)
+    return videos.select(
+        videos.uuid,
+        videos.site_name,
+        videos.camera_id,
+        videos.location,
+        videos.asset_id,
+        videos.gps_lat,
+        videos.gps_lon,
+        videos.duration,
+        videos.recorded_at,
+        videos.timestamp,
+        videos.tags,
+    ).order_by(videos.timestamp, asc=False)
 
 
 if HAVE_GEMINI:
@@ -221,30 +220,34 @@ if HAVE_GEMINI:
     @pxt.query
     def search_frames(query_text: str, limit: int = 20):
         """Cross-modal search over video frames via Gemini embeddings."""
-        f = pxt.get_table(f"{config.NAMESPACE}.video_frames")
-        sim = f.frame.similarity(string=query_text)
+        sim = video_frames.frame.similarity(string=query_text)
         return (
-            f.where(sim > 0.15)
+            video_frames.where(sim > 0.15)
             .order_by(sim, asc=False)
-            .select(f.uuid, f.frame_thumbnail, f.site_name, f.camera_id, sim=sim)
+            .select(
+                video_frames.uuid,
+                video_frames.frame_thumbnail,
+                video_frames.site_name,
+                video_frames.camera_id,
+                sim=sim,
+            )
             .limit(limit)
         )
 
     @pxt.query
     def search_segments(query_text: str, limit: int = 20):
         """Cross-modal search over video segments."""
-        s = pxt.get_table(f"{config.NAMESPACE}.video_segments")
-        sim = s.video_segment.similarity(string=query_text)
+        sim = video_segments.video_segment.similarity(string=query_text)
         return (
-            s.where(sim > 0.15)
+            video_segments.where(sim > 0.15)
             .order_by(sim, asc=False)
             .select(
-                s.uuid,
-                s.segment_start,
-                s.segment_end,
-                s.video_segment,
-                s.site_name,
-                s.camera_id,
+                video_segments.uuid,
+                video_segments.segment_start,
+                video_segments.segment_end,
+                video_segments.video_segment,
+                video_segments.site_name,
+                video_segments.camera_id,
                 sim=sim,
             )
             .limit(limit)
@@ -253,12 +256,17 @@ if HAVE_GEMINI:
     @pxt.query
     def search_transcripts(query_text: str, limit: int = 20):
         """Semantic search over Whisper transcripts."""
-        sents = pxt.get_table(f"{config.NAMESPACE}.video_sentences")
-        sim = sents.text.similarity(string=query_text)
+        sim = video_sentences.text.similarity(string=query_text)
         return (
-            sents.where(sim > 0.3)
+            video_sentences.where(sim > 0.3)
             .order_by(sim, asc=False)
-            .select(sents.text, sents.uuid, sents.site_name, sents.camera_id, sim=sim)
+            .select(
+                video_sentences.text,
+                video_sentences.uuid,
+                video_sentences.site_name,
+                video_sentences.camera_id,
+                sim=sim,
+            )
             .limit(limit)
         )
 

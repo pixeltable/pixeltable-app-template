@@ -52,7 +52,6 @@ Ingest video, automatically extract frames, transcribe audio, detect objects, an
 
 ```bash
 uv sync
-# For object detection: uv sync --extra detection
 # For LLM scene descriptions: uv sync --extra openai
 ```
 
@@ -97,7 +96,7 @@ When you upload a video, Pixeltable automatically runs the full pipeline:
 1. **Frame extraction** — `frame_iterator` extracts frames at 1 FPS
 2. **CLIP embeddings** — each frame gets a visual embedding for semantic image search
 3. **Thumbnails** — base64-encoded 320x320 thumbnails for API responses
-4. **Object detection** — DETR identifies objects in each frame (optional, needs `timm`)
+4. **Object detection** — DETR identifies objects in each frame
 5. **Audio extraction** — `extract_audio` pulls the audio track
 6. **Audio chunking** — `audio_splitter` creates 30-second segments
 7. **Transcription** — Whisper transcribes each audio chunk locally

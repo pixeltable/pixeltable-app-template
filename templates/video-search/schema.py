@@ -49,15 +49,14 @@ frames.add_computed_column(
 
 frames.add_embedding_index(column="frame", idx_name="frames_clip_idx", embedding=clip_embed, if_exists="ignore")
 
-# ── Object detection (optional — requires timm) ─────────────────────────────
-
-try:
-    frames.add_computed_column(
-        detections=detr_for_object_detection(frames.frame, model_id="facebook/detr-resnet-50", threshold=0.7),
-        if_exists="ignore",
-    )
-except Exception as exc:
-    print(f"Skipping DETR object detection: {exc}")
+# ── Object detection (DETR, via timm — a base dependency) ───────────────────
+# Defined unconditionally because the `/search/objects` route and the
+# `search_objects` query (compiled eagerly at decoration time) both require the
+# `detections` column to exist.
+frames.add_computed_column(
+    detections=detr_for_object_detection(frames.frame, model_id="facebook/detr-resnet-50", threshold=0.7),
+    if_exists="ignore",
+)
 
 # ── Audio extraction + transcription ─────────────────────────────────────────
 
