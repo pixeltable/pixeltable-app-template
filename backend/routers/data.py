@@ -2,9 +2,9 @@
 
 import uuid as _uuid
 
+import config
 import pixeltable as pxt
 from pixeltable.serving import FastAPIRouter
-import config
 
 router = FastAPIRouter(prefix="/api/data", tags=["data"])
 
@@ -63,9 +63,7 @@ def get_frames(file_uuid: _uuid.UUID, limit: int = 12):
 
 @pxt.query
 def get_transcription(file_uuid: _uuid.UUID):
-    return video_sentences.where(video_sentences.uuid == file_uuid).select(
-        text=video_sentences.text
-    )
+    return video_sentences.where(video_sentences.uuid == file_uuid).select(text=video_sentences.text)
 
 
 router.add_query_route(path="/chunks", query=get_chunks, method="post")
@@ -75,9 +73,7 @@ router.add_query_route(path="/transcription", query=get_transcription, method="p
 
 @pxt.query
 def list_documents():
-    return docs.select(
-        uuid=docs.uuid, name=docs.document, timestamp=docs.timestamp
-    ).order_by(docs.timestamp, asc=False)
+    return docs.select(uuid=docs.uuid, name=docs.document, timestamp=docs.timestamp).order_by(docs.timestamp, asc=False)
 
 
 @pxt.query
@@ -92,9 +88,9 @@ def list_images():
 
 @pxt.query
 def list_videos():
-    return videos.select(
-        uuid=videos.uuid, name=videos.video, timestamp=videos.timestamp
-    ).order_by(videos.timestamp, asc=False)
+    return videos.select(uuid=videos.uuid, name=videos.video, timestamp=videos.timestamp).order_by(
+        videos.timestamp, asc=False
+    )
 
 
 router.add_query_route(path="/list/documents", query=list_documents, method="get")

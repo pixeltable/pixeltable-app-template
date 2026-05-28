@@ -1,8 +1,8 @@
 """Cross-modal similarity search endpoints."""
 
+import config
 import pixeltable as pxt
 from pixeltable.serving import FastAPIRouter
-import config
 
 router = FastAPIRouter(prefix="/api/search", tags=["search"])
 
@@ -35,9 +35,7 @@ def search_images(query_text: str):
     return (
         images.where(sim > 0.2)
         .order_by(sim, asc=False)
-        .select(
-            uuid=images.uuid, sim=sim, thumbnail=images.thumbnail, source=images.image
-        )
+        .select(uuid=images.uuid, sim=sim, thumbnail=images.thumbnail, source=images.image)
         .limit(20)
     )
 

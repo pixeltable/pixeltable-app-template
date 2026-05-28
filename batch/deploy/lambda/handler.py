@@ -27,6 +27,7 @@ def _parse_documents(event):
         body = event.get("body", "")
         if event.get("isBase64Encoded"):
             import base64
+
             body = base64.b64decode(body).decode()
         if isinstance(body, str):
             body = json.loads(body) if body else {}
@@ -62,8 +63,8 @@ def _make_response(status_code, body):
 
 
 def lambda_handler(event, context):
-    from pipeline import export_results
     import schema
+    from pipeline import export_results
 
     documents = _parse_documents(event)
 
@@ -76,7 +77,10 @@ def lambda_handler(event, context):
     export_results()
 
     count = len(documents) if documents else "sample"
-    return _make_response(200, {
-        "message": f"Processed {count} records",
-        "pixeltable_home": os.environ.get("PIXELTABLE_HOME"),
-    })
+    return _make_response(
+        200,
+        {
+            "message": f"Processed {count} records",
+            "pixeltable_home": os.environ.get("PIXELTABLE_HOME"),
+        },
+    )

@@ -8,7 +8,7 @@ license = "Apache-2.0"
 [dependency-groups]
 dev = [
     "pytest>=8.0.0",
-    "ruff>=0.4.0",
+    "ruff==0.15.13",
 ]
 
 [tool.pytest.ini_options]

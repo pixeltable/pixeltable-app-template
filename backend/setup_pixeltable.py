@@ -6,18 +6,19 @@ RESET_SCHEMA=true python setup_pixeltable.py  # wipe + recreate
 
 import os
 
+import config
+import functions
 import pixeltable as pxt
-from pixeltable.functions import image as pxt_image, openai, string as pxt_str
+from pixeltable.functions import image as pxt_image
+from pixeltable.functions import openai
+from pixeltable.functions import string as pxt_str
 from pixeltable.functions.anthropic import invoke_tools, messages
 from pixeltable.functions.audio import audio_splitter
 from pixeltable.functions.document import document_splitter
-from pixeltable.functions.huggingface import sentence_transformer, clip
+from pixeltable.functions.huggingface import clip, sentence_transformer
 from pixeltable.functions.string import string_splitter
 from pixeltable.functions.uuid import uuid7
 from pixeltable.functions.video import extract_audio, frame_iterator
-
-import config
-import functions
 
 if os.getenv("RESET_SCHEMA", "false").lower() == "true":
     pxt.drop_dir(config.APP_NAMESPACE, force=True)
@@ -83,9 +84,7 @@ images.add_computed_column(
     thumbnail=pxt_image.b64_encode(pxt_image.thumbnail(images.image, size=(320, 320))),
     if_exists="ignore",
 )
-images.add_embedding_index(
-    "image", idx_name="images_clip_embed", embedding=clip_embed, if_exists="ignore"
-)
+images.add_embedding_index("image", idx_name="images_clip_embed", embedding=clip_embed, if_exists="ignore")
 
 
 @pxt.query
@@ -95,9 +94,7 @@ def _search_images(query_text: str):
         images.where(sim > 0.25)
         .order_by(sim, asc=False)
         .select(
-            encoded_image=pxt_image.b64_encode(
-                pxt_image.thumbnail(images.image, size=(224, 224)), "png"
-            ),
+            encoded_image=pxt_image.b64_encode(pxt_image.thumbnail(images.image, size=(224, 224)), "png"),
             sim=sim,
         )
         .limit(5)
@@ -118,9 +115,7 @@ video_frames = pxt.create_view(
     if_exists="ignore",
 )
 video_frames.add_computed_column(
-    frame_thumbnail=pxt_image.b64_encode(
-        pxt_image.thumbnail(video_frames.frame, size=(320, 320))
-    ),
+    frame_thumbnail=pxt_image.b64_encode(pxt_image.thumbnail(video_frames.frame, size=(320, 320))),
     if_exists="ignore",
 )
 video_frames.add_embedding_index(
@@ -146,9 +141,7 @@ def _search_video_frames(query_text: str):
     )
 
 
-videos.add_computed_column(
-    audio=extract_audio(videos.video, format="mp3"), if_exists="ignore"
-)
+videos.add_computed_column(audio=extract_audio(videos.video, format="mp3"), if_exists="ignore")
 video_audio_chunks = pxt.create_view(
     f"{ns}.video_audio_chunks",
     videos,
@@ -156,17 +149,13 @@ video_audio_chunks = pxt.create_view(
     if_exists="ignore",
 )
 video_audio_chunks.add_computed_column(
-    transcription=openai.transcriptions(
-        audio=video_audio_chunks.audio_segment, model=config.WHISPER_MODEL_ID
-    ),
+    transcription=openai.transcriptions(audio=video_audio_chunks.audio_segment, model=config.WHISPER_MODEL_ID),
     if_exists="ignore",
 )
 video_sentences = pxt.create_view(
     f"{ns}.video_sentences",
     video_audio_chunks.where(video_audio_chunks.transcription != None),  # noqa: E711
-    iterator=string_splitter(
-        text=video_audio_chunks.transcription.text, separators="sentence"
-    ),
+    iterator=string_splitter(text=video_audio_chunks.transcription.text, separators="sentence"),
     if_exists="ignore",
 )
 video_sentences.add_embedding_index(
@@ -275,24 +264,12 @@ agent.add_computed_column(
     ),
     if_exists="ignore",
 )
-agent.add_computed_column(
-    tool_output=invoke_tools(tools, agent.initial_response), if_exists="ignore"
-)
-agent.add_computed_column(
-    doc_context=_search_documents(agent.prompt), if_exists="ignore"
-)
-agent.add_computed_column(
-    image_context=_search_images(agent.prompt), if_exists="ignore"
-)
-agent.add_computed_column(
-    video_frame_context=_search_video_frames(agent.prompt), if_exists="ignore"
-)
-agent.add_computed_column(
-    chat_memory_context=_search_chat_history(agent.prompt), if_exists="ignore"
-)
-agent.add_computed_column(
-    history_context=_get_recent_chat_history(agent.conversation_id), if_exists="ignore"
-)
+agent.add_computed_column(tool_output=invoke_tools(tools, agent.initial_response), if_exists="ignore")
+agent.add_computed_column(doc_context=_search_documents(agent.prompt), if_exists="ignore")
+agent.add_computed_column(image_context=_search_images(agent.prompt), if_exists="ignore")
+agent.add_computed_column(video_frame_context=_search_video_frames(agent.prompt), if_exists="ignore")
+agent.add_computed_column(chat_memory_context=_search_chat_history(agent.prompt), if_exists="ignore")
+agent.add_computed_column(history_context=_get_recent_chat_history(agent.conversation_id), if_exists="ignore")
 agent.add_computed_column(
     multimodal_context=functions.assemble_context(
         agent.prompt, agent.tool_output, agent.doc_context, agent.chat_memory_context
@@ -320,9 +297,7 @@ agent.add_computed_column(
     ),
     if_exists="ignore",
 )
-agent.add_computed_column(
-    answer=agent.final_response.content[0].text, if_exists="ignore"
-)
+agent.add_computed_column(answer=agent.final_response.content[0].text, if_exists="ignore")
 
 if __name__ == "__main__":
     print("Schema setup complete.")

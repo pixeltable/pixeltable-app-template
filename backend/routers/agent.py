@@ -3,19 +3,18 @@
 import logging
 from datetime import datetime
 
-import pixeltable as pxt
-from pixeltable.serving import FastAPIRouter
-from fastapi import HTTPException
-
 import config
+import pixeltable as pxt
+from fastapi import HTTPException
 from models import (
-    ToolAgentRow,
-    ChatHistoryRow,
     AgentResult,
-    QueryRequest,
+    ChatHistoryRow,
     QueryMetadata,
+    QueryRequest,
     QueryResponse,
+    ToolAgentRow,
 )
+from pixeltable.serving import FastAPIRouter
 
 MAX_QUERY_LENGTH = config.MAX_QUERY_LENGTH
 
@@ -46,9 +45,7 @@ def list_messages():
 
 router.add_query_route(path="/conversation", query=get_conversation, method="post")
 router.add_query_route(path="/messages", query=list_messages, method="get")
-router.add_delete_route(
-    chat, path="/delete-conversation", match_columns=["conversation_id"]
-)
+router.add_delete_route(chat, path="/delete-conversation", match_columns=["conversation_id"])
 
 
 @router.post("/query", response_model=QueryResponse)
@@ -57,9 +54,7 @@ def query(body: QueryRequest):
     if not body.query:
         raise HTTPException(status_code=400, detail="Query text is required")
     if len(body.query) > MAX_QUERY_LENGTH:
-        raise HTTPException(
-            status_code=400, detail=f"Query exceeds {MAX_QUERY_LENGTH} characters"
-        )
+        raise HTTPException(status_code=400, detail=f"Query exceeds {MAX_QUERY_LENGTH} characters")
 
     try:
         agent_table = pxt.get_table(f"{config.APP_NAMESPACE}.agent")
@@ -67,9 +62,7 @@ def query(body: QueryRequest):
         conversation_id = body.conversation_id or "default"
 
         # ── Response personalization ─────────────────────────────────────
-        row = ToolAgentRow(
-            prompt=body.query, conversation_id=conversation_id, timestamp=ts
-        )
+        row = ToolAgentRow(prompt=body.query, conversation_id=conversation_id, timestamp=ts)
         if body.temperature is not None:
             row.temperature = body.temperature
         if body.max_tokens is not None:

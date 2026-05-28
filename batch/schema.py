@@ -41,9 +41,7 @@ sentences = pxt.create_view(
     iterator=string_splitter(text=documents.body, separators="sentence"),
     if_exists="ignore",
 )
-sentences.add_embedding_index(
-    "text", idx_name="sentences_embed", string_embed=embed_fn, if_exists="ignore"
-)
+sentences.add_embedding_index("text", idx_name="sentences_embed", string_embed=embed_fn, if_exists="ignore")
 
 if os.getenv("OPENAI_API_KEY"):
     try:

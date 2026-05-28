@@ -16,9 +16,8 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-from pixeltable.io.sql import export_sql
-
 import schema
+from pixeltable.io.sql import export_sql
 
 SERVING_DB_URL = os.getenv("SERVING_DB_URL", "sqlite:///serving.db")
 SAMPLE_BATCH = Path(__file__).parent / "sample_batch.json"

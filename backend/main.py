@@ -1,17 +1,14 @@
 import logging
 from pathlib import Path
 
+import config
+import setup_pixeltable  # noqa: F401 — triggers schema init on first import
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
+from routers import agent, data, search
 
-import config
-import setup_pixeltable  # noqa: F401 — triggers schema init on first import
-from routers import data, search, agent
-
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s [%(name)s] %(message)s")
 
 app = FastAPI(title="Pixeltable Starter Kit", version="1.0.0")
 app.add_middleware(
