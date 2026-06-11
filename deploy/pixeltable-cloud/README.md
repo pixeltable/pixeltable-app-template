@@ -41,11 +41,11 @@ OpenAPI docs at [http://localhost:8000/docs](http://localhost:8000/docs).
 
 ## Deploy to Pixeltable Cloud
 
-This example shows the full org → cluster → environment → deploy flow: one org secret shared by both environments, with dev carrying an optional override.
+This example shows the full org → cluster → environment → deploy flow: one org secret shared by all three environments, with dev carrying an optional override.
 
 ### 1. Create a cluster
 
-A cluster is the compute pool that environments run on. One cluster can serve multiple environments (dev, prod).
+A cluster is the compute pool that environments run on. One cluster can serve multiple environments.
 
 ```bash
 pxt cluster create main --org <your-org> \
@@ -56,7 +56,7 @@ pxt cluster create main --org <your-org> \
 
 ### 2. Add an org-level secret
 
-Org secrets are inherited by all environments in the org. Store your OpenAI key here once — both dev and prod will receive it automatically.
+Org secrets are inherited by all environments in the org. Store your OpenAI key here once — dev, staging, and production all receive it automatically.
 
 ```bash
 pxt org add-secret --org <your-org> OPENAI_API_KEY $OPENAI_API_KEY
@@ -65,19 +65,20 @@ pxt org add-secret --org <your-org> OPENAI_API_KEY $OPENAI_API_KEY
 ### 3. Create environments pointing to the cluster
 
 ```bash
-pxt environment create dev  --org <your-org> --cluster main
-pxt environment create prod --org <your-org> --cluster main
+pxt environment create dev        --org <your-org> --cluster main
+pxt environment create staging    --org <your-org> --cluster main
+pxt environment create production --org <your-org> --cluster main
 ```
 
 ### 4. (Optional) Override the API key for dev
 
-Env-level secrets shadow the org-level secret for that env only. Use a different OpenAI project key in dev to keep dev and prod quotas separate:
+Env-level secrets shadow the org-level secret for that env only. Use a different OpenAI project key in dev to keep dev and production quotas separate:
 
 ```bash
 pxt environment add-secret --org <your-org> dev OPENAI_API_KEY $OPENAI_API_KEY_DEV
 ```
 
-Prod continues to use the org-level key. Dev uses the env-level override.
+Staging and production continue to use the org-level key. Dev uses the env-level override.
 
 ### 5. Deploy
 
@@ -85,22 +86,25 @@ Prod continues to use the org-level key. Dev uses the env-level override.
 # Deploy to dev (1 worker)
 pxt deploy openai_demo_dev --org <your-org>
 
-# Deploy to prod (3 workers)
-pxt deploy openai_demo_prod --org <your-org>
+# Deploy to staging (2 workers)
+pxt deploy openai_demo_staging --org <your-org>
+
+# Deploy to production (3 workers)
+pxt deploy openai_demo_production --org <your-org>
 ```
 
-The CLI bundles your project, builds a Docker image in CI, and starts the service. When it finishes:
+When each deploy finishes it prints the live endpoint:
 
 ```
 Service 'openai_demo' is live at: https://dev.pxt.run/<org>/dev/openai_demo
-Service 'openai_demo' is live at: https://dev.pxt.run/<org>/prod/openai_demo
+Service 'openai_demo' is live at: https://dev.pxt.run/<org>/staging/openai_demo
+Service 'openai_demo' is live at: https://dev.pxt.run/<org>/production/openai_demo
 ```
 
 ### 6. Test the live endpoints
 
 ```bash
 export DEV_ENDPOINT=https://dev.pxt.run/<org>/dev/openai_demo
-export PROD_ENDPOINT=https://dev.pxt.run/<org>/prod/openai_demo
 
 # Image (background job)
 curl -H "X-api-key: $PIXELTABLE_API_KEY" \
@@ -117,7 +121,7 @@ curl -H "X-api-key: $PIXELTABLE_API_KEY" \
 curl -H "X-api-key: $PIXELTABLE_API_KEY" \
      -H "Content-Type: application/json" \
      -d @examples/article.json \
-     $PROD_ENDPOINT/document
+     $DEV_ENDPOINT/document
 # → {"summary":"..."}
 ```
 
@@ -129,7 +133,8 @@ pxt org list-secrets --org <your-org>
 
 # List env-level secrets (shows only keys, not values)
 pxt environment list-secrets --org <your-org> dev
-pxt environment list-secrets --org <your-org> prod
+pxt environment list-secrets --org <your-org> staging
+pxt environment list-secrets --org <your-org> production
 
 # List clusters
 pxt cluster list --org <your-org>
@@ -143,7 +148,7 @@ pxt cluster get main --org <your-org>
 Edit `pixeltable.toml` and change `workers` in the `[[deployment]]` block, then redeploy:
 
 ```bash
-pxt deploy openai_demo_prod --org <your-org>
+pxt deploy openai_demo_production --org <your-org>
 ```
 
 The service updates in place — no downtime, new replica count serving traffic.
@@ -157,7 +162,8 @@ pxt service delete --org <your-org> openai_demo
 
 # Delete environments
 pxt environment delete --org <your-org> dev
-pxt environment delete --org <your-org> prod
+pxt environment delete --org <your-org> staging
+pxt environment delete --org <your-org> production
 
 # Remove org secret
 pxt org remove-secret --org <your-org> OPENAI_API_KEY

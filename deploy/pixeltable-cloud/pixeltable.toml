@@ -35,11 +35,20 @@ env     = "dev"
 workers = 1
 exclude = ["__pycache__", "*.pyc", ".git", ".env", "*.egg-info", ".venv"]
 
-# Prod deployment: 3 workers, prod environment.
-# Inherits OPENAI_API_KEY from org secrets (or prod-level override if set).
+# Staging deployment: 2 workers, staging environment.
+# Inherits OPENAI_API_KEY from org secrets.
 [[deployment]]
-name    = "openai_demo_prod"
+name    = "openai_demo_staging"
 service = "openai_demo"
-env     = "prod"
+env     = "staging"
+workers = 2
+exclude = ["__pycache__", "*.pyc", ".git", ".env", "*.egg-info", ".venv"]
+
+# Production deployment: 3 workers, production environment.
+# Inherits OPENAI_API_KEY from org secrets (or production-level override if set).
+[[deployment]]
+name    = "openai_demo_production"
+service = "openai_demo"
+env     = "production"
 workers = 3
 exclude = ["__pycache__", "*.pyc", ".git", ".env", "*.egg-info", ".venv"]
