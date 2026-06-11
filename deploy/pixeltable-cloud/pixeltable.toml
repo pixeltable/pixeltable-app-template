@@ -1,7 +1,8 @@
 # Pixeltable service + deployment configuration.
 #
 # Local dev:   PYTHONPATH=. pxt serve openai_demo
-# Deploy:      pxt deploy openai_demo
+# Deploy dev:  pxt deploy openai_demo_dev --org <your-org>
+# Deploy prod: pxt deploy openai_demo_prod --org <your-org>
 
 [[service]]
 name    = "openai_demo"
@@ -24,9 +25,21 @@ path    = "/document"
 inputs  = ["body"]
 outputs = ["summary"]
 
+# Dev deployment: 1 worker, dev environment.
+# Inherits OPENAI_API_KEY from org secrets.
+# Override with a dev-specific key via: pxt environment add-secret dev OPENAI_API_KEY <dev-key>
 [[deployment]]
-name    = "openai_demo"
+name    = "openai_demo_dev"
 service = "openai_demo"
 env     = "dev"
+workers = 1
+exclude = ["__pycache__", "*.pyc", ".git", ".env", "*.egg-info", ".venv"]
+
+# Prod deployment: 3 workers, prod environment.
+# Inherits OPENAI_API_KEY from org secrets (or prod-level override if set).
+[[deployment]]
+name    = "openai_demo_prod"
+service = "openai_demo"
+env     = "prod"
 workers = 3
 exclude = ["__pycache__", "*.pyc", ".git", ".env", "*.egg-info", ".venv"]
