@@ -333,7 +333,7 @@ Run `uvx pixeltable-new --list` to see all available templates.
 | [`chat-agent`](templates/chat-agent/) | `python app.py` | Persistent agent with durable memory, tool calling, MCP. Web UI |
 | [`audio-transcription`](templates/audio-transcription/) | `python app.py` | Audio/podcast transcription, summarization, search. Web UI |
 | [`full-stack-showcase`](templates/full-stack-showcase/) | `python app.py` | **Complete reference app**: Gemini + DETR + Whisper, cross-modal search, React UI, dashboard, alerting |
-| [`video-search`](templates/video-search/) | `pxt serve videointel` | Video pipeline: frames, transcription, object detection, search. API only |
+| [`video-search`](templates/video-search/) | `pxt serve videointel` | Video pipeline: frames, transcription, object detection, search. Async video ingest (background job). API only |
 | [`media-indexing`](templates/media-indexing/) | `pxt serve pipeline` | Enterprise media processing: S3 ingest, multi-modal, DB export. API only |
 | [`image-dataset`](templates/image-dataset/) | `pxt serve datalab` | ML dataset engineering: auto-annotate, curate, version, export. API only |
 

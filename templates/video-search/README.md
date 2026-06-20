@@ -62,13 +62,18 @@ uv run python schema.py           # create tables, views, indexes (idempotent)
 uv run pxt serve videointel       # http://localhost:8000/docs
 ```
 
-The server starts at `http://localhost:8000`. Upload a video:
+The server starts at `http://localhost:8000`. Upload a video (background job — poll until `done`):
 
 ```bash
-curl -X POST http://localhost:8000/api/ingest \
+RESP=$(curl -s -X POST http://localhost:8000/api/ingest \
   -F "video=@lecture.mp4" \
-  -F "title=ML Lecture 1"
+  -F "title=ML Lecture 1")
+JOB_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
+curl -s "http://localhost:8000/api/jobs/$JOB_ID"
+# Repeat until status is "done", then search.
 ```
+
+Search responses return a **`score`** field (CLIP similarity), plus **`thumbnail`** (base64) — not raw image bytes.
 
 Search across all modalities:
 
