@@ -107,7 +107,7 @@ export_sql(
 | `PIXELTABLE_HOME` | `~/.pixeltable` | Set to `/tmp/pixeltable` for ephemeral |
 | `SERVING_DB_URL` | `sqlite:///serving.db` | SQLAlchemy connection string for export target |
 | `OPENAI_API_KEY` | | Enables LLM summary column |
-| `MEDIA_DEST` | | Cloud URI for generated media (e.g. `s3://bucket/out`) |
+| `MEDIA_DEST` | | Cloud URI for generated media (e.g. `s3://bucket/out`). The included `schema.py` does not set `destination` by default; add it on computed columns when routing generated media to cloud storage. |
 
 ## Production Deployment
 

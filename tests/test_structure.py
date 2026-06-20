@@ -14,6 +14,13 @@ from tests.conftest import (
     TEMPLATES,
 )
 
+_DEPRECATED_PATTERNS: list[tuple[str, str]] = [
+    ("FrameIterator", "Use frame_iterator from pixeltable.functions.video"),
+    ("openai.vision", "Use openai.chat_completions with image_url content blocks"),
+    ("from pixeltable.iterators import", "Use pixeltable.functions.* iterators instead"),
+    (".add_index(", "Use add_embedding_index()"),
+]
+
 
 class TestPatternFiles:
     """Each deployment pattern ships the expected files."""
@@ -91,6 +98,10 @@ class TestDocumentation:
     def test_pattern_has_readme(self, pattern: str) -> None:
         assert (ROOT / pattern / "README.md").is_file(), f"{pattern}/README.md missing"
 
+    @pytest.mark.parametrize("template", TEMPLATES)
+    def test_template_has_readme(self, template: str) -> None:
+        assert (ROOT / "templates" / template / "README.md").is_file(), f"templates/{template}/README.md missing"
+
 
 class TestNoAntiPatterns:
     """Guard against known anti-patterns we've already fixed."""
@@ -109,3 +120,23 @@ class TestNoAntiPatterns:
                 if self._BANNED_ENV_VAR in text:
                     hits.append(str(f.relative_to(ROOT)))
         assert hits == [], f"{self._BANNED_ENV_VAR} found in: {hits}"
+
+    def test_no_deprecated_pixeltable_apis(self) -> None:
+        """Ban known-deprecated Pixeltable APIs from production code."""
+        hits: list[str] = []
+        skip = {".venv", ".git", "node_modules", "tests", "prototype"}
+        scan_roots = [
+            ROOT / "backend",
+            ROOT / "batch",
+            ROOT / "serving",
+            ROOT / "templates",
+        ]
+        for root in scan_roots:
+            for py_file in root.rglob("*.py"):
+                if skip & set(py_file.parts):
+                    continue
+                text = py_file.read_text(encoding="utf-8", errors="ignore")
+                for pattern, _ in _DEPRECATED_PATTERNS:
+                    if pattern in text:
+                        hits.append(f"{py_file.relative_to(ROOT)}: {pattern}")
+        assert hits == [], "Deprecated Pixeltable APIs found:\n" + "\n".join(hits)

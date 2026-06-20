@@ -3,12 +3,12 @@ name = "pixeltable-serving"
 version = "0.1.0"
 requires-python = ">=3.10"
 dependencies = [
-    "pixeltable>=0.6.2",
+    "pixeltable>=0.6.5",
     "fastapi>=0.115",
     "pillow>=10.0",
     "psycopg[binary]>=3.1",
     "python-multipart>=0.0.9",
-    "sentence-transformers>=3.0",
+    "sentence-transformers>=5.6.0",
     "spacy>=3.7",
     "sqlalchemy>=2.0",
     "uvicorn>=0.30",

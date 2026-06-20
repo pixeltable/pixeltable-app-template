@@ -2,6 +2,8 @@
 
 [Pixeltable](https://github.com/pixeltable/pixeltable) is **open-source data infrastructure for AI**. It replaces the patchwork of blob storage, metadata DBs, vector stores, media processing, orchestration, and glue code with a single declarative system. Tables, computed columns, and embedding indexes handle what typically requires stitching together S3, Postgres, Pinecone, FFmpeg, HuggingFace, Airflow, LangChain, and custom scripts to wire them all together.
 
+This starter kit is tested against **Pixeltable 0.6.5** (`pixeltable>=0.6.5` in all patterns and templates). Use the `pxt` CLI for catalog operations and `pxt serve` for declarative API routes.
+
 ## Three Patterns
 
 This repo demonstrates three ways to use Pixeltable. Pick the one that matches your workload:

@@ -37,6 +37,7 @@ export interface VideoDetail {
 
 export interface FrameItem {
   frame: string
+  severity?: string | null
 }
 
 export interface FramesResponse {

@@ -308,7 +308,7 @@ function VideoDetail({ uuid }: { uuid: string }) {
       {frames.length > 0 && (
         <div>
           <div className="text-xs font-medium text-muted-foreground mb-1">
-            Keyframes ({frames.length}) — from FrameIterator
+            Keyframes ({frames.length}) — from frame_iterator
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
             {frames.map((f, i) => (

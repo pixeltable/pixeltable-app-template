@@ -2314,7 +2314,7 @@ wheels = [
 
 [[package]]
 name = "pixeltable"
-version = "0.6.2"
+version = "0.6.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -2354,7 +2354,7 @@ dependencies = [
     { name = "tzlocal" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2b/dd/5492f9bacf5f58088efba259b43799276d99ace2452611afc947f8139663/pixeltable-0.6.2-py3-none-any.whl", hash = "sha256:c11abeea5d552f90c05800ff3724f079c6c17936d29fb0e6bdf6ef5c954b9068", size = 1002671, upload-time = "2026-05-15T18:20:49.331Z" },
+    { url = "https://files.pythonhosted.org/packages/2e/34/744ff9ea9310a6a03c14a37383c48ade861c0e5f26e472f8d0693826b7cc/pixeltable-0.6.5-py3-none-any.whl", hash = "sha256:e47c5fec5b9c0b257ccfe7446ee44617dc724cbe596acfe12b7afc8fc683d954", size = 1057533, upload-time = "2026-06-12T18:33:40.695Z" },
 ]
 
 [[package]]
@@ -2429,10 +2429,10 @@ requires-dist = [
     { name = "lxml" },
     { name = "mistune", specifier = ">=3" },
     { name = "openai" },
-    { name = "pixeltable", specifier = ">=0.6.2" },
+    { name = "pixeltable", specifier = ">=0.6.5" },
     { name = "python-dotenv" },
     { name = "python-multipart" },
-    { name = "sentence-transformers" },
+    { name = "sentence-transformers", specifier = ">=5.6.0" },
     { name = "spacy" },
     { name = "tiktoken" },
     { name = "uvicorn", extras = ["standard"] },
@@ -3692,7 +3692,7 @@ wheels = [
 
 [[package]]
 name = "sentence-transformers"
-version = "5.2.3"
+version = "5.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "huggingface-hub" },
@@ -3707,9 +3707,9 @@ dependencies = [
     { name = "transformers" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5b/30/21664028fc0776eb1ca024879480bbbab36f02923a8ff9e4cae5a150fa35/sentence_transformers-5.2.3.tar.gz", hash = "sha256:3cd3044e1f3fe859b6a1b66336aac502eaae5d3dd7d5c8fc237f37fbf58137c7", size = 381623, upload-time = "2026-02-17T14:05:20.238Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/56/d2cb00765a6b15c994a7fccf20f9032f16e8193ca49147cb5155166ad744/sentence_transformers-5.6.0.tar.gz", hash = "sha256:0e7164d051e416c1853ade7c274ff52af3f9da0f4be7f0b83d734c27699e1057", size = 453194, upload-time = "2026-06-16T14:01:56.42Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/9f/dba4b3e18ebbe1eaa29d9f1764fbc7da0cd91937b83f2b7928d15c5d2d36/sentence_transformers-5.2.3-py3-none-any.whl", hash = "sha256:6437c62d4112b615ddebda362dfc16a4308d604c5b68125ed586e3e95d5b2e30", size = 494225, upload-time = "2026-02-17T14:05:18.596Z" },
+    { url = "https://files.pythonhosted.org/packages/76/c1/dc1582b79e9a2eb0cddf9559cd9bcdff084f541d6fe881fdd9d98630dba7/sentence_transformers-5.6.0-py3-none-any.whl", hash = "sha256:d2075b5e687a1611005e20ab04a6846994d51adfcf39610aed066af3c0c0b81f", size = 596411, upload-time = "2026-06-16T14:01:55.103Z" },
 ]
 
 [[package]]

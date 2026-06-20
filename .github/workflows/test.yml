@@ -56,3 +56,50 @@ jobs:
         run: uv sync
       - name: Run tests
         run: uv run python -m pytest tests/ -v --tb=short
+
+  frontend:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build backend frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+      - name: Build full-stack-showcase frontend
+        run: |
+          cd templates/full-stack-showcase/frontend
+          npm install
+          npm run build
+
+  schema-smoke:
+    needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "**/pyproject.toml"
+      - name: Install pattern dependencies
+        run: |
+          cd backend && uv sync
+          cd ../batch && uv sync
+          cd ../serving && uv sync
+      - name: Install template dependencies
+        run: |
+          for template in audio-transcription chat-agent full-stack-showcase image-dataset knowledge-base media-indexing video-search; do
+            cd templates/$template && uv sync && cd ../..
+          done
+      - name: Run slow schema smoke tests
+        run: uv run python -m pytest tests/test_schema.py -v --run-slow --tb=short

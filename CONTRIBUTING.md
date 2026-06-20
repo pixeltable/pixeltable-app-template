@@ -8,22 +8,26 @@ cd pixeltable-starter-kit
 uv sync                            # installs dev deps (pytest, ruff)
 ```
 
+All patterns and templates require **Pixeltable 0.6.5+** and **sentence-transformers 5.6.0+** (for HuggingFace embedding functions).
+
 ## Testing
 
 ```bash
-uv run ruff check tests/ templates/          # lint
-uv run ruff format tests/ templates/ --check # format check
-uv run python -m pytest tests/ -v            # full suite (~121 tests)
+uv run ruff check backend/ serving/ batch/ templates/ tests/
+uv run ruff format backend/ serving/ batch/ templates/ tests/ --check
+uv run python -m pytest tests/ -v            # fast suite (~140 tests)
+uv run python -m pytest tests/test_schema.py -v --run-slow  # schema smoke (install deps in each pattern/template first)
+cd frontend && npm ci && npm run build     # backend React UI
 ```
 
 Tests live in `tests/` and cover:
 
-- **Structure** (`test_structure.py`): file existence, Python syntax, documentation, anti-pattern guard
-- **Config** (`test_config.py`): TOML parsing, `[build-system]`, `pxt serve` routes, colon-separated query format
+- **Structure** (`test_structure.py`): file existence, Python syntax, documentation, template READMEs, anti-pattern guard, deprecated Pixeltable API grep
+- **Config** (`test_config.py`): TOML parsing, `pixeltable>=0.6.5`, `[build-system]`, `pxt serve` routes, colon-separated query format
 - **Templates** (`test_templates.py`): schema functions exist, TOML routes reference real functions, namespace consistency
-- **Schema** (`test_schema.py`): smoke-import of `schema.py` (marked `slow`, skipped by default)
+- **Schema** (`test_schema.py`): smoke-import of `setup_pixeltable.py` / `schema.py` for backend, serving, batch, and all templates (marked `slow`, skipped by default)
 
-CI runs automatically on push/PR via `.github/workflows/test.yml`.
+CI runs automatically on push/PR via `.github/workflows/test.yml` (lint, fast tests, frontend build, weekly schema-smoke).
 
 ## Template Development
 
@@ -42,7 +46,7 @@ Templates without `app.py` (video-search, media-indexing, image-dataset):
 
 ### Required files
 
-Every template must have: `schema.py`, `pyproject.toml` (with `[build-system]`, `[tool.setuptools] py-modules`, and `[[tool.pixeltable.service]]`).
+Every template must have: `schema.py`, `pyproject.toml` (with `[build-system]`, `[tool.setuptools] py-modules`, and `[[tool.pixeltable.service]]`), `README.md`.
 
 ### How scaffolding works
 

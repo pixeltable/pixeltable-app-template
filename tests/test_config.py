@@ -47,6 +47,23 @@ class TestPatternPyprojectToml:
         pxt_deps = [d for d in deps if d.startswith("pixeltable")]
         assert len(pxt_deps) > 0, f"{pattern} missing pixeltable dependency"
 
+    @pytest.mark.parametrize("pattern", PATTERNS)
+    def test_pixeltable_minimum_version(self, pattern: str) -> None:
+        cfg = _load_toml(str(ROOT / pattern / "pyproject.toml"))
+        deps = cfg["project"].get("dependencies", [])
+        pxt_deps = [d for d in deps if d.startswith("pixeltable")]
+        assert any(">=0.6.5" in d for d in pxt_deps), f"{pattern} must require pixeltable>=0.6.5, got {pxt_deps}"
+
+    @pytest.mark.parametrize("template", TEMPLATES)
+    def test_template_pixeltable_minimum_version(self, template: str) -> None:
+        cfg = _load_toml(str(ROOT / "templates" / template / "pyproject.toml"))
+        deps = cfg["project"].get("dependencies", [])
+        pxt_deps = [d for d in deps if d.startswith("pixeltable")]
+        assert len(pxt_deps) > 0, f"templates/{template} missing pixeltable dependency"
+        assert any(">=0.6.5" in d for d in pxt_deps), (
+            f"templates/{template} must require pixeltable>=0.6.5, got {pxt_deps}"
+        )
+
 
 class TestServingBuildSystem:
     """Patterns/templates using `pxt serve` need [build-system] for schema importability."""

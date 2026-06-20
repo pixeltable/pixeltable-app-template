@@ -125,7 +125,7 @@ All FastAPI endpoints use `def`, not `async def`. Pixeltable operations are sync
 
 1. **Document pipeline**: table → `DocumentSplitter` view → sentence-transformer embedding index
 2. **Image pipeline**: table → thumbnail computed column → CLIP embedding index
-3. **Video pipeline**: table → `FrameIterator` view (keyframes + CLIP) → audio extraction → Whisper transcription → `StringSplitter` view → embedding index
+3. **Video pipeline**: table → `frame_iterator` view (keyframes + CLIP) → audio extraction → Whisper transcription → `StringSplitter` view → embedding index
 4. **Chat history**: table with embedding index for two-tier memory: conversation-scoped recent history + cross-conversation semantic recall
 5. **Agent pipeline**: 11 computed columns: initial LLM call with tools (web search, document search, transcript search) → tool execution → parallel RAG retrieval (docs, images, video frames, chat memory) → conversation-scoped history → context assembly → final LLM call → answer extraction
 
@@ -362,14 +362,16 @@ result = AgentResult.model_validate(status.rows[0])  # typed access to computed 
 
 ```bash
 uv sync                                    # install dev deps (root pyproject.toml)
-uv run ruff check tests/ templates/        # lint
-uv run ruff format tests/ templates/ --check
-uv run python -m pytest tests/ -v          # 121 tests, ~6s
+uv run ruff check backend/ serving/ batch/ templates/ tests/
+uv run ruff format backend/ serving/ batch/ templates/ tests/ --check
+uv run python -m pytest tests/ -v          # fast suite (~140 tests, ~4s)
+uv run python -m pytest tests/test_schema.py -v --run-slow  # schema smoke (needs pixeltable in pattern/template venvs)
+cd frontend && npm ci && npm run build     # React UI for backend/ pattern
 ```
 
-Tests cover: file existence, Python syntax, TOML parsing, `[build-system]` and `py-modules`, `pxt serve` route config (colon-separated queries, no `modules` field), template integrity (query routes reference existing schema functions, namespace consistency), and an anti-pattern guard ensuring banned env vars don't creep back.
+Tests cover: file existence, Python syntax, TOML parsing, `pixeltable>=0.6.5` version guard, deprecated-API grep, `[build-system]` and `py-modules`, `pxt serve` route config (colon-separated queries, no `modules` field), template integrity (query routes reference existing schema functions, namespace consistency), and schema import smoke tests (backend, serving, batch, all templates).
 
-CI runs on every push/PR via `.github/workflows/test.yml`.
+CI runs on every push/PR via `.github/workflows/test.yml` (lint, fast tests, frontend build, weekly schema-smoke job).
 
 ## Files to Read First
 

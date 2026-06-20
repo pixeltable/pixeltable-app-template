@@ -4,14 +4,14 @@ version = "0.1.0"
 description = "Full-stack starter app powered by Pixeltable"
 requires-python = ">=3.10"
 dependencies = [
-    "pixeltable>=0.6.2",
+    "pixeltable>=0.6.5",
     "fastapi",
     "uvicorn[standard]",
     "python-dotenv",
     "python-multipart",
     "anthropic",
     "openai",
-    "sentence-transformers",
+    "sentence-transformers>=5.6.0",
     "ddgs",
     "spacy",
     "en-core-web-sm",

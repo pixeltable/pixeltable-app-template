@@ -32,7 +32,7 @@ audio_files = pxt.create_table(
         "uuid": uuid7(),
         "timestamp": pxt.Timestamp,
     },
-    primary_key="uuid",
+    primary_key=["uuid"],
     if_exists="ignore",
 )
 

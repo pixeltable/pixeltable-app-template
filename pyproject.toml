@@ -16,6 +16,9 @@ addopts = [
     "--strict-config",
     "--strict-markers",
 ]
+markers = [
+    "slow: schema import smoke tests requiring Pixeltable (pass --run-slow)",
+]
 xfail_strict = true
 junit_family = "xunit2"
 testpaths = ["tests"]

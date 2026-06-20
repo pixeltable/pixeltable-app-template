@@ -16,6 +16,7 @@ from pathlib import Path
 
 import config
 import pixeltable as pxt
+import schema  # noqa: F401 -- triggers schema init on import
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse

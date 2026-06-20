@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Full-stack video intelligence platform — Pixeltable showcase with Gemini, DETR, Whisper, and cross-modal search."
 requires-python = ">=3.10"
 dependencies = [
-    "pixeltable>=0.6.2",
+    "pixeltable>=0.6.5",
     "google-genai",
     "transformers>=4.30",
     "timm>=0.9",

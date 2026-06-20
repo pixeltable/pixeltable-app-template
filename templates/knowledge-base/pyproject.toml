@@ -4,9 +4,9 @@ version = "0.1.0"
 description = "Unified multimodal knowledge base -- upload docs, images, video, audio and search across all modalities."
 requires-python = ">=3.10"
 dependencies = [
-    "pixeltable>=0.6.2",
+    "pixeltable>=0.6.5",
     "tiktoken>=0.7",
-    "sentence-transformers>=3.0",
+    "sentence-transformers>=5.6.0",
     "open-clip-torch>=2.20",
     "pillow>=10.0",
     "spacy>=3.7",

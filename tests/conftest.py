@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import pathlib
 
+import pytest
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 PATTERNS: list[str] = ["backend", "serving", "batch"]
@@ -55,3 +57,21 @@ EXPECTED_TEMPLATE_FILES: dict[str, list[str]] = {
     "media-indexing": ["schema.py", "pyproject.toml", "pipeline.py", "functions.py"],
     "video-search": ["schema.py", "pyproject.toml", "functions.py"],
 }
+
+
+def pytest_addoption(parser: pytest.Parser) -> None:
+    parser.addoption(
+        "--run-slow",
+        action="store_true",
+        default=False,
+        help="Run slow schema import smoke tests (needs Pixeltable + model downloads)",
+    )
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    config.addinivalue_line("markers", "slow: schema import smoke tests requiring Pixeltable")
+
+
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    if item.get_closest_marker("slow") and not item.config.getoption("--run-slow"):
+        pytest.skip("Slow test: pass --run-slow to enable.")

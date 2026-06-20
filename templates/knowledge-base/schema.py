@@ -32,10 +32,10 @@ pxt.create_dir("kb", if_exists="ignore")
 
 documents = pxt.create_table(
     "kb.documents",
-    {"id": pxt.String, "doc": pxt.Document},
+    {"id": uuid7(), "doc": pxt.Document},
+    primary_key=["id"],
     if_exists="ignore",
 )
-documents.add_computed_column(id=uuid7(), if_exists="ignore")
 
 doc_chunks = pxt.create_view(
     "kb.doc_chunks",
@@ -58,10 +58,10 @@ def search_documents(query_text: str, n: int = 10) -> pxt.Query:
 
 images = pxt.create_table(
     "kb.images",
-    {"id": pxt.String, "image": pxt.Image, "caption": pxt.String},
+    {"id": uuid7(), "image": pxt.Image, "caption": pxt.String},
+    primary_key=["id"],
     if_exists="ignore",
 )
-images.add_computed_column(id=uuid7(), if_exists="ignore")
 images.add_computed_column(
     thumbnail=pxt_image.thumbnail(images.image, size=(320, 320)),
     if_exists="ignore",
@@ -81,10 +81,10 @@ def search_images(query_text: str, n: int = 10) -> pxt.Query:
 
 videos = pxt.create_table(
     "kb.videos",
-    {"id": pxt.String, "video": pxt.Video},
+    {"id": uuid7(), "video": pxt.Video},
+    primary_key=["id"],
     if_exists="ignore",
 )
-videos.add_computed_column(id=uuid7(), if_exists="ignore")
 
 # Frame extraction -> CLIP visual search
 video_frames = pxt.create_view(
@@ -144,10 +144,10 @@ if HAS_OPENAI:
 
 audio_files = pxt.create_table(
     "kb.audio_files",
-    {"id": pxt.String, "audio": pxt.Audio},
+    {"id": uuid7(), "audio": pxt.Audio},
+    primary_key=["id"],
     if_exists="ignore",
 )
-audio_files.add_computed_column(id=uuid7(), if_exists="ignore")
 
 audio_segments = pxt.create_view(
     "kb.audio_segments",
