@@ -64,7 +64,7 @@ def _search_documents(query_text: str):
         .select(
             chunks.text,
             source_doc=chunks.document,
-            sim=sim,
+            score=sim,
             title=chunks.title,
             heading=chunks.heading,
             page_number=chunks.page,
@@ -95,7 +95,7 @@ def _search_images(query_text: str):
         .order_by(sim, asc=False)
         .select(
             encoded_image=pxt_image.b64_encode(pxt_image.thumbnail(images.image, size=(224, 224)), "png"),
-            sim=sim,
+            score=sim,
         )
         .limit(5)
     )
@@ -135,7 +135,7 @@ def _search_video_frames(query_text: str):
         .select(
             encoded_frame=pxt_image.b64_encode(video_frames.frame, "png"),
             source_video=video_frames.video,
-            sim=sim,
+            score=sim,
         )
         .limit(5)
     )
@@ -173,7 +173,7 @@ def _search_video_transcripts(query_text: str):
     return (
         video_sentences.where(sim > 0.7)
         .order_by(sim, asc=False)
-        .select(video_sentences.text, source_video=video_sentences.video, sim=sim)
+        .select(video_sentences.text, source_video=video_sentences.video, score=sim)
         .limit(20)
     )
 
@@ -215,7 +215,7 @@ def _search_chat_history(query_text: str):
     return (
         chat_history.where(sim > 0.8)
         .order_by(sim, asc=False)
-        .select(role=chat_history.role, content=chat_history.content, sim=sim)
+        .select(role=chat_history.role, content=chat_history.content, score=sim)
         .limit(10)
     )
 

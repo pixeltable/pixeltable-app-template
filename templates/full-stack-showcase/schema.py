@@ -229,7 +229,7 @@ if HAVE_GEMINI:
                 video_frames.frame_thumbnail,
                 video_frames.site_name,
                 video_frames.camera_id,
-                sim=sim,
+                score=sim,
             )
             .limit(limit)
         )
@@ -248,7 +248,7 @@ if HAVE_GEMINI:
                 video_segments.video_segment,
                 video_segments.site_name,
                 video_segments.camera_id,
-                sim=sim,
+                score=sim,
             )
             .limit(limit)
         )
@@ -265,7 +265,7 @@ if HAVE_GEMINI:
                 video_sentences.uuid,
                 video_sentences.site_name,
                 video_sentences.camera_id,
-                sim=sim,
+                score=sim,
             )
             .limit(limit)
         )

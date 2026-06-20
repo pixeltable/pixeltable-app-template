@@ -79,7 +79,7 @@ def _search_segments(*, limit: int, threshold: float, **sim_kwargs: str) -> list
             .order_by(sim, asc=False)
             .select(
                 uuid=segs.uuid,
-                sim=sim,
+                score=sim,
                 segment_start=segs.segment_start,
                 segment_end=segs.segment_end,
                 video_segment=segs.video_segment,
@@ -127,7 +127,7 @@ def _search_frames(*, limit: int, threshold: float, **sim_kwargs: str) -> list[d
             .order_by(sim, asc=False)
             .select(
                 uuid=frames.uuid,
-                sim=sim,
+                score=sim,
                 thumbnail=frames.frame_thumbnail,
                 source=frames.video,
                 site_name=frames.site_name,
@@ -167,7 +167,7 @@ def _search_transcripts(*, query: str, limit: int, threshold: float) -> list[dic
             .select(
                 text=sents.text,
                 uuid=sents.uuid,
-                sim=sim,
+                score=sim,
                 site_name=sents.site_name,
                 camera_id=sents.camera_id,
             )

@@ -99,7 +99,7 @@ def search_documents(query_text: str, limit: int = 10):
     return (
         sentences.where(sim > 0.3)
         .order_by(sim, asc=False)
-        .select(sentences.text, title=sentences.title, sim=sim)
+        .select(sentences.text, title=sentences.title, score=sim)
         .limit(limit)
     )
 

@@ -126,7 +126,7 @@ if HAVE_OPENAI:
     def search_transcripts(query_text: str, limit: int = 10):
         """Semantic search across all transcripts."""
         sim = sentences.text.similarity(string=query_text)
-        return sentences.order_by(sim, asc=False).limit(limit).select(sentences.text, sim=sim)
+        return sentences.order_by(sim, asc=False).limit(limit).select(sentences.text, score=sim)
 
     @pxt.query
     def search_in_recording(recording_title: str, query_text: str, limit: int = 10):
@@ -136,7 +136,7 @@ if HAVE_OPENAI:
             sentences.where(sentences.title == recording_title)
             .order_by(sim, asc=False)
             .limit(limit)
-            .select(sentences.text, sim=sim)
+            .select(sentences.text, score=sim)
         )
 
     @pxt.query

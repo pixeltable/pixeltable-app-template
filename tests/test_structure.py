@@ -121,6 +121,44 @@ class TestNoAntiPatterns:
                     hits.append(str(f.relative_to(ROOT)))
         assert hits == [], f"{self._BANNED_ENV_VAR} found in: {hits}"
 
+    @staticmethod
+    def _is_pxt_query_decorator(node: ast.AST) -> bool:
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
+            return node.func.attr == "query" and isinstance(node.func.value, ast.Name) and node.func.value.id == "pxt"
+        if isinstance(node, ast.Attribute):
+            return node.attr == "query" and isinstance(node.value, ast.Name) and node.value.id == "pxt"
+        return False
+
+    def test_no_sim_alias_in_pxt_query(self) -> None:
+        """Ban sim=sim in @pxt.query — breaks .collect() and pxt serve (use score=sim)."""
+        hits: list[str] = []
+        skip = {".venv", ".git", "node_modules", "tests", "prototype"}
+        scan_roots = [
+            ROOT / "backend",
+            ROOT / "batch",
+            ROOT / "serving",
+            ROOT / "templates",
+        ]
+        for root in scan_roots:
+            for py_file in root.rglob("*.py"):
+                if skip & set(py_file.parts):
+                    continue
+                tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
+                for node in ast.walk(tree):
+                    if not isinstance(node, ast.FunctionDef):
+                        continue
+                    if not any(self._is_pxt_query_decorator(d) for d in node.decorator_list):
+                        continue
+                    for sub in ast.walk(node):
+                        if (
+                            isinstance(sub, ast.keyword)
+                            and sub.arg == "sim"
+                            and isinstance(sub.value, ast.Name)
+                            and sub.value.id == "sim"
+                        ):
+                            hits.append(f"{py_file.relative_to(ROOT)}:{node.name}")
+        assert hits == [], "sim=sim in @pxt.query found:\n" + "\n".join(hits)
+
     def test_no_deprecated_pixeltable_apis(self) -> None:
         """Ban known-deprecated Pixeltable APIs from production code."""
         hits: list[str] = []

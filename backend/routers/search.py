@@ -21,7 +21,7 @@ def search_documents(query_text: str):
         .select(
             text=chunks.text,
             uuid=chunks.uuid,
-            sim=sim,
+            score=sim,
             title=chunks.title,
             source=chunks.document,
         )
@@ -35,7 +35,7 @@ def search_images(query_text: str):
     return (
         images.where(sim > 0.2)
         .order_by(sim, asc=False)
-        .select(uuid=images.uuid, sim=sim, thumbnail=images.thumbnail, source=images.image)
+        .select(uuid=images.uuid, score=sim, thumbnail=images.thumbnail, source=images.image)
         .limit(20)
     )
 
@@ -48,7 +48,7 @@ def search_video_frames(query_text: str):
         .order_by(sim, asc=False)
         .select(
             uuid=video_frames.uuid,
-            sim=sim,
+            score=sim,
             thumbnail=video_frames.frame_thumbnail,
             source=video_frames.video,
         )
@@ -65,7 +65,7 @@ def search_transcripts(query_text: str):
         .select(
             text=video_sentences.text,
             uuid=video_sentences.uuid,
-            sim=sim,
+            score=sim,
             source=video_sentences.video,
         )
         .limit(60)

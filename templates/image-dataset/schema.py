@@ -115,7 +115,7 @@ def search_similar(query_text: str, limit: int = 10):
     return (
         dataset.order_by(sim, asc=False)
         .limit(limit)
-        .select(dataset.uuid, dataset.image, dataset.label, dataset.split, sim)
+        .select(dataset.uuid, dataset.image, dataset.label, dataset.split, score=sim)
     )
 
 

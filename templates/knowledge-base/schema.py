@@ -51,7 +51,7 @@ doc_chunks.add_embedding_index(
 @pxt.query
 def search_documents(query_text: str, n: int = 10) -> pxt.Query:
     sim = doc_chunks.text.similarity(string=query_text)
-    return doc_chunks.select(doc_chunks.text, source=doc_chunks.doc, sim=sim).order_by(sim, asc=False).limit(n)
+    return doc_chunks.select(doc_chunks.text, source=doc_chunks.doc, score=sim).order_by(sim, asc=False).limit(n)
 
 
 # ============================= IMAGES =======================================
@@ -74,7 +74,7 @@ images.add_embedding_index(
 @pxt.query
 def search_images(query_text: str, n: int = 10) -> pxt.Query:
     sim = images.image.similarity(string=query_text)
-    return images.select(images.image, images.caption, sim=sim).order_by(sim, asc=False).limit(n)
+    return images.select(images.image, images.caption, score=sim).order_by(sim, asc=False).limit(n)
 
 
 # ============================= VIDEO ========================================
@@ -101,7 +101,7 @@ video_frames.add_embedding_index(
 @pxt.query
 def search_video_frames(query_text: str, n: int = 10) -> pxt.Query:
     sim = video_frames.frame.similarity(string=query_text)
-    return video_frames.select(video_frames.frame, sim=sim).order_by(sim, asc=False).limit(n)
+    return video_frames.select(video_frames.frame, score=sim).order_by(sim, asc=False).limit(n)
 
 
 # Audio track extraction -> Whisper transcription -> text search
@@ -137,7 +137,7 @@ if HAS_OPENAI:
     @pxt.query
     def search_video_transcripts(query_text: str, n: int = 10) -> pxt.Query:
         sim = transcript_sentences.text.similarity(string=query_text)
-        return transcript_sentences.select(transcript_sentences.text, sim=sim).order_by(sim, asc=False).limit(n)
+        return transcript_sentences.select(transcript_sentences.text, score=sim).order_by(sim, asc=False).limit(n)
 
 
 # ============================= AUDIO ========================================
@@ -180,7 +180,7 @@ if HAS_OPENAI:
     def search_audio_transcripts(query_text: str, n: int = 10) -> pxt.Query:
         sim = audio_transcript_sentences.text.similarity(string=query_text)
         return (
-            audio_transcript_sentences.select(audio_transcript_sentences.text, sim=sim)
+            audio_transcript_sentences.select(audio_transcript_sentences.text, score=sim)
             .order_by(sim, asc=False)
             .limit(n)
         )

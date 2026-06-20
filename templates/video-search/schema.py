@@ -127,7 +127,7 @@ def search_visual(query_text: str, limit: int = 20):
             frames.thumbnail,
             timestamp=frames.frame_attrs.time,
             source_video=frames.video,
-            sim=sim,
+            score=sim,
         )
         .limit(limit)
     )
@@ -144,7 +144,7 @@ def search_spoken(query_text: str, limit: int = 20):
             transcript_sentences.text,
             source_video=transcript_sentences.video,
             segment_start=transcript_sentences.segment_start,
-            sim=sim,
+            score=sim,
         )
         .limit(limit)
     )
@@ -177,7 +177,7 @@ def search_all(query_text: str, limit: int = 10):
             frames.thumbnail,
             timestamp=frames.frame_attrs.time,
             source_video=frames.video,
-            sim=sim,
+            score=sim,
         )
         .limit(limit)
     )

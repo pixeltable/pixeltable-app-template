@@ -74,7 +74,7 @@ def search_knowledge(query_text: str, limit: int = 10):
     return (
         sentences.where(sim > 0.3)
         .order_by(sim, asc=False)
-        .select(sentences.text, title=sentences.title, sim=sim)
+        .select(sentences.text, title=sentences.title, score=sim)
         .limit(limit)
     )
 
@@ -90,7 +90,7 @@ def recall_memory(query_text: str, limit: int = 10):
             role=conversations.role,
             content=conversations.content,
             conversation_id=conversations.conversation_id,
-            sim=sim,
+            score=sim,
         )
         .limit(limit)
     )

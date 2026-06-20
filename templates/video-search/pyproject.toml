@@ -75,3 +75,4 @@ table = "videointel.videos"
 uploadfile_inputs = ["video"]
 inputs = ["title"]
 outputs = ["uuid"]
+background = true
