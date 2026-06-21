@@ -132,7 +132,7 @@ class TestNoAntiPatterns:
     def test_no_sim_alias_in_pxt_query(self) -> None:
         """Ban sim=sim in @pxt.query — breaks .collect() and pxt serve (use score=sim)."""
         hits: list[str] = []
-        skip = {".venv", ".git", "node_modules", "tests", "prototype"}
+        skip = {".venv", ".git", "node_modules", "tests"}
         scan_roots = [
             ROOT / "backend",
             ROOT / "batch",
@@ -162,7 +162,7 @@ class TestNoAntiPatterns:
     def test_no_deprecated_pixeltable_apis(self) -> None:
         """Ban known-deprecated Pixeltable APIs from production code."""
         hits: list[str] = []
-        skip = {".venv", ".git", "node_modules", "tests", "prototype"}
+        skip = {".venv", ".git", "node_modules", "tests"}
         scan_roots = [
             ROOT / "backend",
             ROOT / "batch",
