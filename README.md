@@ -1,25 +1,84 @@
 # Pixeltable Starter Kit
 
-[Pixeltable](https://github.com/pixeltable/pixeltable) is **open-source data infrastructure for AI** — tables, computed columns, and embedding indexes replace the usual patchwork of blob storage, vector DBs, media pipelines, and orchestration glue. This repo shows three ways to build on it, plus seven ready-to-scaffold application templates. Tested against **Pixeltable 0.6.5** (`pixeltable>=0.6.5`).
+[Pixeltable](https://github.com/pixeltable/pixeltable) is **open-source data infrastructure for AI**. It replaces the patchwork of blob storage, metadata DBs, vector stores, media processing, orchestration, and glue code with a single declarative system. Tables, computed columns, and embedding indexes handle what typically requires stitching together S3, Postgres, Pinecone, FFmpeg, HuggingFace, Airflow, LangChain, and custom scripts to wire them all together.
 
-## Quick start
+This starter kit demonstrates **three ways to integrate Pixeltable** into your stack, plus seven ready-to-scaffold application templates. Tested against **Pixeltable 0.6.5** (`pixeltable>=0.6.5`). Use the `pxt` CLI for catalog operations and `pxt serve` for declarative API routes.
 
-**Prerequisites:** Python 3.10+, [uv](https://docs.astral.sh/uv/), Node.js 18+ (for UIs).
+> **Fastest path:** `uvx pixeltable-new --template full-stack-showcase myapp` → `cd myapp && uv sync && python app.py`
 
-### Option A — scaffold a full-stack app (recommended)
+## Three ways to use Pixeltable
 
-```bash
-uvx pixeltable-new --template full-stack-showcase myapp
-cd myapp && cp .env.example .env   # add GEMINI_API_KEY
-uv sync && uv run python app.py    # http://localhost:8000
+Pick the integration mode that matches your workload:
 
-# Frontend (new terminal)
-cd frontend && npm install && npm run dev   # http://localhost:5173
+| Question | Pattern | Folder |
+|---|---|---|
+| I need a custom API (with optional UI) | **API Backend**: FastAPI + Pixeltable | [`backend/`](backend/) |
+| I need batch/background processing (cron, queue, Cloud Run Job) | **Batch Processing**: pure Python script, no HTTP server | [`batch/`](batch/) |
+| I want an API with zero web code | **Declarative Serving**: `pxt serve` generates routes from TOML | [`serving/`](serving/) |
+
+Pixeltable itself is not an HTTP framework — it's a **data engine**. The starter kit wraps it in FastAPI where a demo UI is useful, but **if your workload is batch processing, you don't need FastAPI at all**. `batch/` is a plain Python script that inserts data, lets computed columns process it, exports results, and exits.
+
+### Project structure
+
+```
+# ── Structural Patterns ──────────────────────────────────────
+
+backend/                       FastAPI API (+ reference React UI via frontend/)
+serving/                       Declarative API from TOML config (pxt serve)
+batch/                         Batch processing script, no HTTP server
+
+# ── Application Templates ─────────────────────────────────────
+
+templates/
+├── knowledge-base/            app.py + UI: docs, images, video, audio search
+├── chat-agent/                app.py + UI: persistent agent with memory + tools
+├── audio-transcription/       app.py + UI: transcription, summarization, search
+├── full-stack-showcase/       app.py + React: Gemini, DETR, Whisper, dashboard
+├── video-search/              pxt serve: frames, transcription, detection
+├── media-indexing/            pxt serve + batch: S3 ingest, multi-modal, export
+└── image-dataset/             pxt serve + batch: auto-annotate, curate, export
+
+# ── Shared ───────────────────────────────────────────────────
+
+frontend/                      React UI for the backend/ pattern
+deploy/                        Platform deploy configs → deploy/README.md
 ```
 
-Run `uvx pixeltable-new --list` for all templates.
+---
 
-### Option B — explore this monorepo
+## 1. API Backend
+
+FastAPI + Pixeltable demonstrating three interactive features via API endpoints: **Data** (multimodal upload with automatic processing), **Search** (cross-modal similarity), and **Agent** (tool-calling pipeline wired as 11 computed columns). This monorepo includes a reference [`frontend/`](frontend/) for development; `uvx pixeltable-new --backend` scaffolds the API only. For a full-stack app with UI, use an [application template](#application-templates).
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
+graph TD
+    subgraph Frontend["Frontend · React + TypeScript"]
+        D["<b>Data</b><br/>upload docs, images, videos"]
+        S["<b>Search</b><br/>cross-modal similarity"]
+        A["<b>Agent</b><br/>AI chat with tools"]
+    end
+
+    API["<b>FastAPI</b>"]
+
+    subgraph PXT["Pixeltable: storage · orchestration · retrieval"]
+        Tables["<b>Tables</b><br/>documents · images · videos · chat · agent"]
+        Views["<b>Views & Iterators</b><br/>chunks · keyframes · transcripts"]
+        CC["<b>Computed Columns</b> · @pxt.udf<br/>thumbnails · transcription · embeddings"]
+        EI["<b>Embedding Indexes</b> · @pxt.query<br/>sentence-transformers · CLIP"]
+        AP["<b>Agent Pipeline</b><br/>11 computed columns<br/>tools → RAG → answer"]
+    end
+
+    D & S & A --> API
+    API --> Tables
+    Tables --> Views --> CC --> EI
+    Tables --> AP
+    AP -.->|"@pxt.query"| EI
+```
+
+### Quick start
+
+**Prerequisites:** Python 3.10+, Node.js 18+, [uv](https://docs.astral.sh/uv/). Or open in a [Dev Container](#dev-container).
 
 ```bash
 git clone https://github.com/pixeltable/pixeltable-starter-kit.git
@@ -36,58 +95,73 @@ cd frontend && npm install && npm run dev   # http://localhost:5173
 
 **Production:** `cd frontend && npm run build` then `cd ../backend && python main.py` — serves UI + API on `:8000`.
 
-Open in a [Dev Container](#dev-container) (`.devcontainer/`) for zero local setup.
+**Deploy:** Docker Compose, Fly, Render, Railway, Helm, Terraform, CDK — see [`deploy/README.md`](deploy/README.md).
 
 ---
 
-## Choose your path
+## 2. Batch Processing
 
-| I want to… | Start here |
-|---|---|
-| Build a full-stack AI app fast | [Application templates](#application-templates) via `uvx pixeltable-new --template …` |
-| Custom FastAPI API (+ reference React UI in this repo) | [`backend/`](backend/) — headless when scaffolded with `--backend` |
-| Batch/cron/queue processing, no HTTP | [`batch/`](batch/) |
-| REST API from TOML, zero web code | [`serving/`](serving/) + `pxt serve` |
+A Python script that ingests data, lets computed columns process it, exports results to a serving DB via [`export_sql`](https://docs.pixeltable.com/howto/cookbooks/data/data-export-sql), and exits. **No HTTP server, no FastAPI.** Run it as a Cloud Run Job, ECS Task, K8s Job, Lambda, or a cron'd container.
 
-Pixeltable is a **data engine**, not an HTTP framework. Pick the thinnest wrapper for your workload.
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
+graph TD
+    Trigger["<b>Cron · Queue · Webhook</b><br/>Cloud Scheduler · SQS · Pub/Sub"]
 
-### Project structure
+    subgraph Container["Ephemeral Container · Pixeltable"]
+        Schema["<b>Create Schema</b><br/>tables + computed columns"]
+        Ingest["<b>Ingest</b><br/>text + media from queue, RDBMS, or S3"]
+        Process["<b>Computed Columns</b> + @pxt.udf<br/>thumbnails · transcription · embeddings"]
+    end
 
-```
-backend/          FastAPI API (+ reference React UI via frontend/)
-serving/          Declarative API (pxt serve + pyproject.toml routes)
-batch/            Batch script (ingest → compute → export_sql → exit)
-templates/        Seven scaffoldable apps (fetched by pixeltable-new)
-frontend/         React UI for the backend/ pattern
-deploy/           Platform deploy configs → see deploy/README.md
-```
+    SQL["<b>Serving DB</b> · export_sql<br/>Postgres · MySQL · Snowflake"]
+    Bucket["<b>Cloud Bucket</b> · destination<br/>S3 · GCS · Azure Blob"]
 
----
-
-## Patterns
-
-### API Backend — [`backend/`](backend/)
-
-FastAPI + Pixeltable with three demo features: **Data** (upload → auto-processing), **Search** (cross-modal similarity), **Agent** (tool-calling pipeline as 11 computed columns). This monorepo includes a reference [`frontend/`](frontend/); `uvx pixeltable-new --backend` scaffolds the API only.
-
-```bash
-cd backend && uv sync && python main.py
+    Trigger --> Schema --> Ingest --> Process
+    Process -->|"structured data"| SQL
+    Process -->|"generated media"| Bucket
 ```
 
-### Batch Processing — [`batch/`](batch/)
-
-Ingest data, let computed columns process it, export via [`export_sql`](https://docs.pixeltable.com/howto/cookbooks/data/data-export-sql), exit. No HTTP server.
+### Quick start
 
 ```bash
 cd batch && uv sync
 PIXELTABLE_HOME=/tmp/pxt uv run python pipeline.py
 ```
 
-See [`batch/README.md`](batch/) for Cloud Run, K8s Job, ECS, and Lambda configs.
+### Deploy
 
-### Declarative Serving — [`serving/`](serving/)
+Ready-to-use configs in [`batch/deploy/`](batch/deploy/):
 
-Schema in Python, routes in TOML, API from `pxt serve` — no routers or endpoint handlers.
+| Platform | Config | Runtime | Best for |
+|---|---|---|---|
+| [**Cloud Run Jobs**](batch/deploy/cloud-run/) | `cloudbuild.yaml` | Up to 24h | GCP, cron/Pub/Sub triggers |
+| [**Kubernetes Job**](batch/deploy/k8s-job/) | `job.yaml`, `cronjob.yaml`, `keda-scaledjob.yaml` | Unlimited | Any K8s, queue-driven scaling |
+| [**ECS Fargate**](batch/deploy/ecs-fargate/) | `task-definition.json` | Unlimited | AWS, Spot pricing (~70% cheaper) |
+| [**Lambda**](batch/deploy/lambda/) | `Dockerfile`, `handler.py` | Up to 15 min | Small batches, event-driven |
+
+See [`batch/README.md`](batch/) for full details.
+
+---
+
+## 3. Declarative Serving
+
+Define your schema in Python, your routes in TOML, and run `pxt serve`. Pixeltable generates a complete API with no routers, no Pydantic models, no endpoint handlers.
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#334155', 'lineColor': '#ffffff', 'arrowheadColor': '#ffffff', 'secondaryColor': '#f8fafc', 'tertiaryColor': '#f1f5f9', 'clusterBkg': '#f8fafc', 'clusterBorder': '#94a3b8', 'fontSize': '14px'}}}%%
+graph TD
+    Schema["<b>schema.py</b><br/>tables · views · indexes · @pxt.query"]
+    TOML["<b>pyproject.toml</b><br/>[tool.pixeltable] routes"]
+    Serve["<b>pxt serve</b>"]
+    API["<b>REST API</b><br/>auto-generated · OpenAPI docs"]
+
+    Schema --> Serve
+    TOML --> Serve
+    Serve --> API
+```
+
+### Quick start
 
 ```bash
 cd serving && uv sync
@@ -100,14 +174,14 @@ See [`serving/README.md`](serving/) and [`serving/deploy/pixeltable-cloud/`](ser
 
 ## Application templates
 
-Scaffold with [`pixeltable-new`](https://github.com/pixeltable/pixeltable-new):
+Scaffold a ready-to-run app with [`pixeltable-new`](https://github.com/pixeltable/pixeltable-new) (no install required — `uvx` runs it directly):
 
 ```bash
 uvx pixeltable-new --template <name> my-app
 cd my-app && uv sync
 ```
 
-**app.py templates** — run `python app.py` (schema init is automatic). **pxt-serve templates** — run `python schema.py` then `pxt serve <name>`.
+**app.py templates** — run `python app.py` (schema init is automatic). **pxt-serve templates** — run `python schema.py` then `pxt serve <name>`. Run `uvx pixeltable-new --list` for all options.
 
 | Template | Entry point | What you get |
 |----------|------------|--------------|
