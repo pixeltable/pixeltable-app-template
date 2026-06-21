@@ -40,8 +40,8 @@ templates/
 
 frontend/src/                  React UI for the backend/ pattern
 deploy/                        Fly, Render, Railway, Vercel, DO, Helm, Terraform, CDK
-tests/                         pytest suite (structure, config, template integrity)
-.github/workflows/             CI: lint + test on push/PR
+tests/                         Fast pytest (structure, config, template integrity)
+.github/workflows/             CI: lint + test on PR; schema smoke on PR; app smoke weekly
 ```
 
 ---

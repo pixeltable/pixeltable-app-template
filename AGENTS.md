@@ -371,7 +371,7 @@ cd frontend && npm ci && npm run build     # React UI for backend/ pattern
 
 Tests cover: file existence, Python syntax, TOML parsing, `pixeltable>=0.6.5` version guard, deprecated-API grep, `[build-system]` and `py-modules`, `pxt serve` route config (colon-separated queries, no `modules` field), template integrity (query routes reference existing schema functions, namespace consistency), and schema import smoke tests (backend, serving, batch, all templates).
 
-CI runs on every push/PR via `.github/workflows/test.yml` (lint, fast tests, frontend build, weekly schema-smoke job).
+CI runs via `.github/workflows/test.yml`: lint + fast tests on every push/PR; schema import smoke on every push/PR; full server startup smoke weekly (or manual dispatch from Actions).
 
 ## Files to Read First
 

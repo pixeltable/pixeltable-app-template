@@ -13,21 +13,17 @@ All patterns and templates require **Pixeltable 0.6.5+** and **sentence-transfor
 ## Testing
 
 ```bash
+uv sync
 uv run ruff check backend/ serving/ batch/ templates/ tests/
 uv run ruff format backend/ serving/ batch/ templates/ tests/ --check
-uv run python -m pytest tests/ -v            # fast suite (~140 tests)
-uv run python -m pytest tests/test_schema.py -v --run-slow  # schema smoke (install deps in each pattern/template first)
-cd frontend && npm ci && npm run build     # backend React UI
+uv run python -m pytest tests/ -v
+cd frontend && npm ci && npm run build
 ```
 
-Tests live in `tests/` and cover:
+Slow checks run in CI via `.github/workflows/test.yml`:
 
-- **Structure** (`test_structure.py`): file existence, Python syntax, documentation, template READMEs, anti-pattern guard, deprecated Pixeltable API grep
-- **Config** (`test_config.py`): TOML parsing, `pixeltable>=0.6.5`, `[build-system]`, `pxt serve` routes, colon-separated query format
-- **Templates** (`test_templates.py`): schema functions exist, TOML routes reference real functions, namespace consistency
-- **Schema** (`test_schema.py`): smoke-import of `setup_pixeltable.py` / `schema.py` for backend, serving, batch, and all templates (marked `slow`, skipped by default)
-
-CI runs automatically on push/PR via `.github/workflows/test.yml` (lint, fast tests, frontend build, weekly schema-smoke).
+- **schema-smoke** (every push/PR): `pytest tests/test_schema.py --run-slow`
+- **app-smoke** (weekly + manual dispatch): starts each pattern/template server and verifies HTTP responses
 
 ## Template Development
 
@@ -65,7 +61,7 @@ Every template must have: `schema.py`, `pyproject.toml` (with `[build-system]`, 
 
 ## Linting
 
-Ruff is configured in `ruff.toml` (takes precedence over `pyproject.toml`):
+Ruff is configured in root `pyproject.toml` under `[tool.ruff]`:
 
 - `line-length = 120`
 - Rules: `E, W, F, I, B, C4, UP`
