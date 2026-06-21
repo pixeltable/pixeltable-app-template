@@ -17,7 +17,7 @@ Before modifying this codebase, familiarize yourself with Pixeltable:
 
 | Pattern | Entry point | When to use |
 |---------|------------|-------------|
-| `backend/` | FastAPI + React | You need a full web app |
+| `backend/` | FastAPI (+ reference UI in monorepo) | Custom API; use `--backend` scaffold for headless |
 | `serving/` | `pxt serve` (TOML routes) | You need an API with zero web code |
 | `batch/` | `python pipeline.py` | Cron, queue, Cloud Run Job -- no HTTP server |
 
@@ -52,7 +52,7 @@ The `backend/` pattern's three-tab UI demonstrates interactive Pixeltable patter
 ## Project Structure
 
 ```
-backend/                         API Backend pattern (FastAPI, headless)
+backend/                         API Backend pattern (FastAPI + reference React UI in monorepo)
 ├── main.py                      FastAPI app (CORS, routers, SPA fallback)
 ├── setup_pixeltable.py          Declarative schema (tables, views, indexes, agent pipeline)
 ├── functions.py                 @pxt.udf definitions
@@ -80,7 +80,7 @@ templates/                       Application templates (fetched by pixeltable-ne
 frontend/src/                    React UI for the backend/ pattern
 deploy/                          Fly, Render, Railway, Vercel, Helm, Terraform, CDK
 tests/                           pytest suite (structure, config, template integrity)
-.github/workflows/               CI: lint + test
+.github/workflows/               CI: lint+test matrix, schema-smoke on PR, app-smoke weekly
 ```
 
 ## Setup
@@ -93,8 +93,8 @@ cp .env.example .env          # add ANTHROPIC_API_KEY and OPENAI_API_KEY
 cd backend
 uv sync                       # creates .venv, installs deps including en_core_web_sm
 source .venv/bin/activate
-python setup_pixeltable.py    # initialize schema (idempotent; set RESET_SCHEMA=true to wipe)
-python main.py                # http://localhost:8000
+python main.py                # http://localhost:8000 — schema auto-inits via import setup_pixeltable
+# Optional: python setup_pixeltable.py (or RESET_SCHEMA=true python setup_pixeltable.py to wipe)
 
 # Frontend (separate terminal)
 cd frontend

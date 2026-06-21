@@ -12,25 +12,25 @@ platform that exercises every core primitive in one codebase.
 ## Quick Start
 
 ```bash
-# Scaffold
 uvx pixeltable-new --template full-stack-showcase myapp
-cd myapp
-
-# Environment
-cp .env.example .env   # add your GEMINI_API_KEY
-
-# Backend
-uv sync
-uv run python schema.py
-uv run uvicorn app:app --reload
+cd myapp && cp .env.example .env   # add your GEMINI_API_KEY
+uv sync && uv run python app.py    # http://localhost:8000
 
 # Frontend (new terminal)
-cd frontend
-npm install
-npm run dev
+cd frontend && npm install && npm run dev   # http://localhost:5173
 ```
 
-Open http://localhost:5173 (dev) or http://localhost:8000 (if frontend is built).
+That's it. `app.py` initializes the schema and starts the server.
+
+### API-only mode (no UI)
+
+```bash
+uv sync
+uv run python schema.py
+uv run pxt serve sitewatch         # http://localhost:8000/docs
+```
+
+Do **not** run both `pxt serve` and `app.py` at the same time — they bind to the same port.
 
 ## AI Stack
 
