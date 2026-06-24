@@ -221,6 +221,11 @@ jobs:
             "uv run pxt serve datalab --port $((PORT_BASE + 8))" \
             "http://127.0.0.1:$((PORT_BASE + 8))/openapi.json"
 
+          # app.py template with pyproject.toml routes — catch TOML drift vs FastAPIRouter
+          check_http "knowledge-base-pxt-serve" "$GITHUB_WORKSPACE/templates/knowledge-base" "$((PORT_BASE + 9))" \
+            "uv run pxt serve kb --port $((PORT_BASE + 9))" \
+            "http://127.0.0.1:$((PORT_BASE + 9))/openapi.json"
+
           echo ""
           echo "=== batch (pipeline.py) ==="
           stop_postgres

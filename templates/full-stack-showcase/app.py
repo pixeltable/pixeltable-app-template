@@ -6,8 +6,8 @@ Serves the React frontend (if built) and exposes REST endpoints for:
   - Browse (frames, segments, scenes, audio, detections)
   - Dashboard (stats, alerts, activity)
 
-    uv run uvicorn app:app --reload        # dev server
-    uv run pxt serve sitewatch             # prod (reads pyproject.toml routes)
+    uv run uvicorn app:app --reload        # dev server (full API + React UI)
+    uv run pxt serve sitewatch             # headless API-only subset (ingest + list; see pyproject.toml)
 """
 
 import logging

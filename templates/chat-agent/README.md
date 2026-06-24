@@ -25,6 +25,17 @@ ANTHROPIC_API_KEY=sk-... uv run pxt serve agent
 
 Do **not** run both `pxt serve` and `app.py` at the same time -- they bind to the same port.
 
+### `/ask` endpoint differences
+
+`app.py` and `pxt serve agent` expose different `/ask` contracts:
+
+| Mode | Endpoint | Behavior |
+|------|----------|----------|
+| `app.py` | `POST /api/ask` | Custom handler calling `schema.ask()`; body: `{"question": "...", "conversation_id": "..."}`; returns `{"answer": "..."}` |
+| `pxt serve agent` | `POST /api/ask` | Insert route into `agent.agent`; body includes `prompt`, `conversation_id`, and optional `system_prompt`, `max_tokens`, `temperature`; returns insert row with computed pipeline columns |
+
+Both trigger the same computed-column agent pipeline; choose based on whether you need the simplified app handler or direct table insert semantics.
+
 ## Architecture
 
 Insert a prompt → computed columns fire in sequence → answer comes back:
