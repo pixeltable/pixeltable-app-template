@@ -5,6 +5,7 @@ import {
   FileText, ImageIcon, Wrench, Settings,
 } from 'lucide-react'
 import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import * as api from '@/lib/api'
@@ -309,7 +310,9 @@ function MessageBubble({ message }: { message: ChatMessage }) {
             <div
               className="prose-chat"
               dangerouslySetInnerHTML={{
-                __html: marked.parse(message.content, { async: false }) as string,
+                __html: DOMPurify.sanitize(
+                  marked.parse(message.content, { async: false }) as string,
+                ),
               }}
             />
             {message.metadata && <MetadataBadges metadata={message.metadata} />}

@@ -78,7 +78,7 @@ templates/                       Application templates (fetched by pixeltable-ne
 └── image-dataset/              pxt serve + export.py
 
 frontend/src/                    React UI for the backend/ pattern
-deploy/                          Fly, Render, Railway, Vercel, Helm, Terraform, CDK
+deploy/                          Fly, Render, Railway, Vercel, DigitalOcean, Helm, Terraform, CDK
 tests/                           pytest suite (structure, config, template integrity)
 .github/workflows/               CI: lint+test matrix, schema-smoke on PR, app-smoke weekly
 ```
@@ -189,7 +189,7 @@ A multi-stage `Dockerfile` builds the frontend and Python runtime into a single 
 - **`deploy/railway/`**: [Railway](https://railway.app): `railway.json` for build/deploy config. Add a volume at `/data/pixeltable`.
 - **`deploy/vercel/`**: [Vercel](https://vercel.com): **frontend only**. Deploys the React app with `/api` rewrites to a backend on another platform. Vercel is serverless-only and cannot run Pixeltable's embedded Postgres.
 - **`deploy/digitalocean/`**: [DigitalOcean App Platform](https://www.digitalocean.com/products/app-platform): `app.yaml` spec with Docker builder. For persistence, use managed Postgres or deploy to a Droplet with Docker Compose.
-- **`deploy/helm/`**: Helm chart for deploying on **any existing K8s cluster**. Creates Secret, PVC, schema init Job (Helm hook), Deployment with health checks, and LoadBalancer Service. No infra provisioning, just `helm install`.
+- **`deploy/helm/`**: Helm chart for deploying on **any existing K8s cluster**. Creates Secret, PVC, Deployment with health checks, and LoadBalancer Service. Optional schema init runs inline in the container's startup command (gated by `schemaInit.enabled`), not a separate Job. No infra provisioning, just `helm install`.
 - **`deploy/terraform-k8s/`**: Provisions full AWS stack from scratch: VPC, EKS cluster, ECR, plus K8s resources. Pixeltable data on 50Gi EBS.
 - **`deploy/terraform-gke/`**: Same pattern for GCP: VPC, GKE cluster, Artifact Registry. 50Gi Persistent Disk.
 - **`deploy/terraform-aks/`**: Same pattern for Azure: Resource Group, AKS cluster, ACR. 50Gi Managed Disk.

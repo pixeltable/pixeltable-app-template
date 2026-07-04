@@ -72,9 +72,10 @@ def spa_fallback(full_path: str):
             {"detail": "Frontend not built. Run: cd frontend && npm run build"},
             status_code=404,
         )
-    file_path = STATIC_DIR / full_path
-    if file_path.is_file():
-        return FileResponse(file_path)
+    requested = (STATIC_DIR / full_path).resolve()
+    # Containment guard: reject paths that escape STATIC_DIR (e.g. "../../etc/passwd").
+    if requested.is_relative_to(STATIC_DIR) and requested.is_file():
+        return FileResponse(requested)
     return FileResponse(STATIC_DIR / "index.html")
 
 

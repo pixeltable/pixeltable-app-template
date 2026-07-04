@@ -14,13 +14,13 @@ platform that exercises every core primitive in one codebase.
 ```bash
 uvx pixeltable-new --template full-stack-showcase myapp
 cd myapp && cp .env.example .env   # add your GEMINI_API_KEY
-uv sync && uv run python app.py    # http://localhost:8000
+uv sync && uv run python app.py    # API at http://localhost:8000
 
-# Frontend (new terminal)
-cd frontend && npm install && npm run dev   # http://localhost:5173
+# Frontend dev server (new terminal)
+cd frontend && npm install && npm run dev   # UI at http://localhost:5173
 ```
 
-That's it. `app.py` initializes the schema and starts the server.
+In development, the Vite dev server (`:5173`) proxies `/api` to the backend (`:8000`). For a single-port production build, run `cd frontend && npm run build` (outputs to `static/`), then `python app.py` serves the built UI and the API together on `:8000`.
 
 ### API-only mode (no UI)
 

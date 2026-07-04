@@ -21,7 +21,6 @@ A single TOML file defines both the service (routes) and the deployment (infrast
 
 [[service]]
 name    = "openai_demo"
-modules = ["app"]
 
 # Upload an image -> returns job_url; poll job to get description.
 [[service.routes]]
@@ -51,7 +50,7 @@ exclude = ["__pycache__", "*.pyc", ".git", ".env", "*.egg-info", ".venv"]
 ### What each section does
 
 **`[[service]]`** defines the API, identical to `pxt serve`:
-- `modules` imports your schema (tables, computed columns, indexes)
+- Routes reference your schema — tables by path, queries by `module:attribute`
 - Each `[[service.routes]]` becomes a REST endpoint
 
 **`[[service.routes]]`** with `type = "compute"` runs a table's computed column pipeline on the input and returns the result. Two patterns:

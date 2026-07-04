@@ -42,7 +42,7 @@ Ingest video, automatically extract frames, transcribe audio, detect objects, an
             │  /search/visual  → CLIP similarity   │
             │  /search/spoken  → text similarity   │
             │  /search/objects → label filter       │
-            │  /search         → combined           │
+            │  /search         → visual (default)   │
             └──────────────────────────────────────┘
 ```
 
@@ -123,6 +123,7 @@ All of this is defined declaratively in `schema.py`. No orchestration code, no D
 ```
 video-search/
 ├── schema.py          Declarative pipeline: tables, views, indexes, queries
+├── functions.py       UDF: has_label object-detection filter
 ├── pyproject.toml     Dependencies + pxt serve route config
 └── README.md          This file
 ```

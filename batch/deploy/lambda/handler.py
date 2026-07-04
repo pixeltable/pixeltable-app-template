@@ -2,7 +2,7 @@
 
 Wraps pipeline.py for Lambda execution. Supports multiple trigger types:
   - SQS messages (batch of records)
-  - S3 events (object created)
+  - S3 events (object-created; recognized, but fetching the object is left as a stub)
   - API Gateway / Function URL webhooks (POST with JSON body)
   - EventBridge schedules
   - Direct invocation
@@ -46,7 +46,8 @@ def _parse_documents(event):
                 documents.append(payload)
         return documents
 
-    # S3 event: return the bucket/key info for the caller to handle
+    # S3 event: recognized but not implemented — fetch/parse the S3 object here,
+    # then return a list of {title, body} dicts. For now it falls through to the sample batch.
     if records and "s3" in records[0].get("eventName", "").lower():
         return []
 

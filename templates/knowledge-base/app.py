@@ -5,6 +5,8 @@ Custom endpoints for cross-modal search and LLM Q&A.
 Run: python app.py
 """
 
+from pathlib import Path
+
 import pixeltable as pxt
 import schema
 import uvicorn
@@ -94,12 +96,13 @@ def stats():
 
 # ── Static UI ────────────────────────────────────────────────────────────
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+STATIC_DIR = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 @app.get("/")
 def index():
-    return FileResponse("static/index.html")
+    return FileResponse(str(STATIC_DIR / "index.html"))
 
 
 def _find_port(default: int = 8000) -> int:

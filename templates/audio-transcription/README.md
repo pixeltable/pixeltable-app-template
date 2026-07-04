@@ -54,10 +54,12 @@ All of the following run **automatically** when you insert a row -- zero glue co
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `POST` | `/api/search` | Semantic search across all transcripts |
-| `POST` | `/api/ingest` | Upload and ingest an audio file |
+| `POST` | `/api/upload` | Upload and ingest an audio file (background job) |
 | `GET` | `/api/recordings` | List all recordings |
-| `POST` | `/api/transcript` | Get full transcript for a recording |
+| `POST` | `/api/search` | Semantic search across all transcripts (needs `OPENAI_API_KEY`) |
+| `POST` | `/api/search-in` | Search within one recording (needs `OPENAI_API_KEY`) |
+| `GET` | `/api/transcript` | Full transcript for a recording (needs `OPENAI_API_KEY`) |
+| `GET` | `/api/summary` | Per-chunk summaries for a recording (needs `OPENAI_API_KEY`) |
 
 ## Architecture
 

@@ -157,7 +157,7 @@ This starter kit demonstrates three ways to deploy Pixeltable:
 ```
 serving/
 ├── schema.py           Tables, views, indexes, @pxt.query functions
-├── pyproject.toml      Dependencies + pxt serve config (routes, modules, export_sql)
+├── pyproject.toml      Dependencies + pxt serve config (routes, export_sql)
 ├── Dockerfile          Long-running container
 └── docker-compose.yml  Local testing
 ```

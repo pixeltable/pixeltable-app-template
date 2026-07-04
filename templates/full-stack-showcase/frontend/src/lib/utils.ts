@@ -17,8 +17,3 @@ export function formatDuration(seconds: number | null | undefined): string {
   const s = Math.floor(seconds % 60)
   return `${m}:${s.toString().padStart(2, '0')}`
 }
-
-export function formatTimestamp(iso: string | null | undefined): string {
-  if (!iso) return '--'
-  return new Date(iso).toLocaleString()
-}

@@ -7,7 +7,7 @@ One-command deployment of the Pixeltable Starter Kit to AWS EKS.
 - **VPC**: 2 AZs, public/private subnets, NAT gateway
 - **EKS cluster**: Managed node group (m6i.xlarge × 2 by default)
 - **ECR repository**: For the app Docker image
-- **K8s resources**: Namespace, secret (API keys), PVC (50Gi for Pixeltable data), schema init job, deployment, LoadBalancer service
+- **K8s resources**: Namespace, secret (API keys), PVC (50Gi for Pixeltable data), deployment (schema init runs in the container's startup command), LoadBalancer service
 
 ## Prerequisites
 
@@ -56,7 +56,7 @@ Pixeltable runs an embedded PostgreSQL instance and file cache. In this deployme
 
 - `PIXELTABLE_HOME=/data/pixeltable` points to the PVC
 - The PVC uses `gp3` storage class (EBS) for persistence across pod restarts
-- Schema init runs as a K8s Job before the app deployment starts
+- Schema init runs inline in the deployment container's startup command (Pixeltable's embedded Postgres must stay alive, so a separate Job is not used)
 
 For production with large media files, configure external blob storage:
 

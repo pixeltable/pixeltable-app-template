@@ -21,13 +21,11 @@ const STACK_ITEMS = [
   {
     label: 'Pixeltable',
     role: 'Data Infrastructure',
-    lines: '~370 lines',
     url: 'https://github.com/pixeltable/pixeltable',
   },
   {
     label: 'FastAPI',
     role: 'Backend API',
-    lines: '~1,120 lines',
     url: 'https://fastapi.tiangolo.com',
   },
   {
@@ -110,9 +108,6 @@ export function App() {
                 >
                   <span className="font-medium text-foreground/80">{item.label}</span>
                   <span className="text-muted-foreground/60">{item.role}</span>
-                  {'lines' in item && (
-                    <span className="text-primary/70 font-mono text-[10px]">{item.lines}</span>
-                  )}
                 </a>
               </span>
             ))}

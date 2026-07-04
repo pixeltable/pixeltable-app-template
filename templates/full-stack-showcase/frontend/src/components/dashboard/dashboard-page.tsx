@@ -84,7 +84,7 @@ export function DashboardPage() {
           accent="bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
         />
         <StatCard
-          label="Mean Time to Detect"
+          label="Avg. Video Duration"
           value={`${((stats?.avg_processing_time ?? 0)).toFixed(0)}s`}
           icon={Clock}
           accent="bg-cyan-100 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400"

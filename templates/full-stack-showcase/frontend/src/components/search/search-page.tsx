@@ -562,7 +562,6 @@ function DropZone({
   accept,
   isSearching,
   searchingLabel,
-  icon: _Icon,
   label,
   sublabel,
   onFile,

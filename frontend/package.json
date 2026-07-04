@@ -13,6 +13,7 @@
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
     "clsx": "^2.1.1",
+    "dompurify": "^3.4.11",
     "lucide-react": "^0.564.0",
     "marked": "^17.0.2",
     "react": "^19.2.0",

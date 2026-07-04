@@ -28,7 +28,7 @@ datalab.dataset table
 ### 1. Install
 
 ```bash
-uv sync --extra detection --extra export
+uv sync --extra export
 # Optional: uv sync --extra openai for vision LLM annotations
 ```
 
@@ -51,14 +51,14 @@ dataset.insert([
 ```python
 from schema import search_similar, find_similar_images, dataset_stats
 
-# Find images matching a text description
-results = search_similar('a dog running on grass', limit=20)
+# Find images matching a text description (@pxt.query → call .collect())
+results = search_similar('a dog running on grass', limit=20).collect()
 
-# Find duplicates / near-duplicates
+# Find duplicates / near-duplicates (plain helper — returns records directly)
 similar = find_similar_images(image_uuid='...', limit=10)
 
-# Dataset overview
-stats = dataset_stats()
+# Dataset overview (@pxt.query → call .collect())
+stats = dataset_stats().collect()
 ```
 
 ## Export Formats

@@ -38,7 +38,6 @@ POST /api/search          -- semantic search over document chunks
 POST /api/ingest/image    -- upload + process an image
 POST /api/ingest/document -- upload + process a document
 POST /api/ingest/audio    -- upload + process audio
-GET  /api/status          -- item counts per modality
 ```
 
 ### Batch Processing (`python pipeline.py`)

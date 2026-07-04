@@ -21,7 +21,7 @@ uv run python app.py              # http://localhost:8000
 
 That's it. `app.py` initializes the schema and starts the server with the web UI.
 
-Set `OPENAI_API_KEY` for Whisper transcription and the Ask AI tab. Without it, document + image + video-frame search still works.
+Whisper transcription and the Ask AI tab use the OpenAI SDK — install the extra with `uv sync --extra openai` and set `OPENAI_API_KEY`. Without it, document + image + video-frame search still works.
 
 ### API-only mode (no UI)
 

@@ -8,7 +8,7 @@ cd pixeltable-starter-kit
 uv sync                            # installs dev deps (pytest, ruff)
 ```
 
-All patterns and templates require **Pixeltable 0.6.5+** and **sentence-transformers 5.6.0+** (for HuggingFace embedding functions).
+All patterns and templates require **Pixeltable 0.6.5+**. Those that use HuggingFace sentence-transformer embeddings also require **sentence-transformers 5.6.0+**; the exceptions are `full-stack-showcase` (Gemini embeddings) and `image-dataset` (CLIP), which don't need it.
 
 ## Testing
 

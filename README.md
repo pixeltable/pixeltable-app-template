@@ -186,7 +186,7 @@ cd my-app && uv sync
 | Template | Entry point | What you get |
 |----------|------------|--------------|
 | [`knowledge-base`](templates/knowledge-base/) | `python app.py` | Multimodal upload, search, RAG Q&A. Web UI |
-| [`chat-agent`](templates/chat-agent/) | `python app.py` | Persistent agent, memory, tools, MCP. Web UI |
+| [`chat-agent`](templates/chat-agent/) | `python app.py` | Persistent agent, memory, tools (MCP-ready). Web UI |
 | [`audio-transcription`](templates/audio-transcription/) | `python app.py` | Transcription, summarization, search. Web UI |
 | [`full-stack-showcase`](templates/full-stack-showcase/) | `python app.py` | Gemini + DETR + Whisper, React UI, dashboard |
 | [`video-search`](templates/video-search/) | `pxt serve videointel` | Frames, transcription, detection, search. API only |

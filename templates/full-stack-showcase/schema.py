@@ -272,6 +272,6 @@ if HAVE_GEMINI:
 
 
 if __name__ == "__main__":
-    print("Schema initialized. Run: uvicorn app:app --reload")
+    print("Schema initialized. Run: python app.py")
     if not HAVE_GEMINI:
         print("  Note: Set GEMINI_API_KEY to enable LLM analysis + cross-modal search.")

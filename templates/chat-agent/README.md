@@ -62,7 +62,8 @@ Every step is a column. Every column is queryable, versioned, and debuggable.
 |--------|------|------|-------------|
 | `POST` | `/api/ask` | insert | Ask the agent (triggers full computed column chain) |
 | `POST` | `/api/knowledge` | insert | Add a document to the knowledge base |
-| `POST` | `/api/memory/search` | query | Semantic search across all conversations |
+| `GET` | `/api/knowledge/search` | query | Semantic search over the knowledge base |
+| `GET` | `/api/memory/search` | query | Semantic search across all conversations |
 | `GET` | `/api/history` | query | Get recent turns from a conversation |
 
 ## Tables
@@ -89,10 +90,10 @@ schema.knowledge.insert([{
 # Ask the agent (inserts into agent table, saves conversation history)
 answer = schema.ask('What is Pixeltable?', conversation_id='sess-1')
 
-# Direct query access
-results = schema.search_knowledge.exec('data infrastructure')
-memories = schema.recall_memory.exec('deployment options')
-history = schema.get_history.exec('sess-1')
+# Direct query access — @pxt.query functions return a DataFrame; call .collect()
+results = schema.search_knowledge('data infrastructure').collect()
+memories = schema.recall_memory('deployment options').collect()
+history = schema.get_history('sess-1').collect()
 ```
 
 ## Adding Tools
@@ -120,7 +121,7 @@ tools = pxt.tools(web_search, search_knowledge, *mcp_tools)
 ## Files
 
 ```
-agent/
+chat-agent/
 ├── schema.py        Tables, views, indexes, computed columns, tools, query functions
 ├── functions.py     UDFs (web_search, assemble_context)
 ├── app.py           FastAPI server — API + web UI
