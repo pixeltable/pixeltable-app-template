@@ -16,21 +16,17 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import APPLICATION_FILE_TEMPLATES, ROOT, SCHEMA_TEMPLATES
+from tests.conftest import ROOT
 
 pytestmark = pytest.mark.slow
 
 _SCHEMA_TARGETS: list[tuple[str, str]] = [
     (str(ROOT / "serving"), 'import app; print("OK")'),
     (str(ROOT / "batch"), 'import app; print("OK")'),
-    (str(ROOT / "backend"), 'import setup_pixeltable; print("OK")'),
-    *[(str(ROOT / "templates" / t), 'import app; print("OK")') for t in APPLICATION_FILE_TEMPLATES],
-    *[(str(ROOT / "templates" / t), 'import schema; print("OK")') for t in SCHEMA_TEMPLATES],
 ]
 
 
 def _python_command(cwd: str) -> list[str]:
-    """Use the project venv or `uv run python` when available."""
     venv_python = Path(cwd) / ".venv" / "bin" / "python"
     if venv_python.is_file():
         return [str(venv_python)]
@@ -54,8 +50,6 @@ def _run_import(cwd: str, code: str, home: Path, timeout: int = 600) -> subproce
 
 
 class TestSchemaImports:
-    """Import every pattern and template schema sequentially (one Postgres instance at a time)."""
-
     def test_all_schemas_import_cleanly(self) -> None:
         for index, (cwd, code) in enumerate(_SCHEMA_TARGETS):
             home = Path(f"/tmp/pxt-starter-kit-smoke-{index}")

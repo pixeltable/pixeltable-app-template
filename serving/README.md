@@ -1,29 +1,25 @@
-# Pixeltable Declarative Serving
+# Pixeltable serving
 
-One application file declares tables, computed columns, indexes, and HTTP routes. `pxt schema update` applies the tables. `pxt service` serves the `FastAPIRouter` in the same file.
-
-**When to use this pattern:**
-- You need an API (clients will make HTTP requests)
-- You want insert, query, and delete endpoints without writing FastAPI handlers
-- Insert routes should trigger computed columns and return results in real time
-
-**When not to use this:** If your workload is batch processing (cron jobs, queue consumers, long-running data pipelines), you do not need an HTTP server. Use [`batch/`](../batch/) instead.
+One application file declares tables, computed columns, indexes, and HTTP routes.
+`pxt schema update` applies the tables. `pxt service` serves the `FastAPIRouter`
+in the same file.
 
 This is the default `uvx pixeltable-new myapp` pattern. Python 3.11+.
+No HTTP: use [`batch/`](../batch/).
 
 ```
 app.py                         CLI
-┌─────────────────────┐        pxt schema update app.py pipeline
-│ TableModel classes  │──────▶ catalog directory `pipeline`
-│ FastAPIRouter       │        (not a folder on disk)
-│ @pxt.query          │
-└─────────────────────┘        pxt service update app.py pipeline
+TableModel + FastAPIRouter     pxt schema update app.py pipeline
+                               catalog directory `pipeline`
+                               (not a folder on disk)
+                               pxt service update app.py pipeline
                                pxt service run app.py pipeline
 ```
 
-`pixeltable.toml` marks this directory as a Pixeltable project root. Schema and service commands refuse a file with no root (`pixeltable.toml`, or `pyproject.toml` with `[tool.pixeltable]`). `pxt init` writes a root if you copied files by hand.
+`pixeltable.toml` is the project root. Schema and service refuse a file with no
+root. `pxt init` writes one if you copied files by hand.
 
-## Quick Start
+## Quick start
 
 ```bash
 cd serving
@@ -33,104 +29,83 @@ uv run pxt service update app.py pipeline
 uv run pxt service list
 ```
 
-`pxt service update` starts the service in the background and assigns a port. `pxt service list` prints the URL.
-
-For a foreground process on port 8000 (containers, a development loop):
+Foreground on port 8000:
 
 ```bash
 uv run pxt schema update app.py pipeline
 uv run pxt service run app.py pipeline --port 8000
 ```
 
-OpenAPI docs are at `/docs` on the bound port.
+OpenAPI is at `/docs`. Docker: `docker compose up --build`.
 
 ### Test it
 
-Use the URL from `pxt service list`, or `http://localhost:8000` if you used `pxt service run --port 8000`:
+Use the URL from `pxt service list`, or `http://localhost:8000` after `service run`:
 
 ```bash
-# Insert a document (triggers chunking + embeddings automatically)
 curl -X POST http://localhost:8000/api/ingest/document \
   -H "Content-Type: application/json" \
   -d '{"title": "Test", "body": "Pixeltable replaces the AI data stack.", "source_id": "api-001"}'
 
-# Semantic search
 curl -X POST http://localhost:8000/api/search \
   -H "Content-Type: application/json" \
   -d '{"query_text": "data infrastructure"}'
 
-# List documents
 curl http://localhost:8000/api/documents
-
-# List images
 curl http://localhost:8000/api/images
 ```
 
-### Docker
+## Application file
 
-```bash
-docker compose up --build    # schema update, then pxt service run on :8000
-```
+An annotation is a stored column. An assignment is a computed column. Indexes
+belong on the model (`__indexes__`).
 
-## How It Works
-
-### Application file (`app.py`)
-
-An annotation is a stored column. An assignment is a computed column. Indexes belong on the model (`__indexes__`), not `add_embedding_index()`.
-
-- **Documents:** table → sentence view (`string_splitter`) → embedding index → `search_documents`
-- **Images:** table → thumbnail + width/height/mode → `list_images`
-- **Routes:** `FastAPIRouter(name='pipeline', prefix='/api')` with the insert, query, and delete paths below
-
-`pipeline` is the catalog directory the models bind to. It is not a folder on disk.
+`pipeline` is the catalog directory the models bind to.
 
 ```bash
 pxt schema update app.py pipeline
 pxt service update app.py pipeline
 ```
 
-Hosted catalog (no local HTTP): `pxt schema update app.py pxt://org:db`. `pxt service` is local-only.
+Hosted catalog (no local HTTP): `pxt schema update app.py pxt://org:db`.
+`pxt service` is local-only. [`deploy/pixeltable-cloud/`](deploy/pixeltable-cloud/).
 
-### Live SQL export on insert
+Already have FastAPI:
 
-Pass `export_sql=SqlExport(...)` to `add_insert_route` when each successful insert should also land in an external database. See [HTTP serving](https://docs.pixeltable.com/howto/deployment/serving).
+```python
+from fastapi import FastAPI
+from app import api  # FastAPIRouter next to the TableModel classes
+
+app = FastAPI()
+app.include_router(api)
+```
+
+Apply with `pxt schema update app.py pipeline` first. Call `pxt.get_table()`
+inside custom handlers.
+
+Pass `export_sql=SqlExport(...)` to `add_insert_route` when each successful
+insert should also land in an external database.
+[HTTP serving](https://docs.pixeltable.com/howto/deployment/serving).
 
 ## Endpoints
 
-| Method | Path | Type | Description |
-|--------|------|------|-------------|
-| `POST` | `/api/search` | query | Semantic search over document sentences |
-| `GET` | `/api/documents` | query | List all documents |
-| `GET` | `/api/images` | query | List all images with metadata |
-| `POST` | `/api/ingest/document` | insert | Insert document (triggers chunking + embeddings) |
-| `POST` | `/api/ingest/image` | insert | Upload image (triggers thumbnail + metadata) |
-| `POST` | `/api/delete/document` | delete | Delete a document by primary key (`uuid`) |
-| `POST` | `/api/delete/image` | delete | Delete an image by primary key (`uuid`) |
-
-## Configuration
-
-| Variable | Default | Description |
-|---|---|---|
-| `PIXELTABLE_HOME` | `~/.pixeltable` | Persistent storage for Pixeltable data |
-| `OPENAI_API_KEY` | | Optional: add an LLM summary computed column in `app.py` |
-
-## Three Deployment Paths
-
-| Pattern | Folder | When to use |
-|---|---|---|
-| **Full Backend** | [`backend/`](../backend/) | Custom endpoints and a frontend. Mount `FastAPIRouter` from the application file. |
-| **Batch Processing** | [`batch/`](../batch/) | Sidecar to your existing stack: batch ingest, `export_sql`, exit |
-| **Declarative Serving** | `serving/` (this) | Application file + `pxt service` |
-
-Same file against Pixeltable Cloud: `pxt schema update app.py pxt://org:db`. See [`deploy/pixeltable-cloud/`](deploy/pixeltable-cloud/).
+| Method | Path | Type |
+|--------|------|------|
+| `POST` | `/api/search` | query |
+| `GET` | `/api/documents` | query |
+| `GET` | `/api/images` | query |
+| `POST` | `/api/ingest/document` | insert |
+| `POST` | `/api/ingest/image` | insert |
+| `POST` | `/api/delete/document` | delete |
+| `POST` | `/api/delete/image` | delete |
 
 ## Files
 
 ```
 serving/
-├── app.py              TableModel classes, indexes, @pxt.query, FastAPIRouter
+├── app.py              TableModel, indexes, @pxt.query, FastAPIRouter
 ├── pixeltable.toml     Project root
-├── pyproject.toml      Dependencies
-├── Dockerfile          Long-running container (schema update + service run)
-└── docker-compose.yml  Local testing
+├── pyproject.toml
+├── Dockerfile
+└── docker-compose.yml
 ```

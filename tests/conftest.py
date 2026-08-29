@@ -8,46 +8,9 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-PATTERNS: list[str] = ["backend", "serving", "batch"]
-
-TEMPLATES: list[str] = [
-    "audio-transcription",
-    "chat-agent",
-    "full-stack-showcase",
-    "image-dataset",
-    "knowledge-base",
-    "media-indexing",
-    "video-search",
-]
-
-# Templates that declare TableModel + FastAPIRouter in app.py (no schema.py).
-APPLICATION_FILE_TEMPLATES: list[str] = [
-    "image-dataset",
-    "media-indexing",
-    "video-search",
-]
-
-# UI templates that still apply via import schema / python app.py.
-SCHEMA_TEMPLATES: list[str] = [
-    "audio-transcription",
-    "chat-agent",
-    "full-stack-showcase",
-    "knowledge-base",
-]
+PATTERNS: list[str] = ["serving", "batch"]
 
 EXPECTED_FILES: dict[str, list[str]] = {
-    "backend": [
-        "pyproject.toml",
-        "pixeltable.toml",
-        "main.py",
-        "config.py",
-        "models.py",
-        "functions.py",
-        "setup_pixeltable.py",
-        "routers/data.py",
-        "routers/search.py",
-        "routers/agent.py",
-    ],
     "serving": [
         "pyproject.toml",
         "pixeltable.toml",
@@ -66,15 +29,13 @@ EXPECTED_FILES: dict[str, list[str]] = {
     ],
 }
 
-EXPECTED_TEMPLATE_FILES: dict[str, list[str]] = {
-    "audio-transcription": ["schema.py", "pyproject.toml", "pixeltable.toml", "app.py", "functions.py"],
-    "chat-agent": ["schema.py", "pyproject.toml", "pixeltable.toml", "app.py"],
-    "full-stack-showcase": ["schema.py", "pyproject.toml", "pixeltable.toml", "app.py", "config.py", "functions.py"],
-    "image-dataset": ["app.py", "pyproject.toml", "pixeltable.toml", "export.py"],
-    "knowledge-base": ["schema.py", "pyproject.toml", "pixeltable.toml", "app.py", "functions.py"],
-    "media-indexing": ["app.py", "pyproject.toml", "pixeltable.toml", "pipeline.py", "functions.py"],
-    "video-search": ["app.py", "pyproject.toml", "pixeltable.toml", "functions.py"],
-}
+REMOVED_PATHS: list[str] = [
+    "templates",
+    "backend",
+    "frontend",
+    "deploy",
+    "batch/deploy",
+]
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

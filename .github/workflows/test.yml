@@ -41,30 +41,10 @@ jobs:
         run: uv sync
       - name: Lint
         run: |
-          uv run ruff check backend/ serving/ batch/ templates/ tests/
-          uv run ruff format backend/ serving/ batch/ templates/ tests/ --check
+          uv run ruff check serving/ batch/ tests/
+          uv run ruff format serving/ batch/ tests/ --check
       - name: Test
         run: uv run python -m pytest tests/ -v --tb=short
-
-  frontend:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - name: Build backend frontend
-        run: |
-          cd frontend
-          npm ci
-          npm run build
-      - name: Build full-stack-showcase frontend
-        run: |
-          cd templates/full-stack-showcase/frontend
-          npm install
-          npm run build
 
   schema-smoke:
     runs-on: ubuntu-latest
@@ -80,21 +60,15 @@ jobs:
           cache-dependency-glob: "**/pyproject.toml"
       - name: Install pattern dependencies
         run: |
-          cd backend && uv sync
+          cd serving && uv sync
           cd ../batch && uv sync
-          cd ../serving && uv sync
-      - name: Install template dependencies
-        run: |
-          for template in audio-transcription chat-agent full-stack-showcase image-dataset knowledge-base media-indexing video-search; do
-            cd templates/$template && uv sync && cd ../..
-          done
       - name: Run schema import smoke tests
         run: uv run python -m pytest tests/test_schema.py -v --run-slow --tb=short
 
   app-smoke:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -106,18 +80,12 @@ jobs:
           cache-dependency-glob: "**/pyproject.toml"
       - name: Install pattern dependencies
         run: |
-          cd backend && uv sync
+          cd serving && uv sync
           cd ../batch && uv sync
-          cd ../serving && uv sync
-      - name: Install template dependencies
-        run: |
-          for template in audio-transcription chat-agent full-stack-showcase image-dataset knowledge-base media-indexing video-search; do
-            cd templates/$template && uv sync && cd ../..
-          done
-      - name: Verify apps start and respond
+      - name: Verify serving and batch
         run: |
           set -euo pipefail
-          PORT_BASE=18100
+          PORT=18100
           RESULTS=()
           PID=""
 
@@ -134,7 +102,6 @@ jobs:
             cleanup_server
             pkill -f pixeltable_pgserver 2>/dev/null || true
             pkill -f "pginstall/bin/postgres" 2>/dev/null || true
-            lsof -ti:8000 2>/dev/null | xargs kill -9 2>/dev/null || true
             sleep 3
           }
 
@@ -150,101 +117,48 @@ jobs:
             return 1
           }
 
-          check_http() {
-            local name=$1
-            local dir=$2
-            local port=$3
-            local start_cmd=$4
-            local url=$5
-            local home="/tmp/pxt-app-verify-${name}"
-
-            echo ""
-            echo "=== $name (port $port) ==="
-            stop_postgres
-            rm -rf "$home"
-
-            (
-              cd "$dir"
-              export PIXELTABLE_HOME="$home"
-              export PORT="$port"
-              eval "$start_cmd"
-            ) >"/tmp/pxt-app-verify-${name}.log" 2>&1 &
-            PID=$!
-
-            if wait_for_url "$url" 180; then
-              echo "OK  $name -> $url"
-              RESULTS+=("OK  $name")
-            else
-              echo "FAIL $name (no response at $url)"
-              tail -25 "/tmp/pxt-app-verify-${name}.log" || true
-              RESULTS+=("FAIL $name")
-            fi
-            stop_postgres
-          }
-
           stop_postgres
-          echo "Starting one-by-one app verification..."
-
-          check_http "backend" "$GITHUB_WORKSPACE/backend" "$PORT_BASE" \
-            "uv run uvicorn main:app --host 127.0.0.1 --port $PORT_BASE" \
-            "http://127.0.0.1:$PORT_BASE/api/health"
-
-          check_http "serving" "$GITHUB_WORKSPACE/serving" "$((PORT_BASE + 1))" \
-            "uv run pxt schema update app.py pipeline -f && uv run pxt service run app.py pipeline --host 127.0.0.1 --port $((PORT_BASE + 1))" \
-            "http://127.0.0.1:$((PORT_BASE + 1))/openapi.json"
-
-          check_http "knowledge-base" "$GITHUB_WORKSPACE/templates/knowledge-base" "$((PORT_BASE + 2))" \
-            "uv run uvicorn app:app --host 127.0.0.1 --port $((PORT_BASE + 2))" \
-            "http://127.0.0.1:$((PORT_BASE + 2))/openapi.json"
-
-          check_http "chat-agent" "$GITHUB_WORKSPACE/templates/chat-agent" "$((PORT_BASE + 3))" \
-            "uv run uvicorn app:app --host 127.0.0.1 --port $((PORT_BASE + 3))" \
-            "http://127.0.0.1:$((PORT_BASE + 3))/openapi.json"
-
-          check_http "audio-transcription" "$GITHUB_WORKSPACE/templates/audio-transcription" "$((PORT_BASE + 4))" \
-            "uv run uvicorn app:app --host 127.0.0.1 --port $((PORT_BASE + 4))" \
-            "http://127.0.0.1:$((PORT_BASE + 4))/openapi.json"
-
-          check_http "full-stack-showcase" "$GITHUB_WORKSPACE/templates/full-stack-showcase" "$((PORT_BASE + 5))" \
-            "uv run uvicorn app:app --host 127.0.0.1 --port $((PORT_BASE + 5))" \
-            "http://127.0.0.1:$((PORT_BASE + 5))/api/health"
-
-          check_http "video-search" "$GITHUB_WORKSPACE/templates/video-search" "$((PORT_BASE + 6))" \
-            "uv run pxt schema update app.py videointel -f && uv run pxt service run app.py videointel --host 127.0.0.1 --port $((PORT_BASE + 6))" \
-            "http://127.0.0.1:$((PORT_BASE + 6))/openapi.json"
-
-          check_http "media-indexing" "$GITHUB_WORKSPACE/templates/media-indexing" "$((PORT_BASE + 7))" \
-            "uv run pxt schema update app.py pipeline -f && uv run pxt service run app.py pipeline --host 127.0.0.1 --port $((PORT_BASE + 7))" \
-            "http://127.0.0.1:$((PORT_BASE + 7))/openapi.json"
-
-          check_http "image-dataset" "$GITHUB_WORKSPACE/templates/image-dataset" "$((PORT_BASE + 8))" \
-            "uv run pxt schema update app.py datalab -f && uv run pxt service run app.py datalab --host 127.0.0.1 --port $((PORT_BASE + 8))" \
-            "http://127.0.0.1:$((PORT_BASE + 8))/openapi.json"
-
-          echo ""
-          echo "=== batch (pipeline.py) ==="
+          echo "=== serving ==="
+          SERVING_HOME="/tmp/pxt-app-verify-serving"
+          rm -rf "$SERVING_HOME"
+          (
+            cd "$GITHUB_WORKSPACE/serving"
+            export PIXELTABLE_HOME="$SERVING_HOME"
+            uv run pxt schema update app.py pipeline -f
+            uv run pxt service run app.py pipeline --host 127.0.0.1 --port "$PORT"
+          ) >"/tmp/pxt-app-verify-serving.log" 2>&1 &
+          PID=$!
+          if wait_for_url "http://127.0.0.1:${PORT}/openapi.json" 180; then
+            echo "OK  serving"
+            RESULTS+=("OK  serving")
+          else
+            echo "FAIL serving"
+            tail -25 "/tmp/pxt-app-verify-serving.log" || true
+            RESULTS+=("FAIL serving")
+          fi
           stop_postgres
+
+          echo "=== batch ==="
           BATCH_HOME="/tmp/pxt-app-verify-batch"
           rm -rf "$BATCH_HOME"
           if (
             cd "$GITHUB_WORKSPACE/batch"
             export PIXELTABLE_HOME="$BATCH_HOME"
             export SERVING_DB_URL="sqlite:///${BATCH_HOME}/serving.db"
+            uv run pxt schema update app.py pipeline -f
             uv run python pipeline.py
           ) >"/tmp/pxt-app-verify-batch.log" 2>&1; then
-            echo "OK  batch pipeline"
+            echo "OK  batch"
             RESULTS+=("OK  batch")
           else
-            echo "FAIL batch pipeline"
+            echo "FAIL batch"
             tail -20 "/tmp/pxt-app-verify-batch.log" || true
             RESULTS+=("FAIL batch")
           fi
           stop_postgres
 
-          echo ""
           echo "========== SUMMARY =========="
           printf '%s\n' "${RESULTS[@]}"
-
           if printf '%s\n' "${RESULTS[@]}" | grep -q '^FAIL'; then
             exit 1
           fi

@@ -7,24 +7,9 @@ venv/
 .env
 .env.local
 
-# Pixeltable local data (backend upload folder)
-/backend/data/
-
 # Node
 node_modules/
 dist/
-
-# Build output
-backend/static/
-
-# Terraform
-deploy/**/.terraform/
-deploy/**/*.tfstate*
-deploy/**/.terraform.lock.hcl
-deploy/**/terraform.tfvars
-
-# CDK
-deploy/aws-cdk/cdk.out/
 
 # Pipeline output
 batch/serving.db

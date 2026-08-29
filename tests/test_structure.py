@@ -1,4 +1,4 @@
-"""Test that all patterns and templates have the expected file structure."""
+"""Advertised patterns have the expected file structure."""
 
 from __future__ import annotations
 
@@ -6,25 +6,27 @@ import ast
 
 import pytest
 
-from tests.conftest import (
-    EXPECTED_FILES,
-    EXPECTED_TEMPLATE_FILES,
-    PATTERNS,
-    ROOT,
-    TEMPLATES,
-)
+from tests.conftest import EXPECTED_FILES, PATTERNS, REMOVED_PATHS, ROOT
 
 _DEPRECATED_PATTERNS: list[tuple[str, str]] = [
     ("FrameIterator", "Use frame_iterator from pixeltable.functions.video"),
     ("openai.vision", "Use openai.chat_completions with image_url content blocks"),
     ("from pixeltable.iterators import", "Use pixeltable.functions.* iterators instead"),
-    (".add_index(", "Use add_embedding_index()"),
+    (".add_index(", "Use EmbeddingIndex on the model"),
 ]
+
+_BANNED_APPLY: tuple[str, ...] = (
+    "pxt serve",
+    "[[tool.pixeltable.service]]",
+    "tool.pixeltable.service",
+    "python schema.py",
+    "pxt.create_table",
+    "setup_pixeltable",
+    "add_embedding_index",
+)
 
 
 class TestPatternFiles:
-    """Each deployment pattern ships the expected files."""
-
     @pytest.mark.parametrize("pattern", PATTERNS)
     def test_pattern_directory_exists(self, pattern: str) -> None:
         assert (ROOT / pattern).is_dir(), f"{pattern}/ directory missing"
@@ -36,31 +38,15 @@ class TestPatternFiles:
             assert fpath.is_file(), f"{pattern}/{relpath} missing"
 
     @pytest.mark.parametrize("pattern", PATTERNS)
-    def test_pyproject_toml_exists(self, pattern: str) -> None:
-        assert (ROOT / pattern / "pyproject.toml").is_file()
-
-    @pytest.mark.parametrize("pattern", PATTERNS)
     def test_uv_lock_exists(self, pattern: str) -> None:
         assert (ROOT / pattern / "uv.lock").is_file(), f"{pattern}/uv.lock missing"
 
-
-class TestTemplateFiles:
-    """Each application template ships the expected files."""
-
-    @pytest.mark.parametrize("template", TEMPLATES)
-    def test_template_directory_exists(self, template: str) -> None:
-        assert (ROOT / "templates" / template).is_dir(), f"templates/{template}/ missing"
-
-    @pytest.mark.parametrize("template", TEMPLATES)
-    def test_expected_files_exist(self, template: str) -> None:
-        for relpath in EXPECTED_TEMPLATE_FILES[template]:
-            fpath = ROOT / "templates" / template / relpath
-            assert fpath.is_file(), f"templates/{template}/{relpath} missing"
+    @pytest.mark.parametrize("relpath", REMOVED_PATHS)
+    def test_removed_paths_absent(self, relpath: str) -> None:
+        assert not (ROOT / relpath).exists(), f"{relpath} should not ship"
 
 
 class TestPythonSyntax:
-    """All Python files parse without syntax errors."""
-
     @pytest.mark.parametrize("pattern", PATTERNS)
     def test_pattern_python_files_parse(self, pattern: str) -> None:
         for py_file in (ROOT / pattern).rglob("*.py"):
@@ -72,44 +58,36 @@ class TestPythonSyntax:
             except SyntaxError as exc:
                 pytest.fail(f"Syntax error in {py_file.relative_to(ROOT)}: {exc}")
 
-    @pytest.mark.parametrize("template", TEMPLATES)
-    def test_template_python_files_parse(self, template: str) -> None:
-        for py_file in (ROOT / "templates" / template).rglob("*.py"):
-            if ".venv" in py_file.parts:
-                continue
-            source = py_file.read_text(encoding="utf-8")
-            try:
-                ast.parse(source, filename=str(py_file))
-            except SyntaxError as exc:
-                pytest.fail(f"Syntax error in {py_file.relative_to(ROOT)}: {exc}")
-
 
 class TestDocumentation:
-    """Key documentation files exist."""
-
     @pytest.mark.parametrize(
         "relpath",
-        ["README.md", "AGENTS.md", ".env.example", "Dockerfile", "docker-compose.yml"],
+        ["README.md", "AGENTS.md", ".env.example"],
     )
     def test_root_docs_exist(self, relpath: str) -> None:
         assert (ROOT / relpath).is_file(), f"{relpath} missing from repo root"
 
-    @pytest.mark.parametrize("pattern", ["serving", "batch"])
+    @pytest.mark.parametrize("pattern", PATTERNS)
     def test_pattern_has_readme(self, pattern: str) -> None:
         assert (ROOT / pattern / "README.md").is_file(), f"{pattern}/README.md missing"
 
-    @pytest.mark.parametrize("template", TEMPLATES)
-    def test_template_has_readme(self, template: str) -> None:
-        assert (ROOT / "templates" / template / "README.md").is_file(), f"templates/{template}/README.md missing"
+
+class TestApplicationFile:
+    @pytest.mark.parametrize("pattern", PATTERNS)
+    def test_app_is_tablemodel(self, pattern: str) -> None:
+        source = (ROOT / pattern / "app.py").read_text(encoding="utf-8")
+        assert "model_base()" in source
+        assert "add_embedding_index" not in source
+        assert "pxt.create_table" not in source
+        if pattern == "serving":
+            assert "FastAPIRouter" in source
+            assert "__indexes__" in source
 
 
 class TestNoAntiPatterns:
-    """Guard against known anti-patterns we've already fixed."""
-
     _BANNED_ENV_VAR = "PYTHON" + "PATH"
 
     def test_no_banned_env_var_references(self) -> None:
-        """Env-var hack was removed; make sure it doesn't creep back."""
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
         for ext in ("*.py", "*.toml", "*.yml", "*.yaml", "*.md"):
@@ -130,17 +108,10 @@ class TestNoAntiPatterns:
         return False
 
     def test_no_sim_alias_in_pxt_query(self) -> None:
-        """Ban sim=sim in @pxt.query: breaks .collect() (use score=sim)."""
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
-        scan_roots = [
-            ROOT / "backend",
-            ROOT / "batch",
-            ROOT / "serving",
-            ROOT / "templates",
-        ]
-        for root in scan_roots:
-            for py_file in root.rglob("*.py"):
+        for pattern in PATTERNS:
+            for py_file in (ROOT / pattern).rglob("*.py"):
                 if skip & set(py_file.parts):
                     continue
                 tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
@@ -160,39 +131,28 @@ class TestNoAntiPatterns:
         assert hits == [], "sim=sim in @pxt.query found:\n" + "\n".join(hits)
 
     def test_no_deprecated_pixeltable_apis(self) -> None:
-        """Ban known-deprecated Pixeltable APIs from production code."""
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
-        scan_roots = [
-            ROOT / "backend",
-            ROOT / "batch",
-            ROOT / "serving",
-            ROOT / "templates",
-        ]
-        for root in scan_roots:
-            for py_file in root.rglob("*.py"):
+        for pattern in PATTERNS:
+            for py_file in (ROOT / pattern).rglob("*.py"):
                 if skip & set(py_file.parts):
                     continue
                 text = py_file.read_text(encoding="utf-8", errors="ignore")
-                for pattern, _ in _DEPRECATED_PATTERNS:
-                    if pattern in text:
-                        hits.append(f"{py_file.relative_to(ROOT)}: {pattern}")
+                for token, _ in _DEPRECATED_PATTERNS:
+                    if token in text:
+                        hits.append(f"{py_file.relative_to(ROOT)}: {token}")
         assert hits == [], "Deprecated Pixeltable APIs found:\n" + "\n".join(hits)
 
-    def test_no_pxt_serve_contract(self) -> None:
-        """pxt serve and [tool.pixeltable.service] TOML routes are gone."""
+    def test_one_apply_path(self) -> None:
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests", "docs", "sdk"}
         scan_roots = [
-            ROOT / "backend",
             ROOT / "batch",
             ROOT / "serving",
-            ROOT / "templates",
             ROOT / "README.md",
             ROOT / "AGENTS.md",
             ROOT / "CONTRIBUTING.md",
         ]
-        banned = ("pxt serve", "[[tool.pixeltable.service]]", "tool.pixeltable.service")
         for root in scan_roots:
             paths = [root] if root.is_file() else list(root.rglob("*"))
             for f in paths:
@@ -201,7 +161,7 @@ class TestNoAntiPatterns:
                 if f.suffix not in {".py", ".toml", ".md", ".yml", ".yaml"}:
                     continue
                 text = f.read_text(encoding="utf-8", errors="ignore")
-                for token in banned:
+                for token in _BANNED_APPLY:
                     if token in text:
                         hits.append(f"{f.relative_to(ROOT)}: {token}")
-        assert hits == [], "Dead pxt serve contract found:\n" + "\n".join(hits)
+        assert hits == [], "Dead apply path found:\n" + "\n".join(hits)

@@ -1,7 +1,7 @@
 [project]
 name = "pixeltable-starter-kit"
 version = "0.1.0"
-description = "Production-ready starter kit demonstrating three ways to deploy Pixeltable"
+description = "Application file plus pxt schema update and pxt service"
 requires-python = ">=3.11"
 license = "Apache-2.0"
 
