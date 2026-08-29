@@ -8,7 +8,7 @@ Use Pixeltable as a **batch processing engine**: no HTTP server, no FastAPI, no 
 - Sidecar to your existing stack: you already have a serving layer and just need processing
 - You don't need an HTTP API at all
 
-This is the complement to the [starter kit](../README.md) (interactive web app with FastAPI) and [`serving/`](../serving/) (declarative API via `pxt serve`). If you need an API, use those instead. If you just need to process data and export results, this is the right pattern.
+This is the complement to the [starter kit](../README.md) (interactive web app with FastAPI) and [`serving/`](../serving/) (application file + `pxt service`). If you need an API, use those instead. If you just need to process data and export results, this is the right pattern.
 
 ```
 Cron / Queue / Webhook
@@ -38,8 +38,11 @@ Cron / Queue / Webhook
 ```bash
 cd batch
 uv sync
+uv run pxt schema update app.py pipeline
 PIXELTABLE_HOME=/tmp/pxt uv run python pipeline.py
 ```
+
+`pipeline.py` also calls `TableModel.update_all('pipeline')`, so a job can run that file as its only command. `pixeltable.toml` is the project root. Python 3.11+.
 
 Output:
 
@@ -72,9 +75,9 @@ uv run python pipeline.py --input my_batch.json
 
 ## How It Works
 
-### Schema as code (`schema.py`)
+### Schema as code (`app.py`)
 
-One file defines the entire data model. Importing it creates everything:
+`TableModel` classes declare the data model. Apply with `pxt schema update app.py pipeline`.
 
 - **Documents pipeline:** `pipeline.documents` table → `pipeline.sentences` view (sentence-level chunking via `string_splitter`) → embedding index for semantic search
 - **Images pipeline:** `pipeline.images` table → thumbnail (128×128 b64), width, height, mode (all computed automatically)
@@ -106,8 +109,7 @@ export_sql(
 |---|---|---|
 | `PIXELTABLE_HOME` | `~/.pixeltable` | Set to `/tmp/pixeltable` for ephemeral |
 | `SERVING_DB_URL` | `sqlite:///serving.db` | SQLAlchemy connection string for export target |
-| `OPENAI_API_KEY` | | Enables LLM summary column |
-| `MEDIA_DEST` | | Cloud URI for generated media (e.g. `s3://bucket/out`). The included `schema.py` does not set `destination` by default; add it on computed columns when routing generated media to cloud storage. |
+| `MEDIA_DEST` | | Cloud URI for generated media (e.g. `s3://bucket/out`). Add `destination=` on a `pxt.Column` in `app.py` when routing generated media to cloud storage. |
 
 ## Production Deployment
 
@@ -176,14 +178,15 @@ See [`deploy/lambda/`](deploy/lambda/) for the handler, SQS event source mapping
 
 ## See Also
 
-- **[`serving/`](../serving/)**: Declarative API serving with `pxt serve` (zero Python web code)
+- **[`serving/`](../serving/)**: Declarative API serving with `app.py` + `pxt service`
 - **[`backend/`](../backend/)**: Full backend with FastAPI routers + React frontend
 
 ## Files
 
 ```
 batch/
-├── schema.py               Tables, views, embedding indexes, computed columns
+├── app.py                  TableModel classes, views, embedding indexes
+├── pixeltable.toml         Project root
 ├── pipeline.py             Batch ingest → compute → export_sql → exit
 ├── sample_batch.json       Example JSON input
 ├── pyproject.toml          Dependencies (uv)

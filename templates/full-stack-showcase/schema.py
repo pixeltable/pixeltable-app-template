@@ -7,8 +7,7 @@ Demonstrates every core Pixeltable primitive in one schema:
   - Multimodal embedding indexes (Gemini embed_content for cross-modal search)
   - Scene detection, panoptic segmentation, severity classification
 
-    python schema.py        # create tables, views, indexes
-    pxt serve sitewatch     # start the API
+    python app.py           # import this module, then serve the FastAPI app
 """
 
 import os
@@ -194,7 +193,7 @@ if HAVE_GEMINI:
         if_exists="ignore",
     )
 
-# ── Query functions (used by pxt serve routes) ────────────────────────────────
+# ── Query functions ───────────────────────────────────────────────────────────
 
 
 @pxt.query

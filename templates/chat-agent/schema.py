@@ -4,7 +4,6 @@ Replaces Mem0/MemGPT: conversations, memory, knowledge, and tool traces
 are all queryable, versioned Pixeltable tables.
 
     python app.py           # start the server with web UI
-    # or API-only: python schema.py && pxt serve agent
 """
 
 import os
@@ -117,7 +116,7 @@ def get_history(conversation_id: str, limit: int = 10):
 # mcp_tools = pxt.mcp_udfs('http://localhost:8000/mcp')
 # tools = pxt.tools(functions.web_search, search_knowledge, recall_memory, *mcp_tools)
 
-# ── Agent table (always created so pxt serve can register routes) ─────────
+# ── Agent table ───────────────────────────────────────────────────────────
 
 agent = pxt.create_table(
     "agent.agent",

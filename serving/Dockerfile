@@ -7,11 +7,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 WORKDIR /app
-COPY pyproject.toml uv.lock ./
+COPY pyproject.toml uv.lock pixeltable.toml ./
 RUN uv sync --frozen --no-dev --no-install-project --python /usr/local/bin/python3
 ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 
-COPY schema.py ./
+COPY app.py ./
 RUN uv sync --frozen --no-dev --python /usr/local/bin/python3
 
 RUN addgroup --system --gid 1000 appgroup && \
@@ -21,4 +21,5 @@ RUN addgroup --system --gid 1000 appgroup && \
 USER appuser
 ENV PIXELTABLE_HOME=/data/pixeltable
 
-ENTRYPOINT ["uv", "run", "pxt", "serve", "pipeline"]
+EXPOSE 8000
+CMD ["sh", "-c", "uv run pxt schema update app.py pipeline -f && uv run pxt service run app.py pipeline --host 0.0.0.0 --port 8000"]

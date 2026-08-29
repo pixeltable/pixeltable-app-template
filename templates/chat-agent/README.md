@@ -14,27 +14,9 @@ ANTHROPIC_API_KEY=sk-... uv run python app.py
 # Open http://localhost:8000
 ```
 
-That's it. `app.py` initializes the schema and starts the server with the web UI.
+That's it. `app.py` imports `schema.py` (creates tables) and mounts a `FastAPIRouter`. `pixeltable.toml` marks this directory as a project root.
 
-### API-only mode (no UI)
-
-```bash
-ANTHROPIC_API_KEY=sk-... uv run python schema.py
-ANTHROPIC_API_KEY=sk-... uv run pxt serve agent
-```
-
-Do **not** run both `pxt serve` and `app.py` at the same time -- they bind to the same port.
-
-### `/ask` endpoint differences
-
-`app.py` and `pxt serve agent` expose different `/ask` contracts:
-
-| Mode | Endpoint | Behavior |
-|------|----------|----------|
-| `app.py` | `POST /api/ask` | Custom handler calling `schema.ask()`; body: `{"question": "...", "conversation_id": "..."}`; returns `{"answer": "..."}` |
-| `pxt serve agent` | `POST /api/ask` | Insert route into `agent.agent`; body includes `prompt`, `conversation_id`, and optional `system_prompt`, `max_tokens`, `temperature`; returns insert row with computed pipeline columns |
-
-Both trigger the same computed-column agent pipeline; choose based on whether you need the simplified app handler or direct table insert semantics.
+`POST /api/ask` is a custom handler calling `schema.ask()`. Body: `{"question": "...", "conversation_id": "..."}`. Returns `{"answer": "..."}`. The computed-column agent pipeline still runs on insert.
 
 ## Architecture
 
@@ -127,6 +109,7 @@ chat-agent/
 ├── app.py           FastAPI server — API + web UI
 ├── static/
 │   └── index.html   Frontend (Tailwind CSS, vanilla JS)
-├── pyproject.toml   Dependencies + pxt serve routes (API-only alternative)
+├── pixeltable.toml  Project root
+├── pyproject.toml   Dependencies
 └── README.md
 ```

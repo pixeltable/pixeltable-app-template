@@ -1,7 +1,8 @@
-"""Batch processing runner -- alternative to `pxt serve` for offline/scheduled workloads.
+"""Batch processing runner for offline or scheduled workloads.
 
 Usage:
-    python pipeline.py                           # interactive demo with sample data
+    pxt schema update app.py pipeline
+    python pipeline.py                           # status
     python pipeline.py --file urls.json          # ingest from JSON file
     python pipeline.py --urls img.png doc.pdf    # ingest from CLI args
     python pipeline.py --export-parquet out/     # export processed data to Parquet
@@ -13,15 +14,8 @@ import mimetypes
 from datetime import datetime
 from pathlib import Path
 
-import schema  # noqa: F401 -- triggers table/view creation on import
+from app import AudioFiles, DocChunks, Documents, Images, Media, TableModel, search_documents
 from functions import get_processing_status
-from schema import (
-    audio_files,
-    documents,
-    images,
-    media,
-    search_documents,
-)
 
 MIME_TO_MODALITY = {
     "image": "image",
@@ -77,7 +71,7 @@ def ingest_url(url: str, tags: dict | None = None) -> None:
     now = datetime.now()
     tag_data = tags or {}
 
-    media.insert(
+    Media.insert(
         [
             {
                 "url": url,
@@ -89,14 +83,13 @@ def ingest_url(url: str, tags: dict | None = None) -> None:
     )
 
     if modality == "image":
-        images.insert([{"image": url, "source_url": url, "timestamp": now}])
+        Images.insert([{"image": url, "source_url": url, "timestamp": now}])
     elif modality == "document":
         title = Path(url).stem.replace("_", " ").replace("-", " ")
-        documents.insert([{"document": url, "title": title, "timestamp": now}])
+        Documents.insert([{"document": url, "title": title, "timestamp": now}])
     elif modality == "audio":
         title = Path(url).stem.replace("_", " ").replace("-", " ")
-        audio_files.insert([{"audio": url, "title": title, "timestamp": now}])
-    # video: registered in media table only (no dedicated processing table yet)
+        AudioFiles.insert([{"audio": url, "title": title, "timestamp": now}])
 
 
 def ingest_from_file(json_path: str) -> int:
@@ -118,11 +111,11 @@ def export_results(parquet_dir: str) -> None:
     out.mkdir(parents=True, exist_ok=True)
     print(f"Exporting to {out}/")
 
-    export_parquet(images.select(images.uuid, images.source_url, images.width, images.height), out / "images")
+    export_parquet(Images.select(Images.uuid, Images.source_url, Images.width, Images.height), out / "images")
     print("  images -> done")
 
     export_parquet(
-        schema.doc_chunks.select(schema.doc_chunks.text, schema.doc_chunks.page),
+        DocChunks.select(DocChunks.text, DocChunks.page),
         out / "doc_chunks",
     )
     print("  doc_chunks -> done")
@@ -142,11 +135,10 @@ def main() -> None:
     parser.add_argument("--urls", nargs="+", help="URLs or file paths to ingest")
     parser.add_argument("--search", help="Run a document search query")
     parser.add_argument("--export-parquet", metavar="DIR", help="Export results to Parquet")
-    # Export to SQL: use export_sql for Postgres/Snowflake/SQLite
-    # from pixeltable.io.sql import export_sql
-    # export_sql(images, 'processed_images', db_connect_str='postgresql://user:pass@host/db')
     parser.add_argument("--status", action="store_true", help="Show processing status")
     args = parser.parse_args()
+
+    TableModel.update_all("pipeline")
 
     if args.file:
         count = ingest_from_file(args.file)
@@ -170,7 +162,7 @@ def main() -> None:
         print_status()
 
     if not any([args.file, args.urls, args.search, args.export_parquet, args.status]):
-        print("Run with --help for usage, or use `pxt serve pipeline` for the API server.")
+        print("Run with --help for usage, or: pxt schema update app.py pipeline && pxt service run app.py pipeline")
 
 
 if __name__ == "__main__":

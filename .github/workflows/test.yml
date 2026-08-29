@@ -20,7 +20,7 @@ jobs:
           - ubuntu-latest
           - macos-latest
         python-version:
-          - "3.10"
+          - "3.11"
           - "3.12"
       fail-fast: false
     runs-on: ${{ matrix.os }}
@@ -190,7 +190,7 @@ jobs:
             "http://127.0.0.1:$PORT_BASE/api/health"
 
           check_http "serving" "$GITHUB_WORKSPACE/serving" "$((PORT_BASE + 1))" \
-            "uv run pxt serve pipeline --port $((PORT_BASE + 1))" \
+            "uv run pxt schema update app.py pipeline -f && uv run pxt service run app.py pipeline --host 127.0.0.1 --port $((PORT_BASE + 1))" \
             "http://127.0.0.1:$((PORT_BASE + 1))/openapi.json"
 
           check_http "knowledge-base" "$GITHUB_WORKSPACE/templates/knowledge-base" "$((PORT_BASE + 2))" \
@@ -210,21 +210,16 @@ jobs:
             "http://127.0.0.1:$((PORT_BASE + 5))/api/health"
 
           check_http "video-search" "$GITHUB_WORKSPACE/templates/video-search" "$((PORT_BASE + 6))" \
-            "uv run pxt serve videointel --port $((PORT_BASE + 6))" \
+            "uv run pxt schema update app.py videointel -f && uv run pxt service run app.py videointel --host 127.0.0.1 --port $((PORT_BASE + 6))" \
             "http://127.0.0.1:$((PORT_BASE + 6))/openapi.json"
 
           check_http "media-indexing" "$GITHUB_WORKSPACE/templates/media-indexing" "$((PORT_BASE + 7))" \
-            "uv run pxt serve pipeline --port $((PORT_BASE + 7))" \
+            "uv run pxt schema update app.py pipeline -f && uv run pxt service run app.py pipeline --host 127.0.0.1 --port $((PORT_BASE + 7))" \
             "http://127.0.0.1:$((PORT_BASE + 7))/openapi.json"
 
           check_http "image-dataset" "$GITHUB_WORKSPACE/templates/image-dataset" "$((PORT_BASE + 8))" \
-            "uv run pxt serve datalab --port $((PORT_BASE + 8))" \
+            "uv run pxt schema update app.py datalab -f && uv run pxt service run app.py datalab --host 127.0.0.1 --port $((PORT_BASE + 8))" \
             "http://127.0.0.1:$((PORT_BASE + 8))/openapi.json"
-
-          # app.py template with pyproject.toml routes — catch TOML drift vs FastAPIRouter
-          check_http "knowledge-base-pxt-serve" "$GITHUB_WORKSPACE/templates/knowledge-base" "$((PORT_BASE + 9))" \
-            "uv run pxt serve kb --port $((PORT_BASE + 9))" \
-            "http://127.0.0.1:$((PORT_BASE + 9))/openapi.json"
 
           echo ""
           echo "=== batch (pipeline.py) ==="

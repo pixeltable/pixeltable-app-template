@@ -26,18 +26,9 @@ OPENAI_API_KEY=sk-... uv run python app.py
 # Open http://localhost:8000
 ```
 
-That's it. `app.py` initializes the schema and starts the server with the web UI.
+That's it. `app.py` imports `schema.py` (creates tables) and mounts a `FastAPIRouter`. `pixeltable.toml` marks this directory as a project root.
 
 To use local Whisper instead of the OpenAI API, install with `uv sync --extra local` and uncomment the local whisper block in `schema.py`.
-
-### API-only mode (no UI)
-
-```bash
-OPENAI_API_KEY=sk-... uv run python schema.py
-OPENAI_API_KEY=sk-... uv run pxt serve audiointel
-```
-
-Do **not** run both `pxt serve` and `app.py` at the same time -- they bind to the same port.
 
 ## What Pixeltable handles
 
@@ -82,6 +73,7 @@ audio-transcription/
 ├── app.py            FastAPI server — API + web UI
 ├── static/
 │   └── index.html    Frontend (Tailwind CSS, vanilla JS)
-├── pyproject.toml    Dependencies + pxt serve routes (API-only alternative)
+├── pixeltable.toml   Project root
+├── pyproject.toml    Dependencies
 └── README.md
 ```

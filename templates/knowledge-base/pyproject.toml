@@ -1,8 +1,8 @@
 [project]
 name = "knowledge-base"
 version = "0.1.0"
-description = "Unified multimodal knowledge base -- upload docs, images, video, audio and search across all modalities."
-requires-python = ">=3.10"
+description = "Unified multimodal knowledge base: upload docs, images, video, audio and search across all modalities."
+requires-python = ">=3.11"
 dependencies = [
     "pixeltable>=0.6.5",
     "tiktoken>=0.7",
@@ -25,62 +25,4 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["schema", "functions"]
-
-# API-only alternative to app.py: `pxt serve kb`
-# Do not run both at the same time -- they bind to the same port.
-[[tool.pixeltable.service]]
-name = "kb"
-prefix = "/api"
-port = 8000
-
-# ── Insert routes ────────────────────────────────────────────────────────
-
-[[tool.pixeltable.service.routes]]
-type = "insert"
-path = "/ingest/document"
-table = "kb.documents"
-uploadfile_inputs = ["doc"]
-outputs = ["id"]
-
-[[tool.pixeltable.service.routes]]
-type = "insert"
-path = "/ingest/image"
-table = "kb.images"
-uploadfile_inputs = ["image"]
-inputs = ["caption"]
-outputs = ["id"]
-
-[[tool.pixeltable.service.routes]]
-type = "insert"
-path = "/ingest/video"
-table = "kb.videos"
-uploadfile_inputs = ["video"]
-outputs = ["id"]
-
-[[tool.pixeltable.service.routes]]
-type = "insert"
-path = "/ingest/audio"
-table = "kb.audio_files"
-uploadfile_inputs = ["audio"]
-outputs = ["id"]
-
-# ── Query routes ─────────────────────────────────────────────────────────
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/search/documents"
-query = "schema:search_documents"
-method = "post"
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/search/images"
-query = "schema:search_images"
-method = "post"
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/search/video-frames"
-query = "schema:search_video_frames"
-method = "post"
+py-modules = ["schema", "functions", "app"]

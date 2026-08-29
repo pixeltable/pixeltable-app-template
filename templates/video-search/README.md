@@ -2,9 +2,9 @@
 
 Ingest video, automatically extract frames, transcribe audio, detect objects, and search across everything. Your own Twelve Labs, self-hosted.
 
-**What it replaces:** Twelve Labs, Valossa, Ambient.ai ($10K–100K+/yr)
+**What it replaces:** Twelve Labs, Valossa, Ambient.ai ($10K-100K+/yr)
 
-**What Pixeltable does declaratively:** the pipeline that would normally require stitching together ffmpeg + Whisper + DETR + CLIP + a vector DB + a search API — defined as tables, views, and computed columns.
+**What Pixeltable does declaratively:** the pipeline that would normally require stitching together ffmpeg + Whisper + DETR + CLIP + a vector DB + a search API, defined as tables, views, and computed columns.
 
 ## Architecture
 
@@ -48,47 +48,54 @@ Ingest video, automatically extract frames, transcribe audio, detect objects, an
 
 ## Quickstart
 
+Python 3.11+. `pixeltable.toml` is the project root.
+
 ### 1. Install
 
 ```bash
 uv sync
-# For LLM scene descriptions: uv sync --extra openai
+# For LLM scene descriptions: add a computed column in app.py and uv sync --extra openai
 ```
 
-### 2. Initialize & serve
+### 2. Apply and serve
 
 ```bash
-uv run python schema.py           # create tables, views, indexes (idempotent)
-uv run pxt serve videointel       # http://localhost:8000/docs
+uv run pxt schema update app.py videointel
+uv run pxt service update app.py videointel
+uv run pxt service list
 ```
 
-The server starts at `http://localhost:8000`. Upload a video (background job — poll until `done`):
+Foreground on port 8000:
 
 ```bash
-RESP=$(curl -s -X POST http://localhost:8000/api/ingest \
+uv run pxt schema update app.py videointel
+uv run pxt service run app.py videointel --port 8000
+```
+
+`videointel` is a catalog directory, not a folder on disk.
+
+Upload a video (background job: use the `job_url` from the response):
+
+```bash
+curl -s -X POST http://localhost:8000/api/ingest \
   -F "video=@lecture.mp4" \
-  -F "title=ML Lecture 1")
-JOB_ID=$(echo "$RESP" | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
-curl -s "http://localhost:8000/api/jobs/$JOB_ID"
-# Repeat until status is "done", then search.
+  -F "title=ML Lecture 1"
 ```
 
-Search responses return a **`score`** field (CLIP similarity), plus **`thumbnail`** (base64) — not raw image bytes.
-
-Search across all modalities:
+Search responses return a **`score`** field (CLIP similarity), plus **`thumbnail`** (base64).
 
 ```bash
-# Visual search — "what does X look like?"
+# Visual search
 curl -X POST http://localhost:8000/api/search/visual \
   -H "Content-Type: application/json" \
   -d '{"query_text": "person writing on whiteboard"}'
 
-# Spoken content search — "what was said about X?"
+# Spoken content search
 curl -X POST http://localhost:8000/api/search/spoken \
   -H "Content-Type: application/json" \
   -d '{"query_text": "gradient descent optimization"}'
 
-# Object detection search — "where does X appear?"
+# Object detection search
 curl -X POST http://localhost:8000/api/search/objects \
   -H "Content-Type: application/json" \
   -d '{"label": "person"}'
@@ -98,32 +105,31 @@ curl -X POST http://localhost:8000/api/search/objects \
 
 When you upload a video, Pixeltable automatically runs the full pipeline:
 
-1. **Frame extraction** — `frame_iterator` extracts frames at 1 FPS
-2. **CLIP embeddings** — each frame gets a visual embedding for semantic image search
-3. **Thumbnails** — base64-encoded 320x320 thumbnails for API responses
-4. **Object detection** — DETR identifies objects in each frame
-5. **Audio extraction** — `extract_audio` pulls the audio track
-6. **Audio chunking** — `audio_splitter` creates 30-second segments
-7. **Transcription** — Whisper transcribes each audio chunk locally
-8. **Sentence splitting** — transcripts are split into sentences
-9. **Text embeddings** — sentence-transformer embeddings for spoken content search
-10. **Scene descriptions** — GPT-4o-mini describes keyframes (optional, needs `OPENAI_API_KEY`)
+1. **Frame extraction:** `frame_iterator` extracts frames at 1 FPS
+2. **CLIP embeddings:** each frame gets a visual embedding for semantic image search
+3. **Thumbnails:** base64-encoded 320x320 thumbnails for API responses
+4. **Object detection:** DETR identifies objects in each frame
+5. **Audio extraction:** `extract_audio` pulls the audio track
+6. **Audio chunking:** `audio_splitter` creates 30-second segments
+7. **Transcription:** Whisper transcribes each audio chunk locally
+8. **Sentence splitting:** transcripts are split into sentences
+9. **Text embeddings:** sentence-transformer embeddings for spoken content search
 
-All of this is defined declaratively in `schema.py`. No orchestration code, no DAG, no glue.
+All of this is declared in `app.py`. Indexes live on `__indexes__`. Routes live on a `FastAPIRouter`.
 
 ## Configuration
 
 | Environment Variable | Effect |
 |---------------------|--------|
-| `OPENAI_API_KEY` | Enables LLM scene descriptions on frames |
 | `PIXELTABLE_HOME` | Custom data directory (default `~/.pixeltable`) |
 
 ## Project Structure
 
 ```
 video-search/
-├── schema.py          Declarative pipeline: tables, views, indexes, queries
+├── app.py             TableModel classes, indexes, queries, FastAPIRouter
 ├── functions.py       UDF: has_label object-detection filter
-├── pyproject.toml     Dependencies + pxt serve route config
+├── pixeltable.toml    Project root
+├── pyproject.toml     Dependencies
 └── README.md          This file
 ```

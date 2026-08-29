@@ -1,7 +1,7 @@
 [project]
 name = "pixeltable-chat-agent"
 version = "0.1.0"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "pixeltable>=0.6.5",
     "sentence-transformers>=5.6.0",
@@ -21,48 +21,4 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["schema", "functions"]
-
-# API-only alternative to app.py: `pxt serve agent`
-# Do not run both at the same time -- they bind to the same port.
-[[tool.pixeltable.service]]
-name = "agent"
-prefix = "/api"
-port = 8000
-
-# ── Routes ────────────────────────────────────────────────────────────────
-# POST /ask inserts a prompt into agent.agent; the computed column chain
-# (memory recall → knowledge RAG → LLM + tools → context → final LLM)
-# fires automatically and the answer column is returned.
-
-[[tool.pixeltable.service.routes]]
-type = "insert"
-path = "/ask"
-table = "agent.agent"
-inputs = ["prompt", "conversation_id", "system_prompt", "max_tokens", "temperature"]
-outputs = ["uuid"]
-
-[[tool.pixeltable.service.routes]]
-type = "insert"
-path = "/knowledge"
-table = "agent.knowledge"
-inputs = ["text", "title", "source"]
-outputs = ["uuid"]
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/knowledge/search"
-query = "schema:search_knowledge"
-method = "get"
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/memory/search"
-query = "schema:recall_memory"
-method = "get"
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/history"
-query = "schema:get_history"
-method = "get"
+py-modules = ["schema", "functions", "app"]

@@ -20,9 +20,25 @@ TEMPLATES: list[str] = [
     "video-search",
 ]
 
+# Templates that declare TableModel + FastAPIRouter in app.py (no schema.py).
+APPLICATION_FILE_TEMPLATES: list[str] = [
+    "image-dataset",
+    "media-indexing",
+    "video-search",
+]
+
+# UI templates that still apply via import schema / python app.py.
+SCHEMA_TEMPLATES: list[str] = [
+    "audio-transcription",
+    "chat-agent",
+    "full-stack-showcase",
+    "knowledge-base",
+]
+
 EXPECTED_FILES: dict[str, list[str]] = {
     "backend": [
         "pyproject.toml",
+        "pixeltable.toml",
         "main.py",
         "config.py",
         "models.py",
@@ -34,13 +50,15 @@ EXPECTED_FILES: dict[str, list[str]] = {
     ],
     "serving": [
         "pyproject.toml",
-        "schema.py",
+        "pixeltable.toml",
+        "app.py",
         "Dockerfile",
         "docker-compose.yml",
     ],
     "batch": [
         "pyproject.toml",
-        "schema.py",
+        "pixeltable.toml",
+        "app.py",
         "pipeline.py",
         "sample_batch.json",
         "Dockerfile",
@@ -49,13 +67,13 @@ EXPECTED_FILES: dict[str, list[str]] = {
 }
 
 EXPECTED_TEMPLATE_FILES: dict[str, list[str]] = {
-    "audio-transcription": ["schema.py", "pyproject.toml", "app.py", "functions.py"],
-    "chat-agent": ["schema.py", "pyproject.toml", "app.py"],
-    "full-stack-showcase": ["schema.py", "pyproject.toml", "app.py", "config.py", "functions.py"],
-    "image-dataset": ["schema.py", "pyproject.toml", "export.py"],
-    "knowledge-base": ["schema.py", "pyproject.toml", "app.py", "functions.py"],
-    "media-indexing": ["schema.py", "pyproject.toml", "pipeline.py", "functions.py"],
-    "video-search": ["schema.py", "pyproject.toml", "functions.py"],
+    "audio-transcription": ["schema.py", "pyproject.toml", "pixeltable.toml", "app.py", "functions.py"],
+    "chat-agent": ["schema.py", "pyproject.toml", "pixeltable.toml", "app.py"],
+    "full-stack-showcase": ["schema.py", "pyproject.toml", "pixeltable.toml", "app.py", "config.py", "functions.py"],
+    "image-dataset": ["app.py", "pyproject.toml", "pixeltable.toml", "export.py"],
+    "knowledge-base": ["schema.py", "pyproject.toml", "pixeltable.toml", "app.py", "functions.py"],
+    "media-indexing": ["app.py", "pyproject.toml", "pixeltable.toml", "pipeline.py", "functions.py"],
+    "video-search": ["app.py", "pyproject.toml", "pixeltable.toml", "functions.py"],
 }
 
 

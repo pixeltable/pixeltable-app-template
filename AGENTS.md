@@ -18,7 +18,7 @@ Before modifying this codebase, familiarize yourself with Pixeltable:
 | Pattern | Entry point | When to use |
 |---------|------------|-------------|
 | `backend/` | FastAPI (+ reference UI in monorepo) | Custom API; use `--backend` scaffold for headless |
-| `serving/` | `pxt serve` (TOML routes) | You need an API with zero web code |
+| `serving/` | `app.py` + `pxt service` | You need an API with zero web code |
 | `batch/` | `python pipeline.py` | Cron, queue, Cloud Run Job -- no HTTP server |
 
 **Seven application templates** (scaffolded via `uvx pixeltable-new --template <name>`):
@@ -29,13 +29,13 @@ Before modifying this codebase, familiarize yourself with Pixeltable:
 | `chat-agent` | `python app.py` | **app.py template** -- has UI |
 | `audio-transcription` | `python app.py` | **app.py template** -- has UI |
 | `full-stack-showcase` | `python app.py` | **app.py template** -- has UI + React frontend |
-| `video-search` | `pxt serve videointel` | **pxt-serve template** -- API only |
-| `media-indexing` | `pxt serve pipeline` | **pxt-serve template** -- API + batch |
-| `image-dataset` | `pxt serve datalab` | **pxt-serve template** -- API + batch |
+| `video-search` | `pxt schema update app.py videointel` then `pxt service` | API only |
+| `media-indexing` | `pxt schema update app.py pipeline` then `pxt service` | API + batch |
+| `image-dataset` | `pxt schema update app.py datalab` then `pxt service` | API + batch |
 
 The two template categories matter:
-- **app.py templates** have `app.py` + `static/index.html` (or `frontend/`). `app.py` does `import schema` which triggers schema init. Running `python app.py` is the single entry point. `pxt serve` routes in `pyproject.toml` exist as an API-only alternative. They must **not** run simultaneously (same port).
-- **pxt-serve templates** have no `app.py`. Run `python schema.py` then `pxt serve <name>`.
+- **UI templates** have `app.py` + `static/index.html` (or `frontend/`). `app.py` does `import schema` which triggers schema init, then mounts `FastAPIRouter`. Running `python app.py` is the single entry point.
+- **Application-file templates** (`serving/`, `video-search`, `media-indexing`, `image-dataset`) declare `TableModel` + `FastAPIRouter` in `app.py`. Apply with `pxt schema update app.py TARGET`, serve with `pxt service update` or `pxt service run`. `TARGET` is a catalog directory, not a folder on disk. Each of these ships `pixeltable.toml` as the project root.
 
 All `app.py` templates include port auto-detection: if port 8000 is taken, they probe upward. Override with `PORT` env var.
 
@@ -60,12 +60,14 @@ backend/                         API Backend pattern (FastAPI + reference React 
 ├── config.py                    Environment-driven settings
 └── routers/                     FastAPIRouter + @pxt.query per domain
 
-serving/                         Declarative Serving pattern (pxt serve)
-├── schema.py                    Tables, views, indexes, @pxt.query
-└── pyproject.toml               Dependencies + [tool.pixeltable] routes
+serving/                         Declarative Serving pattern (app.py + pxt service)
+├── app.py                       TableModel, indexes, @pxt.query, FastAPIRouter
+├── pixeltable.toml              Project root
+└── pyproject.toml               Dependencies
 
 batch/                           Batch Processing pattern (no HTTP server)
-├── schema.py                    Tables, views, computed columns
+├── app.py                       TableModel classes, views, indexes
+├── pixeltable.toml              Project root
 └── pipeline.py                  Ingest → compute → export_sql → exit
 
 templates/                       Application templates (fetched by pixeltable-new)
@@ -73,9 +75,9 @@ templates/                       Application templates (fetched by pixeltable-ne
 ├── chat-agent/                  app.py + static UI
 ├── audio-transcription/         app.py + static UI
 ├── full-stack-showcase/         app.py + React frontend + routers
-├── video-search/               pxt serve only
-├── media-indexing/             pxt serve + pipeline.py
-└── image-dataset/              pxt serve + export.py
+├── video-search/               app.py + pxt service
+├── media-indexing/             app.py + pipeline.py
+└── image-dataset/              app.py + export.py
 
 frontend/src/                    React UI for the backend/ pattern
 deploy/                          Fly, Render, Railway, Vercel, DigitalOcean, Helm, Terraform, CDK
@@ -93,7 +95,7 @@ cp .env.example .env          # add ANTHROPIC_API_KEY and OPENAI_API_KEY
 cd backend
 uv sync                       # creates .venv, installs deps including en_core_web_sm
 source .venv/bin/activate
-python main.py                # http://localhost:8000 — schema auto-inits via import setup_pixeltable
+python main.py                # http://localhost:8000: schema auto-inits via import setup_pixeltable
 # Optional: python setup_pixeltable.py (or RESET_SCHEMA=true python setup_pixeltable.py to wipe)
 
 # Frontend (separate terminal)
@@ -369,7 +371,7 @@ uv run python -m pytest tests/test_schema.py -v --run-slow  # schema smoke (need
 cd frontend && npm ci && npm run build     # React UI for backend/ pattern
 ```
 
-Tests cover: file existence, Python syntax, TOML parsing, `pixeltable>=0.6.5` version guard, deprecated-API grep, `[build-system]` and `py-modules`, `pxt serve` route config (colon-separated queries, no `modules` field), template integrity (query routes reference existing schema functions, namespace consistency), and schema import smoke tests (backend, serving, batch, all templates).
+Tests cover: file existence, Python syntax, TOML parsing, `pixeltable>=0.6.5` version guard, deprecated-API grep, no TOML route tables, `pixeltable.toml` project roots, `[build-system]` and `py-modules`, template integrity, and schema import smoke tests (backend, serving, batch, all templates).
 
 CI runs via `.github/workflows/test.yml`: lint + fast tests on every push/PR; schema import smoke on every push/PR; full server startup smoke weekly (or manual dispatch from Actions).
 
@@ -380,5 +382,5 @@ If you're new to this codebase, read in this order:
 1. `backend/setup_pixeltable.py`: the core. Defines the entire data model and agent pipeline.
 2. `backend/routers/data.py`: `FastAPIRouter` + co-located `@pxt.query` (shows `add_insert_route`, `add_delete_route`, `add_query_route`).
 3. `templates/knowledge-base/`: simplest app.py template. Shows the `import schema` + `FastAPIRouter` + custom endpoints pattern.
-4. `templates/video-search/`: simplest pxt-serve template. Shows schema.py + `pyproject.toml` routes, no app.py.
+4. `templates/video-search/`: simplest application-file template. Shows TableModel + FastAPIRouter in `app.py`.
 5. `tests/conftest.py` + `tests/test_config.py`: how tests validate templates.

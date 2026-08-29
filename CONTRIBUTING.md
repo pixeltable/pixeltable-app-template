@@ -8,7 +8,7 @@ cd pixeltable-starter-kit
 uv sync                            # installs dev deps (pytest, ruff)
 ```
 
-All patterns and templates require **Pixeltable 0.6.5+**. Those that use HuggingFace sentence-transformer embeddings also require **sentence-transformers 5.6.0+**; the exceptions are `full-stack-showcase` (Gemini embeddings) and `image-dataset` (CLIP), which don't need it.
+All patterns and templates require **Pixeltable 0.6.5+** and **Python 3.11+**. Those that use HuggingFace sentence-transformer embeddings also require **sentence-transformers 5.6.0+**; the exceptions are `full-stack-showcase` (Gemini embeddings) and `image-dataset` (CLIP), which don't need it.
 
 ## Testing
 
@@ -29,20 +29,24 @@ Slow checks run in CI via `.github/workflows/test.yml`:
 
 ### Two categories
 
-Templates with `app.py` (knowledge-base, chat-agent, audio-transcription, full-stack-showcase):
+UI templates (knowledge-base, chat-agent, audio-transcription, full-stack-showcase):
 - `app.py` does `import schema` which triggers schema init on import
-- `python app.py` is the **single entry point** -- no separate `schema.py` step
+- `python app.py` is the **single entry point**
 - Port auto-detection: probes from 8000 upward, respects `PORT` env var
-- `pxt serve` routes in `pyproject.toml` are an API-only alternative (same port, don't run both)
-- `schema.py __main__` should print: `Schema initialized. Run: python app.py`
+- Do not document the retired TOML serving CLI
 
-Templates without `app.py` (video-search, media-indexing, image-dataset):
-- Entry point: `python schema.py` then `pxt serve <name>`
-- `schema.py __main__` should print: `Schema initialized. Run: pxt serve <name>`
+Application-file templates (video-search, media-indexing, image-dataset, and `serving/`):
+- `app.py` declares `TableModel` classes and a `FastAPIRouter`
+- Apply: `pxt schema update app.py TARGET`
+- Serve: `pxt service update app.py TARGET` or `pxt service run app.py TARGET`
+- Indexes on the model: `__indexes__ = [pxt.EmbeddingIndex(...)]`
+- `TARGET` is a catalog directory, not a folder on disk
 
 ### Required files
 
-Every template must have: `schema.py`, `pyproject.toml` (with `[build-system]`, `[tool.setuptools] py-modules`, and `[[tool.pixeltable.service]]`), `README.md`.
+Every template must have: `app.py` (or `schema.py` + serving `app.py` for UI templates), `pixeltable.toml` (`[[pixeltable.database]]`), `pyproject.toml` (with `[build-system]` and `[tool.setuptools] py-modules`), `README.md`.
+
+Do not add TOML service route tables. Routes belong on FastAPIRouter in app.py.
 
 ### How scaffolding works
 
@@ -50,14 +54,13 @@ Every template must have: `schema.py`, `pyproject.toml` (with `[build-system]`, 
 
 ### Checklist for new templates
 
-1. Create `templates/<name>/` with `schema.py`, `pyproject.toml`, `README.md`
-2. Add `[build-system]` and `[tool.setuptools] py-modules` to `pyproject.toml`
-3. Add `[[tool.pixeltable.service]]` with routes
-4. Query routes use colon format: `query = "schema:function_name"`
-5. Add the template to `tests/conftest.py` (`TEMPLATES` and `EXPECTED_TEMPLATE_FILES`)
-6. Add the template to `pixeltable-new`'s `TEMPLATES`, `TEMPLATE_DESCRIPTIONS`, and `TEMPLATE_NEXT_STEPS`
-7. Run `uv run python -m pytest tests/ -v` to verify
-8. Update root `README.md` template table
+1. Create `templates/<name>/` with `app.py`, `pixeltable.toml`, `pyproject.toml`, `README.md`
+2. Add `[build-system]` and `[tool.setuptools] py-modules` listing `app`
+3. Declare routes on `FastAPIRouter` in `app.py`
+4. Add the template to `tests/conftest.py` (`TEMPLATES` and `EXPECTED_TEMPLATE_FILES`)
+5. Add the template to `pixeltable-new`'s `TEMPLATES`, `TEMPLATE_DESCRIPTIONS`, and `TEMPLATE_NEXT_STEPS`
+6. Run `uv run python -m pytest tests/ -v` to verify
+7. Update root `README.md` template table
 
 ## Linting
 

@@ -3,12 +3,18 @@
 from pathlib import Path
 
 import pixeltable as pxt
+from app import TableModel
 from pixeltable.io import export_parquet
+
+
+def _dataset():
+    TableModel.update_all("datalab")
+    return pxt.get_table("datalab.dataset")
 
 
 def export_to_parquet(output_path: str = "exports/dataset.parquet") -> None:
     """Export the full dataset to Parquet format."""
-    dataset = pxt.get_table("datalab.dataset")
+    dataset = _dataset()
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     export_parquet(dataset, output_path)
     print(f"Exported to {output_path}")
@@ -24,7 +30,7 @@ def export_to_pytorch(split: str = "train", image_format: str = "pt"):
     Returns:
         A torch IterableDataset ready for DataLoader.
     """
-    dataset = pxt.get_table("datalab.dataset")
+    dataset = _dataset()
     query = dataset.where(dataset.split == split).select(dataset.image, dataset.label)
     return query.to_pytorch_dataset(image_format=image_format)
 
@@ -39,7 +45,7 @@ def export_to_coco(output_dir: str = "exports/coco") -> Path:
     """
     from pixeltable.functions.huggingface import detr_to_coco
 
-    dataset = pxt.get_table("datalab.dataset")
+    dataset = _dataset()
     query = dataset.select(detr_to_coco(dataset.image, dataset.detections))
     coco_path = query.to_coco_dataset()
     print(f"COCO dataset written to {coco_path}")
@@ -55,7 +61,7 @@ def export_to_pandas(split: str | None = None):
     Returns:
         A pandas DataFrame with image paths, labels, and metadata.
     """
-    dataset = pxt.get_table("datalab.dataset")
+    dataset = _dataset()
     query = dataset if split is None else dataset.where(dataset.split == split)
     df = query.select(dataset.uuid, dataset.image, dataset.label, dataset.split, dataset.source).collect().to_pandas()
     print(f"Collected {len(df)} samples")
@@ -63,6 +69,4 @@ def export_to_pandas(split: str | None = None):
 
 
 if __name__ == "__main__":
-    import schema  # noqa: F401 -- ensure tables exist
-
     export_to_parquet()

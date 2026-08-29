@@ -7,7 +7,6 @@ Serves the React frontend (if built) and exposes REST endpoints for:
   - Dashboard (stats, alerts, activity)
 
     uv run uvicorn app:app --reload        # dev server (full API + React UI)
-    uv run pxt serve sitewatch             # headless API-only subset (ingest + list; see pyproject.toml)
 """
 
 import logging
@@ -32,7 +31,7 @@ async def lifespan(app: FastAPI):
         pxt.get_table(f"{config.NAMESPACE}.videos")
         logger.info("Connected to Pixeltable schema")
     except Exception:
-        logger.warning("Pixeltable schema not initialized. Run 'python schema.py' first.")
+        logger.warning("Pixeltable schema not initialized. Import schema or run python app.py once.")
     yield
 
 

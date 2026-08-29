@@ -22,15 +22,7 @@ cd frontend && npm install && npm run dev   # UI at http://localhost:5173
 
 In development, the Vite dev server (`:5173`) proxies `/api` to the backend (`:8000`). For a single-port production build, run `cd frontend && npm run build` (outputs to `static/`), then `python app.py` serves the built UI and the API together on `:8000`.
 
-### API-only mode (no UI)
-
-```bash
-uv sync
-uv run python schema.py
-uv run pxt serve sitewatch         # http://localhost:8000/docs
-```
-
-Do **not** run both `pxt serve` and `app.py` at the same time — they bind to the same port.
+`app.py` imports `schema.py` and mounts FastAPI routers. `pixeltable.toml` marks this directory as a project root.
 
 ## AI Stack
 

@@ -4,10 +4,6 @@ These tests require Pixeltable (embedded Postgres) and download embedding models
 They are marked `slow` and skipped in fast CI runs. Run with:
 
     uv run pytest tests/test_schema.py -v --run-slow
-
-To run in the serving venv (which has pixeltable installed):
-
-    cd serving && uv run pytest ../tests/test_schema.py -v --run-slow
 """
 
 from __future__ import annotations
@@ -20,15 +16,16 @@ from pathlib import Path
 
 import pytest
 
-from tests.conftest import ROOT, TEMPLATES
+from tests.conftest import APPLICATION_FILE_TEMPLATES, ROOT, SCHEMA_TEMPLATES
 
 pytestmark = pytest.mark.slow
 
 _SCHEMA_TARGETS: list[tuple[str, str]] = [
-    (str(ROOT / "serving"), "import schema; print('OK')"),
-    (str(ROOT / "batch"), "import schema; print('OK')"),
-    (str(ROOT / "backend"), "import setup_pixeltable; print('OK')"),
-    *[(str(ROOT / "templates" / template), "import schema; print('OK')") for template in TEMPLATES],
+    (str(ROOT / "serving"), 'import app; print("OK")'),
+    (str(ROOT / "batch"), 'import app; print("OK")'),
+    (str(ROOT / "backend"), 'import setup_pixeltable; print("OK")'),
+    *[(str(ROOT / "templates" / t), 'import app; print("OK")') for t in APPLICATION_FILE_TEMPLATES],
+    *[(str(ROOT / "templates" / t), 'import schema; print("OK")') for t in SCHEMA_TEMPLATES],
 ]
 
 

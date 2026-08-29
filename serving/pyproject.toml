@@ -1,17 +1,14 @@
 [project]
 name = "pixeltable-serving"
 version = "0.1.0"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
-    "pixeltable>=0.6.5",
-    "fastapi>=0.115",
+    "pixeltable[serve]>=0.6.5",
     "pillow>=10.0",
     "psycopg[binary]>=3.1",
-    "python-multipart>=0.0.9",
     "sentence-transformers>=5.6.0",
     "spacy>=3.7",
     "sqlalchemy>=2.0",
-    "uvicorn>=0.30",
     "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
 ]
 
@@ -23,72 +20,4 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["schema"]
-
-# ── Pixeltable service config (read by `pxt serve`) ─────────────────────────
-# Start the server:
-#   pxt serve pipeline
-#   pxt serve pipeline --port 9000
-
-[[tool.pixeltable.service]]
-name = "pipeline"
-prefix = "/api"
-port = 8000
-
-# ── Query routes ─────────────────────────────────────────────────────────────
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/search"
-query = "schema:search_documents"
-method = "post"
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/documents"
-query = "schema:list_documents"
-method = "get"
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/images"
-query = "schema:list_images"
-method = "get"
-
-# ── Insert routes ────────────────────────────────────────────────────────────
-# Each insert triggers computed columns (chunking, embeddings, thumbnails)
-# automatically. Optional export_sql sends results to a serving DB on every
-# insert — uncomment the [tool.pixeltable.service.routes.export_sql] blocks.
-
-[[tool.pixeltable.service.routes]]
-type = "insert"
-path = "/ingest/document"
-table = "pipeline.documents"
-inputs = ["title", "body", "source_id"]
-outputs = ["uuid"]
-
-# Uncomment to auto-export every inserted document to a serving DB:
-# [tool.pixeltable.service.routes.export_sql]
-# db_connect = "postgresql+psycopg://user:pass@host/db"
-# table = "processed_documents"
-# method = "insert"
-
-[[tool.pixeltable.service.routes]]
-type = "insert"
-path = "/ingest/image"
-table = "pipeline.images"
-uploadfile_inputs = ["image"]
-inputs = ["label", "source_id"]
-outputs = ["uuid"]
-
-# ── Delete routes ────────────────────────────────────────────────────────────
-
-[[tool.pixeltable.service.routes]]
-type = "delete"
-path = "/delete/document"
-table = "pipeline.documents"
-
-[[tool.pixeltable.service.routes]]
-type = "delete"
-path = "/delete/image"
-table = "pipeline.images"
+py-modules = ["app"]

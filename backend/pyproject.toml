@@ -2,7 +2,7 @@
 name = "pixeltable-starter-kit"
 version = "0.1.0"
 description = "Full-stack starter app powered by Pixeltable"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "pixeltable>=0.6.5",
     "fastapi",

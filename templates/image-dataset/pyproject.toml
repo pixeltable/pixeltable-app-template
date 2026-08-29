@@ -1,19 +1,16 @@
 [project]
 name = "image-dataset"
 version = "0.1.0"
-description = "ML dataset engineering -- import, auto-annotate, curate, version, and export."
-requires-python = ">=3.10"
+description = "ML dataset engineering: import, auto-annotate, curate, version, and export."
+requires-python = ">=3.11"
 dependencies = [
-    "pixeltable>=0.6.5",
+    "pixeltable[serve]>=0.6.5",
     "open-clip-torch>=2.20",
     "transformers>=4.30",
     "torch>=2.0",
     "timm>=0.9",
     "pillow>=10.0",
     "psycopg[binary]>=3.1",
-    "fastapi>=0.115",
-    "uvicorn>=0.30",
-    "python-multipart>=0.0.9",
 ]
 
 [project.optional-dependencies]
@@ -25,35 +22,4 @@ requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-py-modules = ["schema"]
-
-[[tool.pixeltable.service]]
-name = "datalab"
-prefix = "/api"
-port = 8000
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/search"
-query = "schema:search_similar"
-method = "post"
-
-[[tool.pixeltable.service.routes]]
-type = "insert"
-path = "/ingest"
-table = "datalab.dataset"
-uploadfile_inputs = ["image"]
-inputs = ["label", "split", "source"]
-outputs = ["uuid"]
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/annotations"
-query = "schema:get_annotations"
-method = "get"
-
-[[tool.pixeltable.service.routes]]
-type = "query"
-path = "/stats"
-query = "schema:dataset_stats"
-method = "get"
+py-modules = ["app", "export"]

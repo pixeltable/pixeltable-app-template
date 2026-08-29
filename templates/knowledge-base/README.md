@@ -19,20 +19,9 @@ uv sync                           # install deps
 uv run python app.py              # http://localhost:8000
 ```
 
-That's it. `app.py` initializes the schema and starts the server with the web UI.
+That's it. `app.py` imports `schema.py` (creates tables) and mounts a `FastAPIRouter` for ingest and search. `pixeltable.toml` marks this directory as a project root.
 
-Whisper transcription and the Ask AI tab use the OpenAI SDK — install the extra with `uv sync --extra openai` and set `OPENAI_API_KEY`. Without it, document + image + video-frame search still works.
-
-### API-only mode (no UI)
-
-If you only need the REST API without the web UI:
-
-```bash
-uv run python schema.py           # initialize tables
-uv run pxt serve kb               # http://localhost:8000/docs
-```
-
-Do **not** run both `pxt serve` and `app.py` at the same time -- they bind to the same port.
+Whisper transcription and the Ask AI tab use the OpenAI SDK. Install the extra with `uv sync --extra openai` and set `OPENAI_API_KEY`. Without it, document + image + video-frame search still works.
 
 ## What Pixeltable Handles Automatically
 
@@ -62,10 +51,11 @@ All indexes stay current as new data arrives. No cron jobs, no reindex scripts, 
 knowledge-base/
 ├── schema.py         Tables, views, indexes, computed columns, query functions
 ├── functions.py      UDFs (merge_results)
-├── app.py            FastAPI server — API + web UI
+├── app.py            FastAPI server: mounts FastAPIRouter + web UI
 ├── static/
 │   └── index.html    Frontend (Tailwind CSS, vanilla JS)
-├── pyproject.toml    Dependencies + pxt serve routes (API-only alternative)
+├── pixeltable.toml   Project root
+├── pyproject.toml    Dependencies
 └── README.md
 ```
 

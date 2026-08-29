@@ -130,7 +130,7 @@ class TestNoAntiPatterns:
         return False
 
     def test_no_sim_alias_in_pxt_query(self) -> None:
-        """Ban sim=sim in @pxt.query — breaks .collect() and pxt serve (use score=sim)."""
+        """Ban sim=sim in @pxt.query: breaks .collect() (use score=sim)."""
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
         scan_roots = [
@@ -178,3 +178,30 @@ class TestNoAntiPatterns:
                     if pattern in text:
                         hits.append(f"{py_file.relative_to(ROOT)}: {pattern}")
         assert hits == [], "Deprecated Pixeltable APIs found:\n" + "\n".join(hits)
+
+    def test_no_pxt_serve_contract(self) -> None:
+        """pxt serve and [tool.pixeltable.service] TOML routes are gone."""
+        hits: list[str] = []
+        skip = {".venv", ".git", "node_modules", "tests", "docs", "sdk"}
+        scan_roots = [
+            ROOT / "backend",
+            ROOT / "batch",
+            ROOT / "serving",
+            ROOT / "templates",
+            ROOT / "README.md",
+            ROOT / "AGENTS.md",
+            ROOT / "CONTRIBUTING.md",
+        ]
+        banned = ("pxt serve", "[[tool.pixeltable.service]]", "tool.pixeltable.service")
+        for root in scan_roots:
+            paths = [root] if root.is_file() else list(root.rglob("*"))
+            for f in paths:
+                if not f.is_file() or skip & set(f.parts):
+                    continue
+                if f.suffix not in {".py", ".toml", ".md", ".yml", ".yaml"}:
+                    continue
+                text = f.read_text(encoding="utf-8", errors="ignore")
+                for token in banned:
+                    if token in text:
+                        hits.append(f"{f.relative_to(ROOT)}: {token}")
+        assert hits == [], "Dead pxt serve contract found:\n" + "\n".join(hits)

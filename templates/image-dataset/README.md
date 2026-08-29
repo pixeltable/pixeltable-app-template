@@ -1,4 +1,4 @@
-# Data Lab -- ML Dataset Engineering
+# Data Lab: ML Dataset Engineering
 
 Import, auto-annotate, curate with embedding search, version, and export to PyTorch/Parquet. Your own Roboflow, self-hosted.
 
@@ -17,71 +17,71 @@ Import → Auto-Annotate → Curate → Version → Export
   │          │              │         │         │
   │     DETR object     CLIP sim    Built-in  PyTorch
   │     detection +     search +    version   Parquet
-  │     Vision LLM      dedup       control   COCO
-  │                                           Label Studio
+  │     labels          dedup       control   COCO
   ▼
 datalab.dataset table
 ```
 
 ## Quickstart
 
+Python 3.11+. `pixeltable.toml` is the project root. `datalab` is a catalog directory, not a folder on disk.
+
 ### 1. Install
 
 ```bash
 uv sync --extra export
-# Optional: uv sync --extra openai for vision LLM annotations
 ```
 
-### 2. Initialize & Ingest
+### 2. Apply schema
+
+```bash
+uv run pxt schema update app.py datalab
+```
+
+### 3. Ingest (SDK)
 
 ```python
-import schema  # creates tables, computed columns, and indexes
+from app import Dataset, TableModel
 
-import pixeltable as pxt
-dataset = pxt.get_table('datalab.dataset')
-
-dataset.insert([
+TableModel.update_all('datalab')
+Dataset.insert([
     {'image': 'path/to/image1.jpg', 'label': 'cat', 'split': 'train', 'source': 'coco'},
     {'image': 'path/to/image2.jpg', 'label': 'dog', 'split': 'val', 'source': 'coco'},
 ])
 ```
 
-### 3. Search & Curate
+### 4. Search and curate
 
 ```python
-from schema import search_similar, find_similar_images, dataset_stats
+from app import dataset_stats, find_similar_images, search_similar
 
-# Find images matching a text description (@pxt.query → call .collect())
 results = search_similar('a dog running on grass', limit=20).collect()
-
-# Find duplicates / near-duplicates (plain helper — returns records directly)
 similar = find_similar_images(image_uuid='...', limit=10)
-
-# Dataset overview (@pxt.query → call .collect())
 stats = dataset_stats().collect()
 ```
 
 ## Export Formats
 
 ```python
-from export import export_to_pytorch, export_to_parquet, export_to_coco
+from export import export_to_coco, export_to_parquet, export_to_pytorch
 
-# PyTorch DataLoader
 train_ds = export_to_pytorch(split='train')
-loader = torch.utils.data.DataLoader(train_ds, batch_size=32)
-
-# Parquet (for Spark, DuckDB, pandas)
 export_to_parquet('exports/dataset.parquet')
-
-# COCO format (requires DETR detections)
 export_to_coco()
 ```
 
 ## API Server
 
 ```bash
-uv run python schema.py           # initialize tables
-uv run pxt serve datalab           # http://localhost:8000/docs
+uv run pxt schema update app.py datalab
+uv run pxt service update app.py datalab
+uv run pxt service list
+```
+
+Foreground on port 8000:
+
+```bash
+uv run pxt service run app.py datalab --port 8000
 ```
 
 | Method | Endpoint | Description |
@@ -93,21 +93,20 @@ uv run pxt serve datalab           # http://localhost:8000/docs
 
 ## Auto-Annotation Pipeline
 
-**Always on (computed columns):**
-- **DETR Object Detection** -- `facebook/detr-resnet-50` detects objects and produces bounding boxes, labels, and scores.
-- **CLIP Embeddings** -- `openai/clip-vit-base-patch32` enables text-to-image and image-to-image similarity search.
+Always on (computed columns in `app.py`):
 
-**Optional (requires `OPENAI_API_KEY`):**
-- **Vision LLM Classification** -- GPT-4o-mini classifies each image into a single category.
+- **DETR object detection:** `facebook/detr-resnet-50` detects objects and produces bounding boxes, labels, and scores.
+- **CLIP embeddings:** `openai/clip-vit-base-patch32` enables text-to-image and image-to-image similarity search.
 
-All annotations run automatically on insert -- no manual labeling step.
+All annotations run automatically on insert.
 
 ## Project Structure
 
 ```
 image-dataset/
-├── schema.py        # Table definitions, computed columns, query functions
-├── export.py        # PyTorch, Parquet, COCO export helpers
-├── pyproject.toml   # Dependencies and service routes
+├── app.py           TableModel, indexes, queries, FastAPIRouter
+├── export.py        PyTorch, Parquet, COCO export helpers
+├── pixeltable.toml  Project root
+├── pyproject.toml   Dependencies
 └── README.md
 ```
