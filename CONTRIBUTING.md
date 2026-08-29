@@ -15,8 +15,8 @@ sentence-transformer embeddings require sentence-transformers 5.6.0+.
 
 ```bash
 uv sync
-uv run ruff check serving/ batch/ tests/
-uv run ruff format serving/ batch/ tests/ --check
+uv run ruff check serving/ batch/ examples/ tests/
+uv run ruff format serving/ batch/ examples/ tests/ --check
 uv run python -m pytest tests/ -v
 ```
 
@@ -35,6 +35,9 @@ for serving), `README.md`.
 
 Do not add TOML service route tables. Do not add `templates/` or a second
 apply path. Tables are declared in `app.py` and applied with `pxt schema update`.
+
+`examples/` are Cloud gallery apps (`gallery.json`). Same `app.py` contract.
+`pixeltable-new` does not copy them. Each example README names its catalog TARGET.
 
 `pixeltable-new` fetches `serving/` or `batch/` from this repo's `main` tarball.
 Printed next-steps live in pixeltable-new and need a PyPI release to change.

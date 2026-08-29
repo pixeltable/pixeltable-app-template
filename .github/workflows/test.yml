@@ -41,8 +41,8 @@ jobs:
         run: uv sync
       - name: Lint
         run: |
-          uv run ruff check serving/ batch/ tests/
-          uv run ruff format serving/ batch/ tests/ --check
+          uv run ruff check serving/ batch/ examples/ tests/
+          uv run ruff format serving/ batch/ examples/ tests/ --check
       - name: Test
         run: uv run python -m pytest tests/ -v --tb=short
 

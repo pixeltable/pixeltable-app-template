@@ -9,6 +9,7 @@ import pytest
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 PATTERNS: list[str] = ["serving", "batch"]
+EXAMPLES: list[str] = ["video-search", "chat-agent"]
 
 EXPECTED_FILES: dict[str, list[str]] = {
     "serving": [

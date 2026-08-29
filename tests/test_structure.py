@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import ast
+import json
 
 import pytest
 
-from tests.conftest import EXPECTED_FILES, PATTERNS, REMOVED_PATHS, ROOT
+from tests.conftest import EXAMPLES, EXPECTED_FILES, PATTERNS, REMOVED_PATHS, ROOT
 
 _DEPRECATED_PATTERNS: list[tuple[str, str]] = [
     ("FrameIterator", "Use frame_iterator from pixeltable.functions.video"),
@@ -110,8 +111,8 @@ class TestNoAntiPatterns:
     def test_no_sim_alias_in_pxt_query(self) -> None:
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
-        for pattern in PATTERNS:
-            for py_file in (ROOT / pattern).rglob("*.py"):
+        for folder in [*PATTERNS, *[f"examples/{e}" for e in EXAMPLES]]:
+            for py_file in (ROOT / folder).rglob("*.py"):
                 if skip & set(py_file.parts):
                     continue
                 tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
@@ -133,8 +134,8 @@ class TestNoAntiPatterns:
     def test_no_deprecated_pixeltable_apis(self) -> None:
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
-        for pattern in PATTERNS:
-            for py_file in (ROOT / pattern).rglob("*.py"):
+        for folder in [*PATTERNS, *[f"examples/{e}" for e in EXAMPLES]]:
+            for py_file in (ROOT / folder).rglob("*.py"):
                 if skip & set(py_file.parts):
                     continue
                 text = py_file.read_text(encoding="utf-8", errors="ignore")
@@ -149,6 +150,7 @@ class TestNoAntiPatterns:
         scan_roots = [
             ROOT / "batch",
             ROOT / "serving",
+            ROOT / "examples",
             ROOT / "README.md",
             ROOT / "AGENTS.md",
             ROOT / "CONTRIBUTING.md",
@@ -165,3 +167,46 @@ class TestNoAntiPatterns:
                     if token in text:
                         hits.append(f"{f.relative_to(ROOT)}: {token}")
         assert hits == [], "Dead apply path found:\n" + "\n".join(hits)
+
+
+class TestExamples:
+    @pytest.mark.parametrize("example", EXAMPLES)
+    def test_example_app_exists(self, example: str) -> None:
+        root = ROOT / "examples" / example
+        for relpath in ("app.py", "pixeltable.toml", "pyproject.toml", "README.md"):
+            assert (root / relpath).is_file(), f"examples/{example}/{relpath} missing"
+
+    @pytest.mark.parametrize("example", EXAMPLES)
+    def test_example_python_parses(self, example: str) -> None:
+        for py_file in (ROOT / "examples" / example).rglob("*.py"):
+            if ".venv" in py_file.parts:
+                continue
+            source = py_file.read_text(encoding="utf-8")
+            ast.parse(source, filename=str(py_file))
+
+    @pytest.mark.parametrize("example", EXAMPLES)
+    def test_example_is_tablemodel(self, example: str) -> None:
+        source = (ROOT / "examples" / example / "app.py").read_text(encoding="utf-8")
+        assert "model_base()" in source
+        assert "FastAPIRouter" in source
+        assert "__indexes__" in source
+        assert "add_embedding_index" not in source
+        assert "pxt.create_table" not in source
+
+
+class TestGallery:
+    def test_gallery_matches_paths(self) -> None:
+        gallery_path = ROOT / "gallery.json"
+        assert gallery_path.is_file()
+        gallery = json.loads(gallery_path.read_text(encoding="utf-8"))
+        recipes = gallery["recipes"]
+        ids = {r["id"] for r in recipes}
+        assert ids == {"serving", "batch", *EXAMPLES}
+        for recipe in recipes:
+            github_path = ROOT / recipe["githubPath"]
+            entry = github_path / recipe["entry"]
+            assert entry.is_file(), f"{recipe['id']}: missing {entry.relative_to(ROOT)}"
+            assert recipe["entry"] == "app.py"
+            assert "scaffold" in recipe
+            assert "--template" not in recipe["scaffold"]
+            assert "--backend" not in recipe["scaffold"]

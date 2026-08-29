@@ -19,8 +19,9 @@ A project root is `pixeltable.toml` (or `pyproject.toml` with `[tool.pixeltable]
 scaffold writes one. If you copied files by hand, run `pxt init` first.
 
 Need HTTP? That is the default (`serving/`). No HTTP? `uvx pixeltable-new myapp --batch`.
-Other apps (RAG, video, agents, a UI) are written into the same `app.py` by an agent
-with the [Pixeltable skill](https://github.com/pixeltable/pixeltable-skill).
+Video frames and an agent-as-table live in [`examples/`](examples/) (same apply path;
+not copied by `uvx`). Cloud reads [`gallery.json`](gallery.json). Other apps are written
+into `app.py` by an agent with the [Pixeltable skill](https://github.com/pixeltable/pixeltable-skill).
 
 ## Serving
 
@@ -53,6 +54,12 @@ uv sync
 uv run pxt schema update app.py pipeline
 uv run python pipeline.py
 ```
+
+## Examples
+
+[`examples/`](examples/) are extra DAGs for Cloud recipes: video search (`frame_iterator` +
+CLIP) and a chat agent (query functions as computed columns). Copy the folder, then the
+same CLI as serving, with the TARGET in that example's README (`videointel` or `agent`).
 
 ## Resources
 
