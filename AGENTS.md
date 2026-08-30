@@ -5,8 +5,9 @@ Instructions for AI coding agents working in the Pixeltable Starter Kit.
 ## Product contract
 
 Apps are one Python file (`app.py`): `TableModel` classes and a `FastAPIRouter`.
-Apply with `pxt schema update`. Serve locally with `pxt service update` or
-`pxt service run`. Indexes belong on the model (`__indexes__`). Routes live
+Apply with `pxt schema update`. Serve with `pxt service update` or
+`pxt service run`. Same file on Cloud: `pxt db update`, then schema, then
+`pxt service update app.py pxt://org:db`. Indexes belong on the model (`__indexes__`). Routes live
 on `FastAPIRouter`. No TOML route tables.
 
 ```bash

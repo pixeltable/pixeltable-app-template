@@ -39,7 +39,13 @@ uv run python -c "import app; print(app.ask('What is Pixeltable?', conversation_
 curl -s "http://localhost:8000/api/memory/search?query_text=Pixeltable&limit=5"
 ```
 
-Hosted catalog: `pxt schema update app.py pxt://org:db`. `pxt service` is local-only.
+Hosted:
+
+```bash
+pxt db update pxt://org:db
+pxt schema update app.py pxt://org:db
+pxt service update app.py pxt://org:db
+```
 
 | Object | Role |
 |--------|------|

@@ -1,13 +1,16 @@
 # Pixeltable Cloud
 
-Apply the same application file to a hosted catalog. `pxt service` is local-only. Managed cloud HTTP is coming.
+Apply the same application file to a hosted catalog.
 
 ```bash
-pxt schema update app.py pipeline              # local catalog directory
-pxt schema update app.py pxt://org:mydb        # hosted
+pxt db update pxt://org:mydb
+pxt schema update app.py pxt://org:mydb
+pxt service update app.py pxt://org:mydb
 ```
 
-`PIXELTABLE_API_KEY` is required for Cloud. Set it in the environment or in config. See [Deploy to Pixeltable Cloud](https://docs.pixeltable.com/howto/deployment/cloud).
+`PIXELTABLE_API_KEY` is required. Set it in the environment or in config. See [Deploy to Pixeltable Cloud](https://docs.pixeltable.com/howto/deployment/cloud).
+
+`pxt service run` stays on this machine. Hosted HTTP is `pxt service update` against the `pxt://` URI.
 
 ## Local HTTP
 
@@ -34,7 +37,7 @@ Do not put routes in TOML. Routes live on the router in `app.py`.
 | | Local | Cloud |
 |---|---|---|
 | Catalog | `pxt schema update app.py pipeline` | `pxt schema update app.py pxt://org:mydb` |
-| HTTP | `pxt service update` / `pxt service run` | Coming soon |
+| HTTP | `pxt service update` / `pxt service run` | `pxt service update app.py pxt://org:mydb` |
 | Media | local disk | `pxtfs://org:mydb/home` |
 
 ## See Also

@@ -27,7 +27,13 @@ curl -s -X POST http://localhost:8000/api/search/visual \
   -d '{"query_text": "a person walking", "limit": 5}'
 ```
 
-Hosted catalog: `pxt schema update app.py pxt://org:db`. `pxt service` is local-only.
+Hosted:
+
+```bash
+pxt db update pxt://org:db
+pxt schema update app.py pxt://org:db
+pxt service update app.py pxt://org:db
+```
 
 | Object | Role |
 |--------|------|

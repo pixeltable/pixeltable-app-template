@@ -67,8 +67,15 @@ pxt schema update app.py pipeline
 pxt service update app.py pipeline
 ```
 
-Hosted catalog (no local HTTP): `pxt schema update app.py pxt://org:db`.
-`pxt service` is local-only. [`deploy/pixeltable-cloud/`](deploy/pixeltable-cloud/).
+Hosted:
+
+```bash
+pxt db update pxt://org:db
+pxt schema update app.py pxt://org:db
+pxt service update app.py pxt://org:db
+```
+
+[`deploy/pixeltable-cloud/`](deploy/pixeltable-cloud/).
 
 Already have FastAPI:
 

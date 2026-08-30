@@ -38,7 +38,14 @@ uv run pxt service list
 Foreground / containers: `uv run pxt service run app.py pipeline --port 8000`.
 Docker: `docker compose up --build` in `serving/`.
 
-Hosted catalog: `pxt schema update app.py pxt://org:db`. `pxt service` is local-only.
+Hosted:
+
+```bash
+pxt db update pxt://org:db
+pxt schema update app.py pxt://org:db
+pxt service update app.py pxt://org:db
+```
+
 See [`serving/deploy/pixeltable-cloud/`](serving/deploy/pixeltable-cloud/).
 
 Already have FastAPI? Apply the file, then `app.include_router(api)` on the router
