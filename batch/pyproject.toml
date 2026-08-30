@@ -3,7 +3,7 @@ name = "pixeltable-batch"
 version = "0.2.0"
 requires-python = ">=3.11"
 dependencies = [
-    "pixeltable>=0.6.5",
+    "pixeltable>=0.7.2",
     "pillow>=10.0",
     "psycopg[binary]>=3.1",
     "sentence-transformers>=5.6.0",

@@ -31,7 +31,7 @@ class TestPatternPyprojectToml:
         cfg = _load_toml(str(ROOT / pattern / "pyproject.toml"))
         deps = cfg["project"].get("dependencies", [])
         pxt_deps = [d for d in deps if d.startswith("pixeltable")]
-        assert any(">=0.6.5" in d for d in pxt_deps), f"{pattern} must require pixeltable>=0.6.5, got {pxt_deps}"
+        assert any(">=0.7.2" in d for d in pxt_deps), f"{pattern} must require pixeltable>=0.7.2, got {pxt_deps}"
 
 
 class TestProjectRoot:
@@ -64,7 +64,7 @@ class TestExampleToml:
         assert "project" in cfg
         deps = cfg["project"].get("dependencies", [])
         pxt_deps = [d for d in deps if d.startswith("pixeltable")]
-        assert any(">=0.6.5" in d for d in pxt_deps), f"{example} must require pixeltable>=0.6.5"
+        assert any(">=0.7.2" in d for d in pxt_deps), f"{example} must require pixeltable>=0.7.2"
         services = cfg.get("tool", {}).get("pixeltable", {}).get("service")
         assert not services, f"examples/{example} still has [tool.pixeltable.service]"
         text = (ROOT / "examples" / example / "pixeltable.toml").read_text(encoding="utf-8")

@@ -8,7 +8,7 @@ cd pixeltable-starter-kit
 uv sync
 ```
 
-Patterns require Pixeltable 0.6.5+ and Python 3.11+. HuggingFace
+Patterns require Pixeltable 0.7.2+ and Python 3.11+. HuggingFace
 sentence-transformer embeddings require sentence-transformers 5.6.0+.
 
 ## Testing
