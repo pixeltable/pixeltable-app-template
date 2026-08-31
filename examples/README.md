@@ -1,7 +1,9 @@
 # Examples
 
-Same apply path as `serving/`: `app.py`, then `pxt schema update`, then `pxt service`.
+Same apply path as `serving/`: the application file (`app.py`), then `pxt schema update`, then `pxt service`.
 `uvx pixeltable-new` does not copy these folders. Cloud reads them from [`gallery.json`](../gallery.json).
+
+Cloud is `pxt schema update app.py pxt://org:db`. `pxt service` stays local.
 
 | Folder | Catalog TARGET | What it adds beyond `serving/` |
 |--------|----------------|--------------------------------|

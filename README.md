@@ -41,12 +41,18 @@ Docker: `docker compose up --build` in `serving/`.
 Hosted:
 
 ```bash
-pxt db update pxt://org:db
-pxt schema update app.py pxt://org:db
-pxt service update app.py pxt://org:db
+pxt db create pxt://org:mydb
+pxt secret set pxt://org KEY=...
+pxt schema update app.py pxt://org:mydb
 ```
 
-See [`serving/deploy/pixeltable-cloud/`](serving/deploy/pixeltable-cloud/).
+Then `t = pxt.get_table('pxt://org:mydb/docs')`. `pxt schema update` applies
+tables to the hosted catalog. It does not start HTTP. `pxt service` binds to
+the local catalog. A `pxt://` target is refused. Hosted browse and insert:
+dashboard and Cloud recipes.
+
+See [`serving/deploy/pixeltable-cloud/`](serving/deploy/pixeltable-cloud/) and
+[Deploy to Pixeltable Cloud](https://docs.pixeltable.com/howto/deployment/cloud).
 
 Already have FastAPI? Apply the file, then `app.include_router(api)` on the router
 declared in `app.py`. Call `pxt.get_table()` inside custom handlers.

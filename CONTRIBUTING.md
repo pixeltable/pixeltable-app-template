@@ -8,7 +8,7 @@ cd pixeltable-starter-kit
 uv sync
 ```
 
-Patterns require Pixeltable from GitHub (the commit with TableModel `.similarity`) and Python 3.11+. HuggingFace
+Patterns require Pixeltable from GitHub (PyPI 0.7.2 cannot resolve TableModel `.similarity`) and Python 3.11+. HuggingFace
 sentence-transformer embeddings require sentence-transformers 5.6.0+.
 
 ## Testing
@@ -36,7 +36,7 @@ for serving), `README.md`.
 Do not add TOML service route tables. Do not add `templates/` or a second
 apply path. Tables are declared in `app.py` and applied with `pxt schema update`.
 
-`examples/` are Cloud gallery apps (`gallery.json`). Same `app.py` contract.
+`examples/` are Cloud gallery apps (`gallery.json`). Same application file.
 `pixeltable-new` does not copy them. Each example README names its catalog TARGET.
 
 `pixeltable-new` fetches `serving/` or `batch/` from this repo's `main` tarball.

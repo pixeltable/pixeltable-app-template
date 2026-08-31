@@ -1,7 +1,8 @@
 # Video search
 
 Ingest a video, extract frames at 1 FPS, CLIP-index them, search by text.
-This is not what `uvx pixeltable-new` copies. Same apply path as `serving/`.
+This is not what `uvx pixeltable-new` copies. Same apply path as `serving/`:
+the application file (`app.py`), `pxt schema update`, then `pxt service`.
 
 ```bash
 cd examples/video-search
@@ -27,13 +28,15 @@ curl -s -X POST http://localhost:8000/api/search/visual \
   -d '{"query_text": "a person walking", "limit": 5}'
 ```
 
-Hosted:
+Cloud:
 
 ```bash
-pxt db update pxt://org:db
+pxt db create pxt://org:db
 pxt schema update app.py pxt://org:db
-pxt service update app.py pxt://org:db
 ```
+
+`pxt service` stays local. Local HTTP: `pxt service update` against the local TARGET (`videointel`).
+On Cloud, insert from the dashboard.
 
 | Object | Role |
 |--------|------|

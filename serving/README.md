@@ -29,6 +29,8 @@ uv run pxt service update app.py pipeline
 uv run pxt service list
 ```
 
+Use the URL from `pxt service list`. OpenAPI is at `/docs`.
+
 Foreground on port 8000:
 
 ```bash
@@ -36,16 +38,16 @@ uv run pxt schema update app.py pipeline
 uv run pxt service run app.py pipeline --port 8000
 ```
 
-OpenAPI is at `/docs`. Docker: `docker compose up --build`.
+Docker Compose keeps 8000: `docker compose up --build`.
 
 ### Test it
 
-Use the URL from `pxt service list`, or `http://localhost:8000` after `service run`:
+After `pxt service run ... --port 8000` (or Docker Compose):
 
 ```bash
 curl -X POST http://localhost:8000/api/ingest/document \
   -H "Content-Type: application/json" \
-  -d '{"title": "Test", "body": "Pixeltable replaces the AI data stack.", "source_id": "api-001"}'
+  -d '{"title": "Test", "body": "One application file. Insert runs compute.", "source_id": "api-001"}'
 
 curl -X POST http://localhost:8000/api/search \
   -H "Content-Type: application/json" \
@@ -54,6 +56,8 @@ curl -X POST http://localhost:8000/api/search \
 curl http://localhost:8000/api/documents
 curl http://localhost:8000/api/images
 ```
+
+After `pxt service update`, use the URL from `pxt service list`.
 
 ## Application file
 
@@ -67,15 +71,9 @@ pxt schema update app.py pipeline
 pxt service update app.py pipeline
 ```
 
-Hosted:
-
-```bash
-pxt db update pxt://org:db
-pxt schema update app.py pxt://org:db
-pxt service update app.py pxt://org:db
-```
-
-[`deploy/pixeltable-cloud/`](deploy/pixeltable-cloud/).
+Hosted catalog: [`deploy/pixeltable-cloud/`](deploy/pixeltable-cloud/).
+`pxt schema update app.py pxt://org:mydb` creates tables. It does not start
+HTTP. `pxt service` is local-only.
 
 Already have FastAPI:
 

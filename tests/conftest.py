@@ -36,6 +36,8 @@ REMOVED_PATHS: list[str] = [
     "frontend",
     "deploy",
     "batch/deploy",
+    "docs",
+    "sdk",
 ]
 
 
