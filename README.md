@@ -3,7 +3,7 @@
 One application file (`app.py`) declares tables, computed columns, indexes, and HTTP routes.
 `pxt schema update` applies the tables. `pxt service` serves the `FastAPIRouter` in the same file.
 
-Python 3.11+. Pixeltable 0.7.2+.
+Python 3.11+. Pixeltable from GitHub (`pxt service`, TableModel indexes). PyPI 0.7.2 cannot resolve `.similarity` on a model column.
 
 ```bash
 uvx pixeltable-new myapp

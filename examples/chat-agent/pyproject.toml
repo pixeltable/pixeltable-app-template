@@ -3,7 +3,7 @@ name = "chat-agent"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
-    "pixeltable[serve]>=0.7.2",
+    "pixeltable[serve] @ git+https://github.com/pixeltable/pixeltable.git",
     "anthropic>=0.25",
     "psycopg[binary]>=3.1",
     "sentence-transformers>=5.6.0",

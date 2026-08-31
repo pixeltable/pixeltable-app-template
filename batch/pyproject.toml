@@ -3,7 +3,7 @@ name = "pixeltable-batch"
 version = "0.2.0"
 requires-python = ">=3.11"
 dependencies = [
-    "pixeltable>=0.7.2",
+    "pixeltable @ git+https://github.com/pixeltable/pixeltable.git",
     "pillow>=10.0",
     "psycopg[binary]>=3.1",
     "sentence-transformers>=5.6.0",

@@ -1870,8 +1870,8 @@ wheels = [
 
 [[package]]
 name = "pixeltable"
-version = "0.7.2"
-source = { registry = "https://pypi.org/simple" }
+version = "0.7.3.dev36+3cefd907"
+source = { git = "https://github.com/pixeltable/pixeltable.git#3cefd907e139a364b5348844f4719e44f250790f" }
 dependencies = [
     { name = "aiohttp" },
     { name = "av" },
@@ -1906,11 +1906,9 @@ dependencies = [
     { name = "sqlalchemy" },
     { name = "tenacity" },
     { name = "toml" },
+    { name = "tqdm" },
     { name = "typing-extensions" },
     { name = "tzlocal" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/ce/1fbfe949d21297d689e158c0fdc34b3ea9b36dcc20b38e998676a298e4cb/pixeltable-0.7.2-py3-none-any.whl", hash = "sha256:67505bb800926221633de507e13135e58fdd7535abbb7e3436301ff7b7849a95", size = 1199754, upload-time = "2026-08-14T21:33:34.573Z" },
 ]
 
 [[package]]
@@ -1937,7 +1935,7 @@ requires-dist = [
     { name = "en-core-web-sm", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.0" },
     { name = "pillow", specifier = ">=10.0" },
-    { name = "pixeltable", specifier = ">=0.7.2" },
+    { name = "pixeltable", git = "https://github.com/pixeltable/pixeltable.git" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
     { name = "sentence-transformers", specifier = ">=5.6.0" },
     { name = "spacy", specifier = ">=3.7" },
