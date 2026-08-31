@@ -56,12 +56,7 @@ class Images(TableModel, name="images"):
 def search_documents(query_text: str, limit: int = 10) -> pxt.Query:
     """Semantic search over document sentences."""
     sim = Sentences.text.similarity(string=query_text)
-    return (
-        Sentences.where(sim > 0.3)
-        .order_by(sim, asc=False)
-        .select(Sentences.text, title=Sentences.title, score=sim)
-        .limit(limit)
-    )
+    return Sentences.where(sim > 0.3).order_by(sim, asc=False).select(Sentences.text, score=sim).limit(limit)
 
 
 @pxt.query

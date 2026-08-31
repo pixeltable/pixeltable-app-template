@@ -75,12 +75,7 @@ class Conversations(TableModel, name="conversations"):
 def search_knowledge(query_text: str, limit: int = 10) -> pxt.Query:
     """Semantic search over the knowledge base."""
     sim = Sentences.text.similarity(string=query_text)
-    return (
-        Sentences.where(sim > 0.3)
-        .order_by(sim, asc=False)
-        .select(Sentences.text, title=Sentences.title, score=sim)
-        .limit(limit)
-    )
+    return Sentences.where(sim > 0.3).order_by(sim, asc=False).select(Sentences.text, score=sim).limit(limit)
 
 
 @pxt.query

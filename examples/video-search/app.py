@@ -47,7 +47,6 @@ def search_visual(query_text: str, limit: int = 20) -> pxt.Query:
         .select(
             Frames.thumbnail,
             timestamp=Frames.frame_attrs.time,
-            source_video=Frames.video,
             score=sim,
         )
         .limit(limit)
