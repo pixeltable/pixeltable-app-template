@@ -1,7 +1,7 @@
 {
   "sourceRepo": "pixeltable/pixeltable-starter-kit",
   "sourcePath": ".",
-  "updated": "2026-08-29",
+  "updated": "2026-08-31",
   "recipes": [
     {
       "id": "serving",
@@ -28,7 +28,7 @@
       "sampleCalls": [
         {
           "label": "Insert a document",
-          "curl": "curl -X POST \"$PIXELTABLE_API_URL/api/ingest/document\" -H \"Authorization: Bearer $PIXELTABLE_API_KEY\" -H \"Content-Type: application/json\" -d '{\"title\": \"readme\", \"body\": \"Pixeltable is declarative multimodal data infrastructure.\", \"source_id\": \"api-001\"}'"
+          "curl": "curl -X POST \"$PIXELTABLE_API_URL/api/ingest/document\" -H \"Authorization: Bearer $PIXELTABLE_API_KEY\" -H \"Content-Type: application/json\" -d '{\"title\": \"readme\", \"body\": \"One application file. Insert runs compute.\", \"source_id\": \"api-001\"}'"
         }
       ],
       "runtimeImageTag": "recipe-serving"
@@ -87,7 +87,7 @@
       "sampleCalls": [
         {
           "label": "Add knowledge",
-          "curl": "curl -X POST \"$PIXELTABLE_API_URL/api/knowledge\" -H \"Authorization: Bearer $PIXELTABLE_API_KEY\" -H \"Content-Type: application/json\" -d '{\"body\": \"Pixeltable is declarative multimodal data infrastructure.\", \"title\": \"intro\", \"source\": \"docs\"}'"
+          "curl": "curl -X POST \"$PIXELTABLE_API_URL/api/knowledge\" -H \"Authorization: Bearer $PIXELTABLE_API_KEY\" -H \"Content-Type: application/json\" -d '{\"body\": \"One application file. Insert runs compute.\", \"title\": \"intro\", \"source\": \"docs\"}'"
         }
       ],
       "runtimeImageTag": null

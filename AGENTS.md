@@ -2,13 +2,19 @@
 
 Instructions for AI coding agents working in the Pixeltable Starter Kit.
 
-## Product contract
+## Apps
 
 Apps are one Python file (`app.py`): `TableModel` classes and a `FastAPIRouter`.
-Apply with `pxt schema update`. Serve with `pxt service update` or
-`pxt service run`. Same file on Cloud: `pxt db update`, then schema, then
-`pxt service update app.py pxt://org:db`. Indexes belong on the model (`__indexes__`). Routes live
-on `FastAPIRouter`. No TOML route tables.
+Apply with `pxt schema update`. Serve with `pxt service update` or `pxt service run`.
+Indexes belong on the model (`__indexes__`). Routes live on `FastAPIRouter`. No TOML route tables.
+Already have FastAPI? `app.include_router(...)` on the router in `app.py`.
+Not a third `backend/` pattern.
+
+Same file on Cloud: `pxt db create pxt://org:mydb`, then
+`pxt secret set pxt://org KEY=...`, then `pxt schema update app.py pxt://org:mydb`.
+Then `t = pxt.get_table('pxt://org:mydb/docs')`.
+`pxt schema update` applies tables to the hosted catalog. It does not start HTTP.
+`pxt service` binds to the local catalog. A hosted URI is refused.
 
 ```bash
 uvx pixeltable-new myapp

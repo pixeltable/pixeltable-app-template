@@ -1,7 +1,8 @@
 # Chat agent
 
 The agent is a table: knowledge, memory, and the Anthropic answer are computed columns.
-This is not what `uvx pixeltable-new` copies. Same apply path as `serving/`.
+This is not what `uvx pixeltable-new` copies. Same apply path as `serving/`:
+the application file (`app.py`), `pxt schema update`, then `pxt service`.
 Requires `ANTHROPIC_API_KEY`.
 
 ```bash
@@ -22,7 +23,7 @@ HTTP `/ask` returns `uuid` and `answer`. It does not write conversation memory.
 ```bash
 curl -s -X POST http://localhost:8000/api/knowledge \
   -H "Content-Type: application/json" \
-  -d '{"body": "Pixeltable is declarative multimodal data infrastructure.", "title": "intro", "source": "docs"}'
+  -d '{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}'
 
 curl -s -X POST http://localhost:8000/api/ask \
   -H "Content-Type: application/json" \
@@ -39,13 +40,16 @@ uv run python -c "import app; print(app.ask('What is Pixeltable?', conversation_
 curl -s "http://localhost:8000/api/memory/search?query_text=Pixeltable&limit=5"
 ```
 
-Hosted:
+Cloud:
 
 ```bash
-pxt db update pxt://org:db
+pxt db create pxt://org:db
+pxt secret set pxt://org ANTHROPIC_API_KEY=sk-...
 pxt schema update app.py pxt://org:db
-pxt service update app.py pxt://org:db
 ```
+
+`pxt service` stays local. Local HTTP: `pxt service update` against the local TARGET (`agent`).
+On Cloud, insert from the dashboard.
 
 | Object | Role |
 |--------|------|

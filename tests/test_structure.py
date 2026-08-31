@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import ast
 import json
+import pathlib
+import re
 
 import pytest
 
@@ -21,10 +23,44 @@ _BANNED_APPLY: tuple[str, ...] = (
     "[[tool.pixeltable.service]]",
     "tool.pixeltable.service",
     "python schema.py",
+    "pxt schema update schema.py",
     "pxt.create_table",
     "setup_pixeltable",
     "add_embedding_index",
+    "pxt service update app.py pxt://",
+    "add_computed_column",
+    "declarative multimodal data infrastructure",
 )
+
+_PXT_SERVE_RE = re.compile(r"pxt serve(?!ice)")
+_HOSTED_SERVICE_RE = re.compile(r"pxt service (update|run|diff|prune)[^\n]*pxt://")
+
+_CONTRACT_MD_FILES: tuple[str, ...] = ("README.md", "AGENTS.md", "CONTRIBUTING.md")
+_CONTRACT_MD_DIRS: tuple[str, ...] = ("serving", "batch", "examples")
+
+
+def _contract_markdown_files() -> list[pathlib.Path]:
+    files: list[pathlib.Path] = []
+    skip = {".venv", ".git", "node_modules", "tests"}
+    for relpath in _CONTRACT_MD_FILES:
+        path = ROOT / relpath
+        if path.is_file():
+            files.append(path)
+    for dirname in _CONTRACT_MD_DIRS:
+        folder = ROOT / dirname
+        if not folder.is_dir():
+            continue
+        for path in folder.rglob("*.md"):
+            if skip & set(path.parts):
+                continue
+            files.append(path)
+    return files
+
+
+def _banned_apply_present(text: str, token: str) -> bool:
+    if token == "pxt serve":
+        return _PXT_SERVE_RE.search(text) is not None
+    return token in text
 
 
 class TestPatternFiles:
@@ -146,7 +182,7 @@ class TestNoAntiPatterns:
 
     def test_one_apply_path(self) -> None:
         hits: list[str] = []
-        skip = {".venv", ".git", "node_modules", "tests", "docs", "sdk"}
+        skip = {".venv", ".git", "node_modules", "tests"}
         scan_roots = [
             ROOT / "batch",
             ROOT / "serving",
@@ -164,9 +200,24 @@ class TestNoAntiPatterns:
                     continue
                 text = f.read_text(encoding="utf-8", errors="ignore")
                 for token in _BANNED_APPLY:
-                    if token in text:
+                    if _banned_apply_present(text, token):
                         hits.append(f"{f.relative_to(ROOT)}: {token}")
         assert hits == [], "Dead apply path found:\n" + "\n".join(hits)
+
+    def test_no_hosted_pxt_service(self) -> None:
+        hits: list[str] = []
+        for f in _contract_markdown_files():
+            text = f.read_text(encoding="utf-8", errors="ignore")
+            for match in _HOSTED_SERVICE_RE.finditer(text):
+                hits.append(f"{f.relative_to(ROOT)}: {match.group(0)}")
+        assert hits == [], "Hosted pxt service found:\n" + "\n".join(hits)
+
+    def test_no_em_dashes(self) -> None:
+        hits: list[str] = []
+        for f in _contract_markdown_files():
+            if "\u2014" in f.read_text(encoding="utf-8", errors="ignore"):
+                hits.append(str(f.relative_to(ROOT)))
+        assert hits == [], f"U+2014 em dash found in: {hits}"
 
 
 class TestExamples:

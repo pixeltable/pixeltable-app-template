@@ -3,14 +3,16 @@
 Apply the same application file to a hosted catalog.
 
 ```bash
-pxt db update pxt://org:mydb
+pxt db create pxt://org:mydb
+pxt secret set pxt://org KEY=...
 pxt schema update app.py pxt://org:mydb
-pxt service update app.py pxt://org:mydb
 ```
+
+Then `t = pxt.get_table('pxt://org:mydb/docs')`. `pxt schema update` creates the tables on the hosted catalog. It does not start HTTP.
 
 `PIXELTABLE_API_KEY` is required. Set it in the environment or in config. See [Deploy to Pixeltable Cloud](https://docs.pixeltable.com/howto/deployment/cloud).
 
-`pxt service run` stays on this machine. Hosted HTTP is `pxt service update` against the `pxt://` URI.
+`pxt service` is local-only. A hosted URI is refused. Hosted HTTP is the dashboard and Cloud recipes.
 
 ## Local HTTP
 
@@ -20,7 +22,7 @@ pxt service update app.py pipeline
 pxt service list
 ```
 
-Or foreground: `pxt service run app.py pipeline --port 8000`.
+Use the URL from `pxt service list`. Or foreground: `pxt service run app.py pipeline --port 8000`.
 
 ## What you write
 
@@ -37,7 +39,7 @@ Do not put routes in TOML. Routes live on the router in `app.py`.
 | | Local | Cloud |
 |---|---|---|
 | Catalog | `pxt schema update app.py pipeline` | `pxt schema update app.py pxt://org:mydb` |
-| HTTP | `pxt service update` / `pxt service run` | `pxt service update app.py pxt://org:mydb` |
+| HTTP | `pxt service update` / `pxt service run` | Dashboard; `pxt service` is local-only |
 | Media | local disk | `pxtfs://org:mydb/home` |
 
 ## See Also
