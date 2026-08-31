@@ -1,0 +1,117 @@
+{
+  "sourceRepo": "pixeltable/pixeltable-starter-kit",
+  "sourcePath": ".",
+  "updated": "2026-08-29",
+  "recipes": [
+    {
+      "id": "serving",
+      "title": "Serving",
+      "blurb": "Documents and images in one application file. Insert, search, delete over HTTP.",
+      "pattern": "serving",
+      "cloudDeploy": true,
+      "dirPrefix": "pipeline",
+      "serviceName": "pipeline",
+      "entry": "app.py",
+      "githubPath": "serving",
+      "scaffold": "uvx pixeltable-new myapp",
+      "legacyIds": ["knowledge-base", "multimodal-rag", "full-stack-showcase"],
+      "secrets": [],
+      "tables": [
+        { "name": "documents", "columns": { "title": "String", "body": "String", "source_id": "String" } },
+        { "name": "images", "columns": { "image": "Image", "label": "String" } }
+      ],
+      "routes": [
+        { "path": "/api/ingest/document", "type": "insert", "table": "documents" },
+        { "path": "/api/ingest/image", "type": "insert", "table": "images" },
+        { "path": "/api/search", "type": "query" }
+      ],
+      "sampleCalls": [
+        {
+          "label": "Insert a document",
+          "curl": "curl -X POST \"$PIXELTABLE_API_URL/api/ingest/document\" -H \"Authorization: Bearer $PIXELTABLE_API_KEY\" -H \"Content-Type: application/json\" -d '{\"title\": \"readme\", \"body\": \"Pixeltable is declarative multimodal data infrastructure.\", \"source_id\": \"api-001\"}'"
+        }
+      ],
+      "runtimeImageTag": "recipe-serving"
+    },
+    {
+      "id": "video-search",
+      "title": "Video search",
+      "blurb": "Ingest video, extract frames at 1 FPS, CLIP-index them, search visually.",
+      "pattern": "serving",
+      "cloudDeploy": true,
+      "dirPrefix": "videointel",
+      "serviceName": "videointel",
+      "entry": "app.py",
+      "githubPath": "examples/video-search",
+      "scaffold": "pxt schema update app.py videointel && pxt service update app.py videointel",
+      "legacyIds": ["video-intel"],
+      "secrets": [],
+      "tables": [
+        { "name": "videos", "columns": { "video": "Video", "title": "String" } }
+      ],
+      "routes": [
+        { "path": "/api/ingest", "type": "insert", "table": "videos" },
+        { "path": "/api/search/visual", "type": "query" }
+      ],
+      "sampleCalls": [
+        {
+          "label": "Insert a video",
+          "curl": "curl -X POST \"$PIXELTABLE_API_URL/api/ingest\" -H \"Authorization: Bearer $PIXELTABLE_API_KEY\" -F video=@clip.mp4 -F title=demo"
+        }
+      ],
+      "runtimeImageTag": "recipe-video-search"
+    },
+    {
+      "id": "chat-agent",
+      "title": "Chat agent",
+      "blurb": "Knowledge, conversation memory, and the LLM answer are tables and computed columns.",
+      "pattern": "serving",
+      "cloudDeploy": false,
+      "dirPrefix": "agent",
+      "serviceName": "agent",
+      "entry": "app.py",
+      "githubPath": "examples/chat-agent",
+      "scaffold": "pxt schema update app.py agent && pxt service update app.py agent",
+      "legacyIds": ["agent"],
+      "secrets": ["ANTHROPIC_API_KEY"],
+      "tables": [
+        { "name": "knowledge", "columns": { "body": "String", "title": "String", "source": "String" } },
+        { "name": "conversations", "columns": { "role": "String", "content": "String", "conversation_id": "String" } },
+        { "name": "agent", "columns": { "prompt": "String", "conversation_id": "String" } }
+      ],
+      "routes": [
+        { "path": "/api/ask", "type": "insert", "table": "agent" },
+        { "path": "/api/knowledge", "type": "insert", "table": "knowledge" },
+        { "path": "/api/knowledge/search", "type": "query" }
+      ],
+      "sampleCalls": [
+        {
+          "label": "Add knowledge",
+          "curl": "curl -X POST \"$PIXELTABLE_API_URL/api/knowledge\" -H \"Authorization: Bearer $PIXELTABLE_API_KEY\" -H \"Content-Type: application/json\" -d '{\"body\": \"Pixeltable is declarative multimodal data infrastructure.\", \"title\": \"intro\", \"source\": \"docs\"}'"
+        }
+      ],
+      "runtimeImageTag": null
+    },
+    {
+      "id": "batch",
+      "title": "Batch",
+      "blurb": "Insert, let computed columns run, export, exit. No HTTP.",
+      "pattern": "batch",
+      "cloudDeploy": false,
+      "dirPrefix": "pipeline",
+      "serviceName": "batch",
+      "entry": "app.py",
+      "githubPath": "batch",
+      "scaffold": "uvx pixeltable-new myapp --batch",
+      "legacyIds": ["media-indexing", "content-pipeline"],
+      "secrets": [],
+      "tables": [
+        { "name": "documents", "columns": { "title": "String", "body": "String" } },
+        { "name": "images", "columns": { "image": "Image" } }
+      ],
+      "routes": [],
+      "sampleCalls": [],
+      "runtimeImageTag": null
+    }
+  ]
+}

@@ -8,39 +8,21 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-PATTERNS: list[str] = ["backend", "serving", "batch"]
-
-TEMPLATES: list[str] = [
-    "audio-transcription",
-    "chat-agent",
-    "full-stack-showcase",
-    "image-dataset",
-    "knowledge-base",
-    "media-indexing",
-    "video-search",
-]
+PATTERNS: list[str] = ["serving", "batch"]
+EXAMPLES: list[str] = ["video-search", "chat-agent"]
 
 EXPECTED_FILES: dict[str, list[str]] = {
-    "backend": [
-        "pyproject.toml",
-        "main.py",
-        "config.py",
-        "models.py",
-        "functions.py",
-        "setup_pixeltable.py",
-        "routers/data.py",
-        "routers/search.py",
-        "routers/agent.py",
-    ],
     "serving": [
         "pyproject.toml",
-        "schema.py",
+        "pixeltable.toml",
+        "app.py",
         "Dockerfile",
         "docker-compose.yml",
     ],
     "batch": [
         "pyproject.toml",
-        "schema.py",
+        "pixeltable.toml",
+        "app.py",
         "pipeline.py",
         "sample_batch.json",
         "Dockerfile",
@@ -48,15 +30,13 @@ EXPECTED_FILES: dict[str, list[str]] = {
     ],
 }
 
-EXPECTED_TEMPLATE_FILES: dict[str, list[str]] = {
-    "audio-transcription": ["schema.py", "pyproject.toml", "app.py", "functions.py"],
-    "chat-agent": ["schema.py", "pyproject.toml", "app.py"],
-    "full-stack-showcase": ["schema.py", "pyproject.toml", "app.py", "config.py", "functions.py"],
-    "image-dataset": ["schema.py", "pyproject.toml", "export.py"],
-    "knowledge-base": ["schema.py", "pyproject.toml", "app.py", "functions.py"],
-    "media-indexing": ["schema.py", "pyproject.toml", "pipeline.py", "functions.py"],
-    "video-search": ["schema.py", "pyproject.toml", "functions.py"],
-}
+REMOVED_PATHS: list[str] = [
+    "templates",
+    "backend",
+    "frontend",
+    "deploy",
+    "batch/deploy",
+]
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:

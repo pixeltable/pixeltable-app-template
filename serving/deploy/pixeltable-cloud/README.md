@@ -1,105 +1,47 @@
-# Pixeltable Cloud (`pxt deploy`)
+# Pixeltable Cloud
 
-> **Coming soon.** `pxt deploy` is being built in [pixeltable/pixeltable#1319](https://github.com/pixeltable/pixeltable/pull/1319) and [#1331](https://github.com/pixeltable/pixeltable/pull/1331). The CLI command exists but cloud hosting is not yet available.
+Apply the same application file to a hosted catalog.
 
-Deploy your Pixeltable service directly to **Pixeltable Cloud**. Same config as `pxt serve`, no Dockerfile, no container management, no persistent volume setup.
-
+```bash
+pxt db update pxt://org:mydb
+pxt schema update app.py pxt://org:mydb
+pxt service update app.py pxt://org:mydb
 ```
-pxt serve openai_demo      # local development (works today)
-pxt deploy openai_demo     # deploy to Pixeltable Cloud (coming soon)
+
+`PIXELTABLE_API_KEY` is required. Set it in the environment or in config. See [Deploy to Pixeltable Cloud](https://docs.pixeltable.com/howto/deployment/cloud).
+
+`pxt service run` stays on this machine. Hosted HTTP is `pxt service update` against the `pxt://` URI.
+
+## Local HTTP
+
+```bash
+pxt schema update app.py pipeline
+pxt service update app.py pipeline
+pxt service list
 ```
 
-## Example Configuration
+Or foreground: `pxt service run app.py pipeline --port 8000`.
 
-A single TOML file defines both the service (routes) and the deployment (infrastructure):
+## What you write
+
+The application file (`app.py`) holds `TableModel` classes and a `FastAPIRouter`. `pixeltable.toml` is the project root:
 
 ```toml
-# pixeltable.toml (or [tool.pixeltable] in pyproject.toml)
-#
-# Local dev:   pxt serve openai_demo
-# Deploy:      pxt deploy openai_demo
-
-[[service]]
-name    = "openai_demo"
-
-# Upload an image -> returns job_url; poll job to get description.
-[[service.routes]]
-type              = "compute"
-table             = "pipeline.images"
-path              = "/image"
-uploadfile_inputs = ["image"]
-outputs           = ["description"]
-background        = true
-
-# Submit text -> summary via gpt-4o-mini.
-[[service.routes]]
-type    = "compute"
-table   = "pipeline.documents"
-path    = "/document"
-inputs  = ["body"]
-outputs = ["summary"]
-
-[[deployment]]
-name    = "openai_demo"
-service = "openai_demo"
-env     = "dev"
-workers = 3
-exclude = ["__pycache__", "*.pyc", ".git", ".env", "*.egg-info", ".venv"]
+[[pixeltable.database]]
 ```
 
-### What each section does
+Do not put routes in TOML. Routes live on the router in `app.py`.
 
-**`[[service]]`** defines the API, identical to `pxt serve`:
-- Routes reference your schema — tables by path, queries by `module:attribute`
-- Each `[[service.routes]]` becomes a REST endpoint
+## Local vs Cloud
 
-**`[[service.routes]]`** with `type = "compute"` runs a table's computed column pipeline on the input and returns the result. Two patterns:
-- **Sync** (`background` omitted): input in, output back in one request
-- **Async** (`background = true`): returns a job URL; client polls for the result (heavy processing like image/video)
-
-**`[[deployment]]`** adds infrastructure intent:
-- `service` references which service to deploy
-- `env` selects the target environment (dev/staging/prod)
-- `workers` sets concurrency (the platform decides what this means)
-- `exclude` replaces `.dockerignore` / `.gcloudignore`
-
-## What Changes vs. Self-Hosted
-
-| Concern | Self-hosted (`pxt serve` + Fly/Render/Railway) | Pixeltable Cloud (`pxt deploy`) |
+| | Local | Cloud |
 |---|---|---|
-| **What you write** | Dockerfile + platform config (fly.toml, render.yaml, ...) | TOML config only |
-| **Compute** | Your container on your infra | Managed by Pixeltable |
-| **Storage** | Persistent volume at `PIXELTABLE_HOME` | Managed by Pixeltable |
-| **Secrets** | Platform-specific (`fly secrets set`, dashboard UI, ...) | `pxt deploy --secret KEY=value` |
-| **Scaling** | Manual (replicas, instance size, auto-scale rules) | `workers = N` |
-| **Schema** | Same `schema.py` | Same `schema.py` |
-| **Routes** | Same `[[service.routes]]` config | Same config |
-
-## Code-Defined Services
-
-For developers who outgrow TOML routes and write a custom FastAPI app, `pxt deploy` also supports `module:attr` references ([PR #1331](https://github.com/pixeltable/pixeltable/pull/1331)):
-
-```toml
-[[deployment]]
-name    = "my_app"
-service = "main:app"       # references FastAPI instance in main.py
-env     = "prod"
-workers = 5
-```
-
-This bridges the gap between the declarative `pxt serve` pattern and a full custom backend.
-
-## Developer Journey
-
-1. Write `app.py` (schema: tables + computed columns)
-2. Write TOML config (routes + deployment)
-3. `pxt serve openai_demo` to develop locally
-4. `pxt deploy openai_demo` when ready
-
-No Dockerfile. No `fly.toml`. No `render.yaml`. No Terraform. No IAM permissions. No volume mounts. No health check config.
+| Catalog | `pxt schema update app.py pipeline` | `pxt schema update app.py pxt://org:mydb` |
+| HTTP | `pxt service update` / `pxt service run` | `pxt service update app.py pxt://org:mydb` |
+| Media | local disk | `pxtfs://org:mydb/home` |
 
 ## See Also
 
-- [`serving/`](../../): Declarative serving with `pxt serve` (works today)
-- [PR #1319](https://github.com/pixeltable/pixeltable/pull/1319): `pxt deploy` CLI + deployment environments
-- [PR #1331](https://github.com/pixeltable/pixeltable/pull/1331): Code-defined services (`module:attr`)
+- [`serving/`](../../): application file + `pxt service`
+- [HTTP serving](https://docs.pixeltable.com/howto/deployment/serving)
+- [Cloud](https://docs.pixeltable.com/howto/deployment/cloud)
