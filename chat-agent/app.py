@@ -135,12 +135,6 @@ class Agent(TableModel, name="agent"):
 
 api = FastAPIRouter(name="agent", prefix="/api")
 api.add_insert_route(
-    Agent,
-    path="/ask",
-    inputs=[Agent.prompt, Agent.conversation_id, Agent.system_prompt, Agent.max_tokens, Agent.temperature],
-    outputs=[Agent.uuid, Agent.answer],
-)
-api.add_insert_route(
     Knowledge,
     path="/knowledge",
     inputs=[Knowledge.body, Knowledge.title, Knowledge.source],
@@ -155,6 +149,8 @@ api.add_insert_route(
 api.add_query_route(path="/knowledge/search", query=search_knowledge, method="get")
 api.add_query_route(path="/memory/search", query=recall_memory, method="get")
 api.add_query_route(path="/history", query=get_history, method="get")
+api.add_delete_route(Knowledge, path="/delete/knowledge")
+api.add_delete_route(Conversations, path="/delete/conversation")
 
 
 def ask(
@@ -218,3 +214,17 @@ def ask(
         ]
     )
     return answer
+
+
+@api.post("/ask")
+def ask_http(body: dict[str, Any]) -> dict[str, str]:
+    """Insert a prompt over HTTP and return the answer."""
+    return {
+        "answer": ask(
+            str(body["prompt"]),
+            str(body.get("conversation_id", "default")),
+            system_prompt=body.get("system_prompt"),
+            max_tokens=int(body.get("max_tokens", 1024)),
+            temperature=float(body.get("temperature", 0.7)),
+        )
+    }

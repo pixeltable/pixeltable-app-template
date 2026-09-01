@@ -21,8 +21,8 @@ from tests.conftest import ROOT
 pytestmark = pytest.mark.slow
 
 _SCHEMA_TARGETS: list[tuple[str, str]] = [
-    (str(ROOT / "serving"), 'import app; print("OK")'),
-    (str(ROOT / "batch"), 'import app; print("OK")'),
+    (str(ROOT / "chat-agent"), 'import app; print("OK")'),
+    (str(ROOT / "video-search"), 'import app; print("OK")'),
 ]
 
 

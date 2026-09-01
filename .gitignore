@@ -11,9 +11,6 @@ venv/
 node_modules/
 dist/
 
-# Pipeline output
-batch/serving.db
-
 # IDE
 .idea/
 .vscode/

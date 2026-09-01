@@ -1,4 +1,4 @@
-"""Advertised patterns have the expected file structure."""
+"""Advertised apps have the expected file structure."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import re
 
 import pytest
 
-from tests.conftest import EXAMPLES, EXPECTED_FILES, PATTERNS, REMOVED_PATHS, ROOT
+from tests.conftest import EXPECTED_FILES, PATTERNS, REMOVED_PATHS, ROOT
 
 _DEPRECATED_PATTERNS: list[tuple[str, str]] = [
     ("FrameIterator", "Use frame_iterator from pixeltable.functions.video"),
@@ -36,7 +36,7 @@ _PXT_SERVE_RE = re.compile(r"pxt serve(?!ice)")
 _HOSTED_SERVICE_RE = re.compile(r"pxt service (update|run|diff|prune)[^\n]*pxt://")
 
 _CONTRACT_MD_FILES: tuple[str, ...] = ("README.md", "AGENTS.md", "CONTRIBUTING.md")
-_CONTRACT_MD_DIRS: tuple[str, ...] = ("serving", "batch", "examples")
+_CONTRACT_MD_DIRS: tuple[str, ...] = ("chat-agent", "video-search")
 
 
 def _contract_markdown_files() -> list[pathlib.Path]:
@@ -114,11 +114,10 @@ class TestApplicationFile:
     def test_app_is_tablemodel(self, pattern: str) -> None:
         source = (ROOT / pattern / "app.py").read_text(encoding="utf-8")
         assert "model_base()" in source
+        assert "FastAPIRouter" in source
+        assert "__indexes__" in source
         assert "add_embedding_index" not in source
         assert "pxt.create_table" not in source
-        if pattern == "serving":
-            assert "FastAPIRouter" in source
-            assert "__indexes__" in source
 
 
 class TestNoAntiPatterns:
@@ -147,7 +146,7 @@ class TestNoAntiPatterns:
     def test_no_sim_alias_in_pxt_query(self) -> None:
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
-        for folder in [*PATTERNS, *[f"examples/{e}" for e in EXAMPLES]]:
+        for folder in PATTERNS:
             for py_file in (ROOT / folder).rglob("*.py"):
                 if skip & set(py_file.parts):
                     continue
@@ -170,7 +169,7 @@ class TestNoAntiPatterns:
     def test_no_deprecated_pixeltable_apis(self) -> None:
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
-        for folder in [*PATTERNS, *[f"examples/{e}" for e in EXAMPLES]]:
+        for folder in PATTERNS:
             for py_file in (ROOT / folder).rglob("*.py"):
                 if skip & set(py_file.parts):
                     continue
@@ -184,9 +183,8 @@ class TestNoAntiPatterns:
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
         scan_roots = [
-            ROOT / "batch",
-            ROOT / "serving",
-            ROOT / "examples",
+            ROOT / "chat-agent",
+            ROOT / "video-search",
             ROOT / "README.md",
             ROOT / "AGENTS.md",
             ROOT / "CONTRIBUTING.md",
@@ -220,31 +218,6 @@ class TestNoAntiPatterns:
         assert hits == [], f"U+2014 em dash found in: {hits}"
 
 
-class TestExamples:
-    @pytest.mark.parametrize("example", EXAMPLES)
-    def test_example_app_exists(self, example: str) -> None:
-        root = ROOT / "examples" / example
-        for relpath in ("app.py", "pixeltable.toml", "pyproject.toml", "README.md"):
-            assert (root / relpath).is_file(), f"examples/{example}/{relpath} missing"
-
-    @pytest.mark.parametrize("example", EXAMPLES)
-    def test_example_python_parses(self, example: str) -> None:
-        for py_file in (ROOT / "examples" / example).rglob("*.py"):
-            if ".venv" in py_file.parts:
-                continue
-            source = py_file.read_text(encoding="utf-8")
-            ast.parse(source, filename=str(py_file))
-
-    @pytest.mark.parametrize("example", EXAMPLES)
-    def test_example_is_tablemodel(self, example: str) -> None:
-        source = (ROOT / "examples" / example / "app.py").read_text(encoding="utf-8")
-        assert "model_base()" in source
-        assert "FastAPIRouter" in source
-        assert "__indexes__" in source
-        assert "add_embedding_index" not in source
-        assert "pxt.create_table" not in source
-
-
 class TestGallery:
     def test_gallery_matches_paths(self) -> None:
         gallery_path = ROOT / "gallery.json"
@@ -252,7 +225,7 @@ class TestGallery:
         gallery = json.loads(gallery_path.read_text(encoding="utf-8"))
         recipes = gallery["recipes"]
         ids = {r["id"] for r in recipes}
-        assert ids == {"serving", "batch", *EXAMPLES}
+        assert ids == set(PATTERNS)
         for recipe in recipes:
             github_path = ROOT / recipe["githubPath"]
             entry = github_path / recipe["entry"]
@@ -261,3 +234,8 @@ class TestGallery:
             assert "scaffold" in recipe
             assert "--template" not in recipe["scaffold"]
             assert "--backend" not in recipe["scaffold"]
+            assert "--batch" not in recipe["scaffold"]
+            if recipe["id"] == "chat-agent":
+                assert recipe["scaffold"] == "uvx pixeltable-new myapp"
+            if recipe["id"] == "video-search":
+                assert "--video" in recipe["scaffold"]

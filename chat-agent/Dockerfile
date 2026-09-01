@@ -22,4 +22,4 @@ USER appuser
 ENV PIXELTABLE_HOME=/data/pixeltable
 
 EXPOSE 8000
-CMD ["sh", "-c", "uv run pxt schema update app.py pipeline -f && uv run pxt service run app.py pipeline --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "uv run pxt schema update app.py agent -f && uv run pxt service run app.py agent --host 0.0.0.0 --port 8000"]
