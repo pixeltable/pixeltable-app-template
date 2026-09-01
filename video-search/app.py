@@ -6,8 +6,6 @@ pxt service update app.py videointel
 
 # ruff: noqa: F821
 
-from __future__ import annotations
-
 import pixeltable as pxt
 import pixeltable.functions as pxtf
 from pixeltable.functions import image as pxt_image
