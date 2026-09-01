@@ -8,8 +8,6 @@ Requires ANTHROPIC_API_KEY for /ask (and ask()) to produce answers.
 
 # ruff: noqa: F821
 
-from __future__ import annotations
-
 from datetime import datetime
 from typing import Any
 
