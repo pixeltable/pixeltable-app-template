@@ -15,8 +15,7 @@ uv run pxt service list
 Foreground: `uv run pxt service run app.py agent --port 8000`.
 Docker Compose keeps 8000: `docker compose up --build`.
 
-HTTP `/ask` returns `uuid` and `answer`. It does not write conversation memory.
-`ask()` in `app.py` writes user and assistant turns after the answer.
+HTTP `/ask` calls `ask()`, which writes user and assistant turns after the answer.
 
 ```bash
 curl -s -X POST http://localhost:8000/api/knowledge \
