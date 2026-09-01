@@ -8,38 +8,37 @@ cd pixeltable-starter-kit
 uv sync
 ```
 
-Patterns require Pixeltable from GitHub (PyPI 0.7.2 cannot resolve TableModel `.similarity`) and Python 3.11+. HuggingFace
+Apps require Pixeltable from GitHub (PyPI 0.7.2 cannot resolve TableModel `.similarity`) and Python 3.11+. HuggingFace
 sentence-transformer embeddings require sentence-transformers 5.6.0+.
 
 ## Testing
 
 ```bash
 uv sync
-uv run ruff check serving/ batch/ examples/ tests/
-uv run ruff format serving/ batch/ examples/ tests/ --check
+uv run ruff check video-search/ chat-agent/ tests/
+uv run ruff format video-search/ chat-agent/ tests/ --check
 uv run python -m pytest tests/ -v
 ```
 
 Slow checks in `.github/workflows/test.yml`:
 
 - **schema-smoke** (every push/PR): `pytest tests/test_schema.py --run-slow`
-- **app-smoke** (weekly + manual dispatch): serving HTTP + batch `pipeline.py`
+- **app-smoke** (weekly + manual dispatch): chat-agent HTTP. Video search skips if no clip is present.
 
-## Patterns
+## Apps
 
-`serving/` is the default `uvx pixeltable-new` extract. `batch/` is `--batch`.
+`chat-agent/` is the default `uvx pixeltable-new` extract. `video-search/` is `--video`.
 
-Each pattern needs: `app.py`, `pixeltable.toml` (`[[pixeltable.database]]`),
-`pyproject.toml` (`[build-system]` and `[tool.setuptools] py-modules` listing `app`
-for serving), `README.md`.
+Each app needs: `app.py`, `pixeltable.toml` (`[[pixeltable.database]]`),
+`pyproject.toml` (`[build-system]` and `[tool.setuptools] py-modules` listing `app`),
+`README.md`, `Dockerfile`, `docker-compose.yml`.
 
 Do not add TOML service route tables. Do not add `templates/` or a second
 apply path. Tables are declared in `app.py` and applied with `pxt schema update`.
 
-`examples/` are Cloud gallery apps (`gallery.json`). Same application file.
-`pixeltable-new` does not copy them. Each example README names its catalog TARGET.
+Cloud recipes: [`gallery.json`](gallery.json). Same application file.
 
-`pixeltable-new` fetches `serving/` or `batch/` from this repo's `main` tarball.
+`pixeltable-new` fetches `chat-agent/` or `video-search/` from this repo's `main` tarball.
 Printed next-steps live in pixeltable-new and need a PyPI release to change.
 
 ## Linting

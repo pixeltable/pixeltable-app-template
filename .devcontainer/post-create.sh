@@ -5,8 +5,8 @@ echo "==> Installing uv"
 curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 
-echo "==> Setting up serving"
-cd /workspaces/pixeltable-starter-kit/serving
+echo "==> Setting up chat-agent"
+cd /workspaces/pixeltable-starter-kit/chat-agent
 uv sync
 
 echo "==> Copying .env.example to .env (if needed)"
@@ -16,5 +16,5 @@ if [ ! -f .env ]; then
 fi
 
 echo "==> Dev container ready"
-echo "    cd serving && uv run pxt schema update app.py pipeline"
-echo "    uv run pxt service run app.py pipeline --port 8000"
+echo "    cd chat-agent && uv run pxt schema update app.py agent"
+echo "    uv run pxt service run app.py agent --port 8000"

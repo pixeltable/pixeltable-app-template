@@ -1,0 +1,13 @@
+services:
+  serve:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      PIXELTABLE_HOME: /data/pixeltable
+      # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    volumes:
+      - pxt-data:/data/pixeltable
+
+volumes:
+  pxt-data:

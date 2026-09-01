@@ -155,6 +155,8 @@ api.add_insert_route(
 api.add_query_route(path="/knowledge/search", query=search_knowledge, method="get")
 api.add_query_route(path="/memory/search", query=recall_memory, method="get")
 api.add_query_route(path="/history", query=get_history, method="get")
+api.add_delete_route(Knowledge, path="/delete/knowledge")
+api.add_delete_route(Conversations, path="/delete/conversation")
 
 
 def ask(

@@ -28,7 +28,7 @@
         "charliermarsh.ruff"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/workspaces/pixeltable-starter-kit/serving/.venv/bin/python"
+        "python.defaultInterpreterPath": "/workspaces/pixeltable-starter-kit/chat-agent/.venv/bin/python"
       }
     }
   }

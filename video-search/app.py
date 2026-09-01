@@ -1,4 +1,4 @@
-"""Video frames at 1 FPS, CLIP index, visual search.
+"""Video frames at 1 FPS, CLIP index, visual search, and image ingest.
 
 pxt schema update app.py videointel
 pxt service update app.py videointel
@@ -37,6 +37,18 @@ class Frames(
     ]
 
 
+class Images(TableModel, name="images"):
+    image: pxt.Image
+    label: pxt.String | None
+    source_id: pxt.String
+    uuid = pxt.Column(value=pxtf.uuid.uuid7(), primary_key=True)
+    timestamp: pxt.Timestamp | None
+    thumbnail = pxt_image.b64_encode(pxt_image.thumbnail(image, size=(128, 128)))
+    width = image.width
+    height = image.height
+    mode = image.mode
+
+
 @pxt.query
 def search_visual(query_text: str, limit: int = 20) -> pxt.Query:
     """CLIP similarity search on video frames."""
@@ -53,6 +65,19 @@ def search_visual(query_text: str, limit: int = 20) -> pxt.Query:
     )
 
 
+@pxt.query
+def list_images() -> pxt.Query:
+    """List ingested images with metadata."""
+    return Images.select(
+        Images.uuid,
+        Images.label,
+        Images.source_id,
+        Images.width,
+        Images.height,
+        Images.thumbnail,
+    ).order_by(Images.timestamp, asc=False)
+
+
 api = FastAPIRouter(name="videointel", prefix="/api")
 api.add_insert_route(
     Videos,
@@ -62,4 +87,14 @@ api.add_insert_route(
     outputs=[Videos.uuid],
     background=True,
 )
+api.add_insert_route(
+    Images,
+    path="/ingest/image",
+    uploadfile_inputs=["image"],
+    inputs=[Images.label, Images.source_id],
+    outputs=[Images.uuid],
+)
 api.add_query_route(path="/search/visual", query=search_visual, method="post")
+api.add_query_route(path="/images", query=list_images, method="get")
+api.add_delete_route(Videos, path="/delete/video")
+api.add_delete_route(Images, path="/delete/image")

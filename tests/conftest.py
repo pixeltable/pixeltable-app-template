@@ -8,23 +8,20 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-PATTERNS: list[str] = ["serving", "batch"]
-EXAMPLES: list[str] = ["video-search", "chat-agent"]
+PATTERNS: list[str] = ["chat-agent", "video-search"]
 
 EXPECTED_FILES: dict[str, list[str]] = {
-    "serving": [
+    "chat-agent": [
         "pyproject.toml",
         "pixeltable.toml",
         "app.py",
         "Dockerfile",
         "docker-compose.yml",
     ],
-    "batch": [
+    "video-search": [
         "pyproject.toml",
         "pixeltable.toml",
         "app.py",
-        "pipeline.py",
-        "sample_batch.json",
         "Dockerfile",
         "docker-compose.yml",
     ],
@@ -35,9 +32,11 @@ REMOVED_PATHS: list[str] = [
     "backend",
     "frontend",
     "deploy",
-    "batch/deploy",
     "docs",
     "sdk",
+    "serving",
+    "batch",
+    "examples",
 ]
 
 

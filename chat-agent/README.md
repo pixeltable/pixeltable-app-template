@@ -1,21 +1,19 @@
 # Chat agent
 
-The agent is a table: knowledge, memory, and the Anthropic answer are computed columns.
-This is not what `uvx pixeltable-new` copies. Same apply path as `serving/`:
-the application file (`app.py`), `pxt schema update`, then `pxt service`.
-Requires `ANTHROPIC_API_KEY`.
+Knowledge, memory, and the Anthropic answer are tables and computed columns.
+One application file (`app.py`). `POST /api/knowledge` does not need an API key.
+`/ask` and `ask()` need `ANTHROPIC_API_KEY`.
 
 ```bash
-cd examples/chat-agent
+cd chat-agent
 uv sync
-export ANTHROPIC_API_KEY=sk-...
 uv run pxt schema update app.py agent
 uv run pxt service update app.py agent
 uv run pxt service list
 ```
 
 Foreground: `uv run pxt service run app.py agent --port 8000`.
-`agent` is a catalog directory, not a folder on disk.
+Docker Compose keeps 8000: `docker compose up --build`.
 
 HTTP `/ask` returns `uuid` and `answer`. It does not write conversation memory.
 `ask()` in `app.py` writes user and assistant turns after the answer.
@@ -24,6 +22,14 @@ HTTP `/ask` returns `uuid` and `answer`. It does not write conversation memory.
 curl -s -X POST http://localhost:8000/api/knowledge \
   -H "Content-Type: application/json" \
   -d '{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}'
+
+curl -s "http://localhost:8000/api/knowledge/search?query_text=application%20file&limit=5"
+```
+
+`/ask` (set `ANTHROPIC_API_KEY` first):
+
+```bash
+export ANTHROPIC_API_KEY=sk-...
 
 curl -s -X POST http://localhost:8000/api/ask \
   -H "Content-Type: application/json" \
@@ -40,22 +46,46 @@ uv run python -c "import app; print(app.ask('What is Pixeltable?', conversation_
 curl -s "http://localhost:8000/api/memory/search?query_text=Pixeltable&limit=5"
 ```
 
+## No HTTP
+
+Apply, then insert and export from Python. Same pattern as [Self-hosting](https://docs.pixeltable.com/howto/deployment/overview).
+
+```bash
+uv run pxt schema update app.py agent
+```
+
+```python
+from pixeltable.io.sql import export_sql
+
+from app import Knowledge
+
+Knowledge.insert(
+    [{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}]
+)
+export_sql(
+    Knowledge.select(Knowledge.title, Knowledge.body, Knowledge.uuid),
+    "knowledge",
+    db_connect_str="sqlite:///agent.db",
+    if_exists="replace",
+)
+```
+
 Cloud:
 
 ```bash
-pxt db create pxt://org:db
+pxt db create pxt://org:mydb
 pxt secret set pxt://org ANTHROPIC_API_KEY=sk-...
-pxt schema update app.py pxt://org:db
+pxt schema update app.py pxt://org:mydb
 ```
 
-`pxt service` stays local. Local HTTP: `pxt service update` against the local TARGET (`agent`).
-On Cloud, insert from the dashboard.
+`pxt service` stays local. On Cloud, insert from the dashboard.
+[Cloud docs](https://docs.pixeltable.com/howto/deployment/cloud).
 
 | Object | Role |
 |--------|------|
 | `agent.knowledge` | Source documents (`body`, not `text`, so the sentence iterator can own `text`) |
 | `agent.sentences` | Sentence chunks + embedding index |
 | `agent.conversations` | Chat turns + embedding index |
-| `agent.agent` | Prompt → memory/knowledge context → Anthropic → `answer` |
+| `agent.agent` | Prompt to memory/knowledge context to Anthropic to `answer` |
 
 Name the stored text column something other than the iterator output. Do not `base=Knowledge.select(...)` to dodge a `text` / `text_1` clash.

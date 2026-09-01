@@ -41,8 +41,8 @@ jobs:
         run: uv sync
       - name: Lint
         run: |
-          uv run ruff check serving/ batch/ examples/ tests/
-          uv run ruff format serving/ batch/ examples/ tests/ --check
+          uv run ruff check video-search/ chat-agent/ tests/
+          uv run ruff format video-search/ chat-agent/ tests/ --check
       - name: Test
         run: uv run python -m pytest tests/ -v --tb=short
 
@@ -58,10 +58,10 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "**/pyproject.toml"
-      - name: Install pattern dependencies
+      - name: Install app dependencies
         run: |
-          cd serving && uv sync
-          cd ../batch && uv sync
+          cd chat-agent && uv sync
+          cd ../video-search && uv sync
       - name: Run schema import smoke tests
         run: uv run python -m pytest tests/test_schema.py -v --run-slow --tb=short
 
@@ -78,11 +78,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: "**/pyproject.toml"
-      - name: Install pattern dependencies
+      - name: Install app dependencies
         run: |
-          cd serving && uv sync
-          cd ../batch && uv sync
-      - name: Verify serving and batch
+          cd chat-agent && uv sync
+          cd ../video-search && uv sync
+      - name: Verify chat-agent HTTP
         run: |
           set -euo pipefail
           PORT=18100
@@ -118,44 +118,60 @@ jobs:
           }
 
           stop_postgres
-          echo "=== serving ==="
-          SERVING_HOME="/tmp/pxt-app-verify-serving"
-          rm -rf "$SERVING_HOME"
+          echo "=== chat-agent ==="
+          AGENT_HOME="/tmp/pxt-app-verify-chat-agent"
+          rm -rf "$AGENT_HOME"
           (
-            cd "$GITHUB_WORKSPACE/serving"
-            export PIXELTABLE_HOME="$SERVING_HOME"
-            uv run pxt schema update app.py pipeline -f
-            uv run pxt service run app.py pipeline --host 127.0.0.1 --port "$PORT"
-          ) >"/tmp/pxt-app-verify-serving.log" 2>&1 &
+            cd "$GITHUB_WORKSPACE/chat-agent"
+            export PIXELTABLE_HOME="$AGENT_HOME"
+            uv run pxt schema update app.py agent -f
+            uv run pxt service run app.py agent --host 127.0.0.1 --port "$PORT"
+          ) >"/tmp/pxt-app-verify-chat-agent.log" 2>&1 &
           PID=$!
           if wait_for_url "http://127.0.0.1:${PORT}/openapi.json" 180; then
-            echo "OK  serving"
-            RESULTS+=("OK  serving")
+            if curl -sf -X POST "http://127.0.0.1:${PORT}/api/knowledge" \
+              -H "Content-Type: application/json" \
+              -d '{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}' \
+              >/dev/null; then
+              echo "OK  chat-agent"
+              RESULTS+=("OK  chat-agent")
+            else
+              echo "FAIL chat-agent (knowledge insert)"
+              tail -25 "/tmp/pxt-app-verify-chat-agent.log" || true
+              RESULTS+=("FAIL chat-agent")
+            fi
           else
-            echo "FAIL serving"
-            tail -25 "/tmp/pxt-app-verify-serving.log" || true
-            RESULTS+=("FAIL serving")
+            echo "FAIL chat-agent"
+            tail -25 "/tmp/pxt-app-verify-chat-agent.log" || true
+            RESULTS+=("FAIL chat-agent")
           fi
           stop_postgres
 
-          echo "=== batch ==="
-          BATCH_HOME="/tmp/pxt-app-verify-batch"
-          rm -rf "$BATCH_HOME"
-          if (
-            cd "$GITHUB_WORKSPACE/batch"
-            export PIXELTABLE_HOME="$BATCH_HOME"
-            export SERVING_DB_URL="sqlite:///${BATCH_HOME}/serving.db"
-            uv run pxt schema update app.py pipeline -f
-            uv run python pipeline.py
-          ) >"/tmp/pxt-app-verify-batch.log" 2>&1; then
-            echo "OK  batch"
-            RESULTS+=("OK  batch")
+          echo "=== video-search ==="
+          CLIP="${VIDEO_CLIP:-}"
+          if [[ -z "$CLIP" || ! -f "$CLIP" ]]; then
+            echo "SKIP video-search (no clip)"
+            RESULTS+=("SKIP video-search")
           else
-            echo "FAIL batch"
-            tail -20 "/tmp/pxt-app-verify-batch.log" || true
-            RESULTS+=("FAIL batch")
+            VIDEO_HOME="/tmp/pxt-app-verify-video-search"
+            rm -rf "$VIDEO_HOME"
+            (
+              cd "$GITHUB_WORKSPACE/video-search"
+              export PIXELTABLE_HOME="$VIDEO_HOME"
+              uv run pxt schema update app.py videointel -f
+              uv run pxt service run app.py videointel --host 127.0.0.1 --port "$PORT"
+            ) >"/tmp/pxt-app-verify-video-search.log" 2>&1 &
+            PID=$!
+            if wait_for_url "http://127.0.0.1:${PORT}/openapi.json" 180; then
+              echo "OK  video-search"
+              RESULTS+=("OK  video-search")
+            else
+              echo "FAIL video-search"
+              tail -25 "/tmp/pxt-app-verify-video-search.log" || true
+              RESULTS+=("FAIL video-search")
+            fi
+            stop_postgres
           fi
-          stop_postgres
 
           echo "========== SUMMARY =========="
           printf '%s\n' "${RESULTS[@]}"
