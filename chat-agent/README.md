@@ -3,6 +3,7 @@
 Knowledge, memory, and the Anthropic answer are tables and computed columns.
 One application file (`app.py`). `POST /api/knowledge` does not need an API key.
 `/ask` and `ask()` need `ANTHROPIC_API_KEY`.
+Declare (`pxt schema update app.py agent`), Serve (`pxt service update`), Experiment (insert, `/ask`, `pxt dashboard`).
 
 ```bash
 cd chat-agent
@@ -72,12 +73,14 @@ export_sql(
 Cloud:
 
 ```bash
-pxt db create pxt://org:mydb
+pxt db update pxt://org:mydb
 pxt secret set pxt://org ANTHROPIC_API_KEY=sk-...
 pxt schema update app.py pxt://org:mydb
+pxt service update app.py pxt://org:mydb
 ```
 
-`pxt service` stays local. On Cloud, insert from the dashboard.
+`pxt db update` packs the hosted image and workers; it is not Experiment.
+`pxt service run` is local only. Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud docs](https://docs.pixeltable.com/howto/deployment/cloud).
 
 | Object | Role |
