@@ -40,6 +40,9 @@ Cloud recipes: [`gallery.json`](gallery.json). Same application file.
 
 `pixeltable-new` fetches `chat-agent/` or `video-search/` from this repo's `main` tarball.
 Printed next-steps live in pixeltable-new and need a PyPI release to change.
+Until that release, the published scaffold may still print the retired Cloud
+create verb and say service stays local. This kit's contract is
+`pxt db update`, then schema update, then `pxt service update` on `pxt://`.
 
 ## Linting
 

@@ -9,9 +9,9 @@ import re
 
 import pytest
 
-from tests.conftest import EXPECTED_FILES, PATTERNS, REMOVED_PATHS, ROOT
+from tests.conftest import APPS, EXPECTED_FILES, REMOVED_PATHS, ROOT
 
-_DEPRECATED_PATTERNS: list[tuple[str, str]] = [
+_DEPRECATED_APIS: list[tuple[str, str]] = [
     ("FrameIterator", "Use frame_iterator from pixeltable.functions.video"),
     ("openai.vision", "Use openai.chat_completions with image_url content blocks"),
     ("from pixeltable.iterators import", "Use pixeltable.functions.* iterators instead"),
@@ -64,20 +64,20 @@ def _banned_apply_present(text: str, token: str) -> bool:
     return token in text
 
 
-class TestPatternFiles:
-    @pytest.mark.parametrize("pattern", PATTERNS)
-    def test_pattern_directory_exists(self, pattern: str) -> None:
-        assert (ROOT / pattern).is_dir(), f"{pattern}/ directory missing"
+class TestAppFiles:
+    @pytest.mark.parametrize("app", APPS)
+    def test_app_directory_exists(self, app: str) -> None:
+        assert (ROOT / app).is_dir(), f"{app}/ directory missing"
 
-    @pytest.mark.parametrize("pattern", PATTERNS)
-    def test_expected_files_exist(self, pattern: str) -> None:
-        for relpath in EXPECTED_FILES[pattern]:
-            fpath = ROOT / pattern / relpath
-            assert fpath.is_file(), f"{pattern}/{relpath} missing"
+    @pytest.mark.parametrize("app", APPS)
+    def test_expected_files_exist(self, app: str) -> None:
+        for relpath in EXPECTED_FILES[app]:
+            fpath = ROOT / app / relpath
+            assert fpath.is_file(), f"{app}/{relpath} missing"
 
-    @pytest.mark.parametrize("pattern", PATTERNS)
-    def test_uv_lock_exists(self, pattern: str) -> None:
-        assert (ROOT / pattern / "uv.lock").is_file(), f"{pattern}/uv.lock missing"
+    @pytest.mark.parametrize("app", APPS)
+    def test_uv_lock_exists(self, app: str) -> None:
+        assert (ROOT / app / "uv.lock").is_file(), f"{app}/uv.lock missing"
 
     @pytest.mark.parametrize("relpath", REMOVED_PATHS)
     def test_removed_paths_absent(self, relpath: str) -> None:
@@ -85,9 +85,9 @@ class TestPatternFiles:
 
 
 class TestPythonSyntax:
-    @pytest.mark.parametrize("pattern", PATTERNS)
-    def test_pattern_python_files_parse(self, pattern: str) -> None:
-        for py_file in (ROOT / pattern).rglob("*.py"):
+    @pytest.mark.parametrize("app", APPS)
+    def test_app_python_files_parse(self, app: str) -> None:
+        for py_file in (ROOT / app).rglob("*.py"):
             if ".venv" in py_file.parts:
                 continue
             source = py_file.read_text(encoding="utf-8")
@@ -105,20 +105,25 @@ class TestDocumentation:
     def test_root_docs_exist(self, relpath: str) -> None:
         assert (ROOT / relpath).is_file(), f"{relpath} missing from repo root"
 
-    @pytest.mark.parametrize("pattern", PATTERNS)
-    def test_pattern_has_readme(self, pattern: str) -> None:
-        assert (ROOT / pattern / "README.md").is_file(), f"{pattern}/README.md missing"
+    @pytest.mark.parametrize("app", APPS)
+    def test_app_has_readme(self, app: str) -> None:
+        assert (ROOT / app / "README.md").is_file(), f"{app}/README.md missing"
 
 
 class TestApplicationFile:
-    @pytest.mark.parametrize("pattern", PATTERNS)
-    def test_app_is_tablemodel(self, pattern: str) -> None:
-        source = (ROOT / pattern / "app.py").read_text(encoding="utf-8")
+    @pytest.mark.parametrize("app", APPS)
+    def test_app_is_tablemodel(self, app: str) -> None:
+        source = (ROOT / app / "app.py").read_text(encoding="utf-8")
         assert "model_base()" in source
         assert "FastAPIRouter" in source
         assert "__indexes__" in source
         assert "add_embedding_index" not in source
         assert "pxt.create_table" not in source
+        assert "pxt.Required" not in source
+
+    def test_chat_agent_uses_return_rows(self) -> None:
+        source = (ROOT / "chat-agent" / "app.py").read_text(encoding="utf-8")
+        assert "return_rows=True" in source
 
 
 class TestNoAntiPatterns:
@@ -147,7 +152,7 @@ class TestNoAntiPatterns:
     def test_no_sim_alias_in_pxt_query(self) -> None:
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
-        for folder in PATTERNS:
+        for folder in APPS:
             for py_file in (ROOT / folder).rglob("*.py"):
                 if skip & set(py_file.parts):
                     continue
@@ -170,12 +175,12 @@ class TestNoAntiPatterns:
     def test_no_deprecated_pixeltable_apis(self) -> None:
         hits: list[str] = []
         skip = {".venv", ".git", "node_modules", "tests"}
-        for folder in PATTERNS:
+        for folder in APPS:
             for py_file in (ROOT / folder).rglob("*.py"):
                 if skip & set(py_file.parts):
                     continue
                 text = py_file.read_text(encoding="utf-8", errors="ignore")
-                for token, _ in _DEPRECATED_PATTERNS:
+                for token, _ in _DEPRECATED_APIS:
                     if token in text:
                         hits.append(f"{py_file.relative_to(ROOT)}: {token}")
         assert hits == [], "Deprecated Pixeltable APIs found:\n" + "\n".join(hits)
@@ -234,17 +239,25 @@ class TestGallery:
         gallery = json.loads(gallery_path.read_text(encoding="utf-8"))
         recipes = gallery["recipes"]
         ids = {r["id"] for r in recipes}
-        assert ids == set(PATTERNS)
+        assert ids == set(APPS)
         for recipe in recipes:
             github_path = ROOT / recipe["githubPath"]
             entry = github_path / recipe["entry"]
             assert entry.is_file(), f"{recipe['id']}: missing {entry.relative_to(ROOT)}"
             assert recipe["entry"] == "app.py"
+            assert recipe["cloudDeploy"] is True
             assert "scaffold" in recipe
             assert "--template" not in recipe["scaffold"]
             assert "--backend" not in recipe["scaffold"]
             assert "--batch" not in recipe["scaffold"]
+            paths = {route["path"] for route in recipe["routes"]}
             if recipe["id"] == "chat-agent":
                 assert recipe["scaffold"] == "uvx pixeltable-new myapp"
+                assert "/api/ask" in paths
+                assert "/api/knowledge" in paths
+                assert "/api/knowledge/search" in paths
             if recipe["id"] == "video-search":
                 assert "--video" in recipe["scaffold"]
+                assert "/api/ingest" in paths
+                assert "/api/search/visual" in paths
+                assert "/api/ingest/image" in paths

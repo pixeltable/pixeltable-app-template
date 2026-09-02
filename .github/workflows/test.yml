@@ -133,8 +133,22 @@ jobs:
               -H "Content-Type: application/json" \
               -d '{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}' \
               >/dev/null; then
-              echo "OK  chat-agent"
-              RESULTS+=("OK  chat-agent")
+              if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
+                if curl -sf -X POST "http://127.0.0.1:${PORT}/api/ask" \
+                  -H "Content-Type: application/json" \
+                  -d '{"prompt": "What is Pixeltable?", "conversation_id": "ci", "system_prompt": "Be concise.", "max_tokens": 64, "temperature": 0.0}' \
+                  >/dev/null; then
+                  echo "OK  chat-agent"
+                  RESULTS+=("OK  chat-agent")
+                else
+                  echo "FAIL chat-agent (ask)"
+                  tail -25 "/tmp/pxt-app-verify-chat-agent.log" || true
+                  RESULTS+=("FAIL chat-agent")
+                fi
+              else
+                echo "OK  chat-agent"
+                RESULTS+=("OK  chat-agent")
+              fi
             else
               echo "FAIL chat-agent (knowledge insert)"
               tail -25 "/tmp/pxt-app-verify-chat-agent.log" || true

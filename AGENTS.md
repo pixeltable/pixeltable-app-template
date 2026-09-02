@@ -6,6 +6,7 @@ Instructions for AI coding agents working in the Pixeltable Starter Kit.
 
 Apps are one Python file (`app.py`): `TableModel` classes and a `FastAPIRouter`.
 The loop is Declare, Experiment, Serve: apply with `pxt schema update`, serve with `pxt service update` or `pxt service run`, then insert / `/ask` / `pxt dashboard`.
+If `.venv` is not on PATH after `uv sync`, prefix `pxt` with `uv run`.
 Indexes belong on the model (`__indexes__`). Routes live on `FastAPIRouter`. No TOML route tables.
 Already have FastAPI? `app.include_router(...)` on the router in `app.py`.
 
@@ -49,6 +50,8 @@ New verticals: edit `app.py` or add a folder next to these two with the same app
 
 Annotation is a stored column. Assignment is a computed column.
 Primary key is `pxt.Column(..., primary_key=True)`, not a bare typed field.
+Optional is `T | None`. Do not use `pxt.Required`.
+Similarity uses `string=`: `col.similarity(string=query)`. In `@pxt.query`, alias as `score=sim`.
 
 ## Testing
 

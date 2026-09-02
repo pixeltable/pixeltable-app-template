@@ -3,7 +3,8 @@
 Knowledge, memory, and the Anthropic answer are tables and computed columns.
 One application file (`app.py`). `POST /api/knowledge` does not need an API key.
 `/ask` and `ask()` need `ANTHROPIC_API_KEY`.
-Declare (`pxt schema update app.py agent`), Serve (`pxt service update`), Experiment (insert, `/ask`, `pxt dashboard`).
+Declare (`pxt schema update app.py agent`), Experiment (insert, `/ask`, `pxt dashboard`), Serve (`pxt service update`).
+Advertised order is schema, then service, then insert.
 
 ```bash
 cd chat-agent
@@ -13,25 +14,22 @@ uv run pxt service update app.py agent
 uv run pxt service list
 ```
 
-Foreground: `uv run pxt service run app.py agent --port 8000`.
-Docker Compose keeps 8000: `docker compose up --build`.
-
-HTTP `/ask` calls `ask()`, which writes user and assistant turns after the answer.
+HTTP `/ask` inserts an agent row, returns `answer`, and writes user and assistant turns.
 
 ```bash
-curl -s -X POST http://localhost:8000/api/knowledge \
+curl -s -X POST http://127.0.0.1:<port>/api/knowledge \
   -H "Content-Type: application/json" \
   -d '{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}'
 
-curl -s "http://localhost:8000/api/knowledge/search?query_text=application%20file&limit=5"
+curl -s "http://127.0.0.1:<port>/api/knowledge/search?query_text=application%20file&limit=5"
 ```
 
-`/ask` (set `ANTHROPIC_API_KEY` first):
+`/ask` (set `ANTHROPIC_API_KEY` first). `pxt service list` prints the port.
 
 ```bash
 export ANTHROPIC_API_KEY=sk-...
 
-curl -s -X POST http://localhost:8000/api/ask \
+curl -s -X POST http://127.0.0.1:<port>/api/ask \
   -H "Content-Type: application/json" \
   -d '{
     "prompt": "What is Pixeltable?",
@@ -43,34 +41,27 @@ curl -s -X POST http://localhost:8000/api/ask \
 
 uv run python -c "import app; print(app.ask('What is Pixeltable?', conversation_id='demo'))"
 
-curl -s "http://localhost:8000/api/memory/search?query_text=Pixeltable&limit=5"
+curl -s "http://127.0.0.1:<port>/api/memory/search?query_text=Pixeltable&limit=5"
 ```
 
-## No HTTP
+## Without HTTP
 
-Apply, then insert and export from Python. Same pattern as [Self-hosting](https://docs.pixeltable.com/howto/deployment/overview).
+Apply, then insert from Python. Same pattern as [Self-hosting](https://docs.pixeltable.com/howto/deployment/overview).
 
 ```bash
 uv run pxt schema update app.py agent
 ```
 
 ```python
-from pixeltable.io.sql import export_sql
+import pixeltable as pxt
 
-from app import Knowledge
-
-Knowledge.insert(
+knowledge = pxt.get_table("agent.knowledge")
+knowledge.insert(
     [{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}]
-)
-export_sql(
-    Knowledge.select(Knowledge.title, Knowledge.body, Knowledge.uuid),
-    "knowledge",
-    db_connect_str="sqlite:///agent.db",
-    if_exists="replace",
 )
 ```
 
-Cloud:
+## Same file, hosted
 
 ```bash
 pxt db update pxt://org:mydb
@@ -82,6 +73,11 @@ pxt service update app.py pxt://org:mydb
 `pxt db update` packs the hosted image and workers; it is not Experiment.
 `pxt service run` is local only. Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud docs](https://docs.pixeltable.com/howto/deployment/cloud).
+
+## Foreground and container
+
+`uv run pxt service run app.py agent --port 8000` stays in this terminal.
+`docker compose up --build` pins port 8000.
 
 | Object | Role |
 |--------|------|

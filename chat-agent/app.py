@@ -13,6 +13,7 @@ from typing import Any
 
 import pixeltable as pxt
 import pixeltable.functions as pxtf
+import pydantic
 from pixeltable.functions.anthropic import messages
 from pixeltable.functions.huggingface import sentence_transformer
 from pixeltable.serving import FastAPIRouter
@@ -151,48 +152,10 @@ api.add_delete_route(Knowledge, path="/delete/knowledge")
 api.add_delete_route(Conversations, path="/delete/conversation")
 
 
-def ask(
-    question: str,
-    conversation_id: str = "default",
-    *,
-    system_prompt: str | None = None,
-    max_tokens: int = 1024,
-    temperature: float = 0.7,
-) -> str:
-    """Insert a prompt, return the answer, and append turns to conversation memory."""
-    agent_tbl = pxt.get_table("agent.agent", if_not_exists="ignore")
+def _append_turns(question: str, answer: str, conversation_id: str, ts: datetime) -> None:
     conversations_tbl = pxt.get_table("agent.conversations", if_not_exists="ignore")
-    if agent_tbl is None or conversations_tbl is None:
-        raise RuntimeError("Tables not materialized. Run: pxt schema update app.py agent")
-
-    ts = datetime.now()
-    sys_prompt = system_prompt or (
-        "You are a helpful assistant with a knowledge base and conversation memory. Be concise and accurate."
-    )
-    agent_tbl.insert(
-        [
-            {
-                "prompt": question,
-                "conversation_id": conversation_id,
-                "system_prompt": sys_prompt,
-                "max_tokens": max_tokens,
-                "temperature": temperature,
-                "timestamp": ts,
-            }
-        ]
-    )
-
-    result = (
-        agent_tbl.where(agent_tbl.timestamp == ts)
-        .order_by(agent_tbl.timestamp, asc=False)
-        .limit(1)
-        .select(agent_tbl.answer)
-        .collect()
-    )
-    if not result:
-        return "Error: no response generated."
-
-    answer = result[0].get("answer") or "Error: no answer in response."
+    if conversations_tbl is None:
+        return
     conversations_tbl.insert(
         [
             {
@@ -211,18 +174,58 @@ def ask(
             },
         ]
     )
+
+
+def ask(
+    question: str,
+    conversation_id: str = "default",
+    *,
+    system_prompt: str | None = None,
+    max_tokens: int = 1024,
+    temperature: float = 0.7,
+) -> str:
+    """Insert a prompt, return the answer, and append turns to conversation memory."""
+    agent_tbl = pxt.get_table("agent.agent", if_not_exists="ignore")
+    if agent_tbl is None:
+        raise RuntimeError("Tables not materialized. Run: pxt schema update app.py agent")
+
+    ts = datetime.now()
+    sys_prompt = system_prompt or (
+        "You are a helpful assistant with a knowledge base and conversation memory. Be concise and accurate."
+    )
+    status = agent_tbl.insert(
+        [
+            {
+                "prompt": question,
+                "conversation_id": conversation_id,
+                "system_prompt": sys_prompt,
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+                "timestamp": ts,
+            }
+        ],
+        return_rows=True,
+    )
+    if not status.rows:
+        return "Error: no response generated."
+
+    answer = status.rows[0].get("answer") or "Error: no answer in response."
+    _append_turns(question, answer, conversation_id, ts)
     return answer
 
 
-@api.post("/ask")
-def ask_http(body: dict[str, Any]) -> dict[str, str]:
-    """Insert a prompt over HTTP and return the answer."""
-    return {
-        "answer": ask(
-            str(body["prompt"]),
-            str(body.get("conversation_id", "default")),
-            system_prompt=body.get("system_prompt"),
-            max_tokens=int(body.get("max_tokens", 1024)),
-            temperature=float(body.get("temperature", 0.7)),
-        )
-    }
+class AskResponse(pydantic.BaseModel):
+    answer: str
+
+
+@api.insert_route(
+    Agent,
+    path="/ask",
+    inputs=[Agent.prompt, Agent.conversation_id, Agent.system_prompt, Agent.max_tokens, Agent.temperature],
+    outputs=[Agent.answer, Agent.prompt, Agent.conversation_id],
+)
+def format_ask(*, answer: str | None, prompt: str, conversation_id: str) -> AskResponse:
+    """Return the computed answer and append turns to conversation memory."""
+    text = answer or "Error: no answer in response."
+    _append_turns(prompt, text, conversation_id, datetime.now())
+    return AskResponse(answer=text)
