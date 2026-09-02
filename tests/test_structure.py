@@ -27,13 +27,14 @@ _BANNED_APPLY: tuple[str, ...] = (
     "pxt.create_table",
     "setup_pixeltable",
     "add_embedding_index",
-    "pxt service update app.py pxt://",
+    "pxt db create",
     "add_computed_column",
     "declarative multimodal data infrastructure",
 )
 
 _PXT_SERVE_RE = re.compile(r"pxt serve(?!ice)")
-_HOSTED_SERVICE_RE = re.compile(r"pxt service (update|run|diff|prune)[^\n]*pxt://")
+_HOSTED_SERVICE_RUN_RE = re.compile(r"pxt service run[^\n]*pxt://")
+_HOSTED_SERVICE_UPDATE = "pxt service update app.py pxt://"
 
 _CONTRACT_MD_FILES: tuple[str, ...] = ("README.md", "AGENTS.md", "CONTRIBUTING.md")
 _CONTRACT_MD_DIRS: tuple[str, ...] = ("chat-agent", "video-search")
@@ -202,13 +203,21 @@ class TestNoAntiPatterns:
                         hits.append(f"{f.relative_to(ROOT)}: {token}")
         assert hits == [], "Dead apply path found:\n" + "\n".join(hits)
 
-    def test_no_hosted_pxt_service(self) -> None:
+    def test_no_hosted_pxt_service_run(self) -> None:
         hits: list[str] = []
         for f in _contract_markdown_files():
             text = f.read_text(encoding="utf-8", errors="ignore")
-            for match in _HOSTED_SERVICE_RE.finditer(text):
+            for match in _HOSTED_SERVICE_RUN_RE.finditer(text):
                 hits.append(f"{f.relative_to(ROOT)}: {match.group(0)}")
-        assert hits == [], "Hosted pxt service found:\n" + "\n".join(hits)
+        assert hits == [], "pxt service run is local only:\n" + "\n".join(hits)
+
+    def test_cloud_teaches_hosted_service_update(self) -> None:
+        missing: list[str] = []
+        for relpath in ("README.md", "AGENTS.md"):
+            text = (ROOT / relpath).read_text(encoding="utf-8")
+            if _HOSTED_SERVICE_UPDATE not in text:
+                missing.append(relpath)
+        assert missing == [], "Cloud copy must teach hosted pxt service update:\n" + "\n".join(missing)
 
     def test_no_em_dashes(self) -> None:
         hits: list[str] = []

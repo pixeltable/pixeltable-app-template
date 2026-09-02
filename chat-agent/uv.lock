@@ -484,7 +484,7 @@ dependencies = [
 requires-dist = [
     { name = "anthropic", specifier = ">=0.25" },
     { name = "en-core-web-sm", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
-    { name = "pixeltable", extras = ["serve"], git = "https://github.com/pixeltable/pixeltable.git" },
+    { name = "pixeltable", extras = ["serve"], specifier = ">=0.7.4" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
     { name = "sentence-transformers", specifier = ">=5.6.0" },
     { name = "spacy", specifier = ">=3.7" },
@@ -2444,8 +2444,8 @@ wheels = [
 
 [[package]]
 name = "pixeltable"
-version = "0.7.3.dev36+3cefd907"
-source = { git = "https://github.com/pixeltable/pixeltable.git#3cefd907e139a364b5348844f4719e44f250790f" }
+version = "0.7.4"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
     { name = "av" },
@@ -2484,6 +2484,9 @@ dependencies = [
     { name = "tqdm" },
     { name = "typing-extensions" },
     { name = "tzlocal" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b2/07/e64714316e5877e47fdbdb9096eb1f273f7b1fdf32fd93897ce066f84c73/pixeltable-0.7.4-py3-none-any.whl", hash = "sha256:479fb570f78f271270b78ee2fe503b78f501d4b877af54efad94d7a4e1dde66d", size = 1290763, upload-time = "2026-09-02T15:40:01.806Z" },
 ]
 
 [package.optional-dependencies]

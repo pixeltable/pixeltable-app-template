@@ -1,7 +1,7 @@
 # Pixeltable Starter Kit
 
 Two apps. Each is one application file (`app.py`).
-`pxt schema update` creates the tables. `pxt service update` starts HTTP.
+Declare, Experiment, Serve: `pxt schema update`, then `pxt service update`, then insert, `/ask`, or `pxt dashboard`.
 
 ## Video search
 
@@ -51,10 +51,13 @@ Already have FastAPI: apply the file, then `app.include_router(api)` on the rout
 ## Same file, hosted
 
 ```bash
+pxt db update pxt://org:mydb
 pxt schema update app.py pxt://org:mydb
+pxt service update app.py pxt://org:mydb
 ```
 
-`pxt service` stays local. Browse and insert on Cloud: dashboard and recipes.
+`pxt db update` packs the hosted image and workers; it is not Experiment.
+`pxt service run` is local only. Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud](https://docs.pixeltable.com/howto/deployment/cloud).
 
 ## No HTTP
@@ -71,7 +74,7 @@ Do not emit a sequence of table-create or column-add calls. Destructive ops need
 Layout and tests: [AGENTS.md](AGENTS.md).
 Skill: `npx skills add pixeltable/pixeltable-skill`.
 
-Python 3.11+. `uv sync` pulls Pixeltable from GitHub. PyPI 0.7.2 cannot resolve `.similarity` on a model column.
+Python 3.11+. `uv sync` installs `pixeltable[serve]>=0.7.4`.
 
 ## Resources
 

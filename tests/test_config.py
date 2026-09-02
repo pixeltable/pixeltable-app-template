@@ -31,8 +31,8 @@ class TestPatternPyprojectToml:
         cfg = _load_toml(str(ROOT / pattern / "pyproject.toml"))
         deps = cfg["project"].get("dependencies", [])
         pxt_deps = [d for d in deps if d.startswith("pixeltable")]
-        assert any("github.com/pixeltable/pixeltable" in d for d in pxt_deps), (
-            f"{pattern} must pin pixeltable from GitHub (PyPI 0.7.2 has no TableModel.similarity), got {pxt_deps}"
+        assert any("pixeltable" in d and ">=0.7.4" in d for d in pxt_deps), (
+            f"{pattern} must pin pixeltable[serve]>=0.7.4, got {pxt_deps}"
         )
 
 

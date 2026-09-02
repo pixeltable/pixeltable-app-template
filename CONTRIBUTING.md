@@ -8,7 +8,7 @@ cd pixeltable-starter-kit
 uv sync
 ```
 
-Apps require Pixeltable from GitHub (PyPI 0.7.2 cannot resolve TableModel `.similarity`) and Python 3.11+. HuggingFace
+Apps require `pixeltable[serve]>=0.7.4` and Python 3.11+. HuggingFace
 sentence-transformer embeddings require sentence-transformers 5.6.0+.
 
 ## Testing

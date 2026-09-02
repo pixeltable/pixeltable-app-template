@@ -2,6 +2,7 @@
 
 Ingest a video, extract frames at 1 FPS, CLIP-index them, search by text.
 Ingest images for thumbnails and size metadata. One application file (`app.py`).
+Declare (`pxt schema update app.py videointel`), Serve (`pxt service update`), Experiment (insert, search, `pxt dashboard`).
 
 ```bash
 cd video-search
@@ -37,11 +38,13 @@ curl -s -X POST http://localhost:8000/api/search/visual \
 Cloud:
 
 ```bash
-pxt db create pxt://org:mydb
+pxt db update pxt://org:mydb
 pxt schema update app.py pxt://org:mydb
+pxt service update app.py pxt://org:mydb
 ```
 
-`pxt service` stays local. On Cloud, insert from the dashboard.
+`pxt db update` packs the hosted image and workers; it is not Experiment.
+`pxt service run` is local only. Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud docs](https://docs.pixeltable.com/howto/deployment/cloud).
 
 | Object | Role |
