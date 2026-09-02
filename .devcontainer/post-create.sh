@@ -17,4 +17,5 @@ fi
 
 echo "==> Dev container ready"
 echo "    cd chat-agent && uv run pxt schema update app.py agent"
-echo "    uv run pxt service run app.py agent --port 8000"
+echo "    uv run pxt service update app.py agent"
+echo "    uv run pxt service list"

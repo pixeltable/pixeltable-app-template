@@ -8,7 +8,7 @@ import pytest
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
-PATTERNS: list[str] = ["chat-agent", "video-search"]
+APPS: list[str] = ["chat-agent", "video-search"]
 
 EXPECTED_FILES: dict[str, list[str]] = {
     "chat-agent": [

@@ -1,7 +1,7 @@
 {
   "sourceRepo": "pixeltable/pixeltable-starter-kit",
   "sourcePath": ".",
-  "updated": "2026-08-31",
+  "updated": "2026-09-02",
   "recipes": [
     {
       "id": "video-search",
@@ -38,7 +38,7 @@
       "title": "Chat agent",
       "blurb": "Knowledge, conversation memory, and the LLM answer are tables and computed columns.",
       "pattern": "chat-agent",
-      "cloudDeploy": false,
+      "cloudDeploy": true,
       "dirPrefix": "agent",
       "serviceName": "agent",
       "entry": "app.py",
@@ -61,9 +61,9 @@
         { "name": "agent", "columns": { "prompt": "String", "conversation_id": "String" } }
       ],
       "routes": [
-        { "path": "/api/ask", "type": "insert", "table": "agent" },
         { "path": "/api/knowledge", "type": "insert", "table": "knowledge" },
-        { "path": "/api/knowledge/search", "type": "query" }
+        { "path": "/api/knowledge/search", "type": "query" },
+        { "path": "/api/ask", "type": "insert", "table": "agent" }
       ],
       "sampleCalls": [
         {
