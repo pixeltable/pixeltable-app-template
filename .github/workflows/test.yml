@@ -131,7 +131,7 @@ jobs:
           if wait_for_url "http://127.0.0.1:${PORT}/openapi.json" 180; then
             if curl -sf -X POST "http://127.0.0.1:${PORT}/api/knowledge" \
               -H "Content-Type: application/json" \
-              -d '{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}' \
+              -d '{"body": "Pixeltable is a unified backend: one application file, tables, and insert runs compute.", "title": "intro", "source": "docs"}' \
               >/dev/null; then
               if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
                 if curl -sf -X POST "http://127.0.0.1:${PORT}/api/ask" \

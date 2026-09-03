@@ -19,7 +19,7 @@ Already cloned: `cd chat-agent` instead of `uvx pixeltable-new`, then the same `
 ```bash
 curl -s -X POST http://127.0.0.1:<port>/api/knowledge \
   -H "Content-Type: application/json" \
-  -d '{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}'
+  -d '{"body": "Pixeltable is a unified backend: one application file, tables, and insert runs compute.", "title": "intro", "source": "docs"}'
 ```
 
 `POST /api/knowledge` works without a key. `/ask` needs `ANTHROPIC_API_KEY`.

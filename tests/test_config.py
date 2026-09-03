@@ -35,6 +35,13 @@ class TestAppPyprojectToml:
             f"{app} must pin pixeltable[serve]>=0.7.4, got {pxt_deps}"
         )
 
+    def test_chat_agent_anthropic_below_v1(self) -> None:
+        cfg = _load_toml(str(ROOT / "chat-agent" / "pyproject.toml"))
+        deps = cfg["project"].get("dependencies", [])
+        assert any(d.startswith("anthropic") and "<1" in d for d in deps), (
+            "pixeltable 0.7.4 talks to Anthropic via httpx; anthropic>=1 needs httpx2"
+        )
+
 
 class TestProjectRoot:
     @pytest.mark.parametrize("app", APPS)

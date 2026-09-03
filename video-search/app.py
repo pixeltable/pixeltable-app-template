@@ -1,8 +1,4 @@
-"""Video frames at 1 FPS, CLIP index, visual search, and image ingest.
-
-pxt schema update app.py videointel
-pxt service update app.py videointel
-"""
+"""pxt schema update app.py videointel && pxt service update app.py videointel"""
 
 # ruff: noqa: F821
 
@@ -30,9 +26,7 @@ class Frames(
     iterator=pxtf.video.frame_iterator(Videos.video, fps=1.0),
 ):
     thumbnail = pxt_image.b64_encode(pxt_image.thumbnail(frame, size=(320, 320)))
-    __indexes__ = [
-        pxt.EmbeddingIndex(frame, embedding=clip_embed, name="frames_clip"),
-    ]
+    __indexes__ = [pxt.EmbeddingIndex(frame, embedding=clip_embed, name="frames_clip")]
 
 
 class Images(TableModel, name="images"):
@@ -49,23 +43,17 @@ class Images(TableModel, name="images"):
 
 @pxt.query
 def search_visual(query_text: str, limit: int = 20) -> pxt.Query:
-    """CLIP similarity search on video frames."""
     sim = Frames.frame.similarity(string=query_text)
     return (
         Frames.where(sim > 0.2)
         .order_by(sim, asc=False)
-        .select(
-            Frames.thumbnail,
-            timestamp=Frames.frame_attrs.time,
-            score=sim,
-        )
+        .select(Frames.thumbnail, timestamp=Frames.frame_attrs.time, score=sim)
         .limit(limit)
     )
 
 
 @pxt.query
 def list_images() -> pxt.Query:
-    """List ingested images with metadata."""
     return Images.select(
         Images.uuid,
         Images.label,
@@ -80,7 +68,7 @@ api = FastAPIRouter(name="videointel", prefix="/api")
 api.add_insert_route(
     Videos,
     path="/ingest",
-    uploadfile_inputs=["video"],
+    uploadfile_inputs=[Videos.video],
     inputs=[Videos.title],
     outputs=[Videos.uuid],
     background=True,
@@ -88,7 +76,7 @@ api.add_insert_route(
 api.add_insert_route(
     Images,
     path="/ingest/image",
-    uploadfile_inputs=["image"],
+    uploadfile_inputs=[Images.image],
     inputs=[Images.label, Images.source_id],
     outputs=[Images.uuid],
 )

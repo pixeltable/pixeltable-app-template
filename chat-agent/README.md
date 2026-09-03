@@ -19,7 +19,7 @@ HTTP `/ask` inserts an agent row, returns `answer`, and writes user and assistan
 ```bash
 curl -s -X POST http://127.0.0.1:<port>/api/knowledge \
   -H "Content-Type: application/json" \
-  -d '{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}'
+  -d '{"body": "Pixeltable is a unified backend: one application file, tables, and insert runs compute.", "title": "intro", "source": "docs"}'
 
 curl -s "http://127.0.0.1:<port>/api/knowledge/search?query_text=application%20file&limit=5"
 ```
@@ -57,7 +57,7 @@ import pixeltable as pxt
 
 knowledge = pxt.get_table("agent.knowledge")
 knowledge.insert(
-    [{"body": "One application file. Insert runs compute.", "title": "intro", "source": "docs"}]
+    [{"body": "Pixeltable is a unified backend: one application file, tables, and insert runs compute.", "title": "intro", "source": "docs"}]
 )
 ```
 

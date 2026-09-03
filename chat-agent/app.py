@@ -1,9 +1,6 @@
-"""Knowledge, memory, and the LLM answer are tables and computed columns.
+"""pxt schema update app.py agent && pxt service update app.py agent
 
-    pxt schema update app.py agent
-    pxt service update app.py agent
-
-Requires ANTHROPIC_API_KEY for /ask (and ask()) to produce answers.
+/ask and ask() need ANTHROPIC_API_KEY.
 """
 
 # ruff: noqa: F821
@@ -14,12 +11,14 @@ from typing import Any
 import pixeltable as pxt
 import pixeltable.functions as pxtf
 import pydantic
+from fastapi import HTTPException
 from pixeltable.functions.anthropic import messages
 from pixeltable.functions.huggingface import sentence_transformer
 from pixeltable.serving import FastAPIRouter
 
 TableModel = pxt.model_base()
 embed_fn = sentence_transformer.using(model_id="all-MiniLM-L6-v2")
+_DEFAULT_SYSTEM = "You are a helpful assistant with a knowledge base and conversation memory. Be concise and accurate."
 
 
 @pxt.udf
@@ -28,7 +27,6 @@ def assemble_context(
     memory_context: list[dict[str, Any]] | None,
     knowledge_context: list[Any] | None,
 ) -> str:
-    """Merge memory and knowledge into one context block for the LLM."""
     parts = [f"QUESTION:\n{prompt}"]
     if knowledge_context:
         items = [item.get("text", str(item)) if isinstance(item, dict) else str(item) for item in knowledge_context]
@@ -53,9 +51,7 @@ class Sentences(
     base=Knowledge,
     iterator=pxtf.string.string_splitter(Knowledge.body, separators="sentence"),
 ):
-    __indexes__ = [
-        pxt.EmbeddingIndex(text, embedding=embed_fn, name="knowledge_embed"),
-    ]
+    __indexes__ = [pxt.EmbeddingIndex(text, embedding=embed_fn, name="knowledge_embed")]
 
 
 class Conversations(TableModel, name="conversations"):
@@ -65,21 +61,17 @@ class Conversations(TableModel, name="conversations"):
     user_id: pxt.String
     uuid = pxt.Column(value=pxtf.uuid.uuid7(), primary_key=True)
     timestamp: pxt.Timestamp | None
-    __indexes__ = [
-        pxt.EmbeddingIndex(content, embedding=embed_fn, name="conversations_embed"),
-    ]
+    __indexes__ = [pxt.EmbeddingIndex(content, embedding=embed_fn, name="conversations_embed")]
 
 
 @pxt.query
 def search_knowledge(query_text: str, limit: int = 10) -> pxt.Query:
-    """Semantic search over the knowledge base."""
     sim = Sentences.text.similarity(string=query_text)
     return Sentences.where(sim > 0.3).order_by(sim, asc=False).select(Sentences.text, score=sim).limit(limit)
 
 
 @pxt.query
 def recall_memory(query_text: str, limit: int = 10) -> pxt.Query:
-    """Semantic recall across conversations."""
     sim = Conversations.content.similarity(string=query_text)
     return (
         Conversations.where(sim > 0.5)
@@ -96,15 +88,10 @@ def recall_memory(query_text: str, limit: int = 10) -> pxt.Query:
 
 @pxt.query
 def get_history(conversation_id: str, limit: int = 10) -> pxt.Query:
-    """Recent turns from one conversation."""
     return (
         Conversations.where(Conversations.conversation_id == conversation_id)
         .order_by(Conversations.timestamp, asc=False)
-        .select(
-            role=Conversations.role,
-            content=Conversations.content,
-            timestamp=Conversations.timestamp,
-        )
+        .select(role=Conversations.role, content=Conversations.content, timestamp=Conversations.timestamp)
         .limit(limit)
     )
 
@@ -121,23 +108,17 @@ class Agent(TableModel, name="agent"):
     knowledge_context = search_knowledge(prompt)
     context = assemble_context(prompt, memory_context, knowledge_context)
     final_response = messages(
+        model="claude-sonnet-4-5-20250929",
         messages=[{"role": "user", "content": context}],
-        model="claude-sonnet-4-20250514",
         max_tokens=max_tokens,
-        model_kwargs={
-            "system": system_prompt,
-            "temperature": temperature,
-        },
+        model_kwargs={"system": system_prompt, "temperature": temperature},
     )
-    answer = final_response.content[0].text
+    answer = final_response.content[0].text.astype(pxt.String)
 
 
 api = FastAPIRouter(name="agent", prefix="/api")
 api.add_insert_route(
-    Knowledge,
-    path="/knowledge",
-    inputs=[Knowledge.body, Knowledge.title, Knowledge.source],
-    outputs=[Knowledge.uuid],
+    Knowledge, path="/knowledge", inputs=[Knowledge.body, Knowledge.title, Knowledge.source], outputs=[Knowledge.uuid]
 )
 api.add_insert_route(
     Conversations,
@@ -153,10 +134,10 @@ api.add_delete_route(Conversations, path="/delete/conversation")
 
 
 def _append_turns(question: str, answer: str, conversation_id: str, ts: datetime) -> None:
-    conversations_tbl = pxt.get_table("agent.conversations", if_not_exists="ignore")
-    if conversations_tbl is None:
+    conversations = pxt.get_table("agent.conversations", if_not_exists="ignore")
+    if conversations is None:
         return
-    conversations_tbl.insert(
+    conversations.insert(
         [
             {
                 "role": "user",
@@ -184,21 +165,16 @@ def ask(
     max_tokens: int = 1024,
     temperature: float = 0.7,
 ) -> str:
-    """Insert a prompt, return the answer, and append turns to conversation memory."""
-    agent_tbl = pxt.get_table("agent.agent", if_not_exists="ignore")
-    if agent_tbl is None:
+    agent = pxt.get_table("agent.agent", if_not_exists="ignore")
+    if agent is None:
         raise RuntimeError("Tables not materialized. Run: pxt schema update app.py agent")
-
     ts = datetime.now()
-    sys_prompt = system_prompt or (
-        "You are a helpful assistant with a knowledge base and conversation memory. Be concise and accurate."
-    )
-    status = agent_tbl.insert(
+    status = agent.insert(
         [
             {
                 "prompt": question,
                 "conversation_id": conversation_id,
-                "system_prompt": sys_prompt,
+                "system_prompt": system_prompt or _DEFAULT_SYSTEM,
                 "max_tokens": max_tokens,
                 "temperature": temperature,
                 "timestamp": ts,
@@ -208,24 +184,34 @@ def ask(
     )
     if not status.rows:
         return "Error: no response generated."
-
     answer = status.rows[0].get("answer") or "Error: no answer in response."
     _append_turns(question, answer, conversation_id, ts)
     return answer
+
+
+class AskRequest(pydantic.BaseModel):
+    prompt: str
+    conversation_id: str = "default"
+    system_prompt: str | None = None
+    max_tokens: int = 1024
+    temperature: float = 0.7
 
 
 class AskResponse(pydantic.BaseModel):
     answer: str
 
 
-@api.insert_route(
-    Agent,
-    path="/ask",
-    inputs=[Agent.prompt, Agent.conversation_id, Agent.system_prompt, Agent.max_tokens, Agent.temperature],
-    outputs=[Agent.answer, Agent.prompt, Agent.conversation_id],
-)
-def format_ask(*, answer: str | None, prompt: str, conversation_id: str) -> AskResponse:
-    """Return the computed answer and append turns to conversation memory."""
-    text = answer or "Error: no answer in response."
-    _append_turns(prompt, text, conversation_id, datetime.now())
-    return AskResponse(answer=text)
+@api.post("/ask")
+def ask_http(body: AskRequest) -> AskResponse:
+    try:
+        return AskResponse(
+            answer=ask(
+                body.prompt,
+                body.conversation_id,
+                system_prompt=body.system_prompt,
+                max_tokens=body.max_tokens,
+                temperature=body.temperature,
+            )
+        )
+    except pxt.Error as exc:
+        raise HTTPException(status_code=exc.http_status, detail=exc.to_dict()) from exc

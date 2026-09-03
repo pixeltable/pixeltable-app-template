@@ -125,6 +125,10 @@ class TestApplicationFile:
         source = (ROOT / "chat-agent" / "app.py").read_text(encoding="utf-8")
         assert "return_rows=True" in source
 
+    @pytest.mark.parametrize("app", APPS)
+    def test_no_functions_py(self, app: str) -> None:
+        assert not (ROOT / app / "functions.py").is_file(), f"{app}/functions.py: UDFs stay in app.py"
+
 
 class TestNoAntiPatterns:
     _BANNED_ENV_VAR = "PYTHON" + "PATH"
