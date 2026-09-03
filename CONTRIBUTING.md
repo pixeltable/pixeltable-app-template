@@ -36,7 +36,7 @@ Each app needs: `app.py`, `pixeltable.toml` (`[[pixeltable.database]]`),
 Do not add TOML service route tables. Do not add `templates/` or a second
 apply path. Tables are declared in `app.py` and applied with `pxt schema update`.
 
-Cloud recipes: [`gallery.json`](gallery.json). Same application file.
+Same application file on Cloud.
 
 `pixeltable-new` fetches `chat-agent/` or `video-search/` from this repo's `main` tarball.
 Printed next-steps live in pixeltable-new and need a PyPI release to change.

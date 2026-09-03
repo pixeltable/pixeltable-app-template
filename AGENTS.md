@@ -34,12 +34,11 @@ Video: `uvx pixeltable-new myapp --video`, then TARGET `videointel`.
 ```
 video-search/   Frames, CLIP, images. TARGET videointel. uvx --video
 chat-agent/     Knowledge, memory, LLM. TARGET agent. uvx default
-gallery.json    Cloud recipe manifest. Fetch URL: /gallery.json on main.
 tests/          Structure and config. Schema smoke: --run-slow.
 ```
 
 Do not add `templates/`, `backend/`, `serving/`, `batch/`, or a PaaS `deploy/` zoo.
-New verticals: edit `app.py` or add a folder next to these two with the same apply path and a `gallery.json` row.
+New verticals: edit `app.py` or add a folder next to these two with the same apply path.
 
 ## Extend an app
 

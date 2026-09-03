@@ -37,6 +37,7 @@ REMOVED_PATHS: list[str] = [
     "serving",
     "batch",
     "examples",
+    "gallery.json",
 ]
 
 

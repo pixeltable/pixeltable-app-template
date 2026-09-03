@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast
-import json
 import pathlib
 import re
 
@@ -234,34 +233,3 @@ class TestNoAntiPatterns:
             if "\u2014" in f.read_text(encoding="utf-8", errors="ignore"):
                 hits.append(str(f.relative_to(ROOT)))
         assert hits == [], f"U+2014 em dash found in: {hits}"
-
-
-class TestGallery:
-    def test_gallery_matches_paths(self) -> None:
-        gallery_path = ROOT / "gallery.json"
-        assert gallery_path.is_file()
-        gallery = json.loads(gallery_path.read_text(encoding="utf-8"))
-        recipes = gallery["recipes"]
-        ids = {r["id"] for r in recipes}
-        assert ids == set(APPS)
-        for recipe in recipes:
-            github_path = ROOT / recipe["githubPath"]
-            entry = github_path / recipe["entry"]
-            assert entry.is_file(), f"{recipe['id']}: missing {entry.relative_to(ROOT)}"
-            assert recipe["entry"] == "app.py"
-            assert recipe["cloudDeploy"] is True
-            assert "scaffold" in recipe
-            assert "--template" not in recipe["scaffold"]
-            assert "--backend" not in recipe["scaffold"]
-            assert "--batch" not in recipe["scaffold"]
-            paths = {route["path"] for route in recipe["routes"]}
-            if recipe["id"] == "chat-agent":
-                assert recipe["scaffold"] == "uvx pixeltable-new myapp"
-                assert "/api/ask" in paths
-                assert "/api/knowledge" in paths
-                assert "/api/knowledge/search" in paths
-            if recipe["id"] == "video-search":
-                assert "--video" in recipe["scaffold"]
-                assert "/api/ingest" in paths
-                assert "/api/search/visual" in paths
-                assert "/api/ingest/image" in paths
