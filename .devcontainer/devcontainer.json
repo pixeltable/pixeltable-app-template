@@ -10,7 +10,7 @@
 
   "forwardPorts": [8000],
   "portsAttributes": {
-    "8000": { "label": "pxt service", "onAutoForward": "notify" }
+    "8000": { "label": "pxt service run", "onAutoForward": "notify" }
   },
 
   "mounts": [
@@ -28,7 +28,7 @@
         "charliermarsh.ruff"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/workspaces/pixeltable-starter-kit/chat-agent/.venv/bin/python"
+        "python.defaultInterpreterPath": "${containerWorkspaceFolder}/chat-agent/.venv/bin/python"
       }
     }
   }
