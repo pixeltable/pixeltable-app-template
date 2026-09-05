@@ -5,7 +5,7 @@ Instructions for AI coding agents working in the Pixeltable Starter Kit.
 ## Apps
 
 Apps are one Python file (`app.py`): `TableModel` classes and a `FastAPIRouter`.
-The loop is Declare, Experiment, Serve: apply with `pxt schema update`, serve with `pxt service update` or `pxt service run`, then insert / `/ask` / `pxt dashboard`.
+The loop is Declare, Experiment, Serve: apply with `pxt schema update`, serve with `pxt service update`, then insert / `/ask` / `pxt dashboard`.
 Every example here uses `uv run pxt`, which works whether or not `.venv` is on PATH.
 Export API keys before the first `pxt` command: it starts the daemon, and the service inherits the daemon's environment.
 Indexes belong on the model (`__indexes__`). Routes live on `FastAPIRouter`. No TOML route tables.
@@ -18,7 +18,7 @@ the local export does: the process that answers `/ask` reads it at request time.
 Then `t = pxt.get_table('pxt://org:mydb/docs')`.
 `pxt db update` packs the hosted image and workers; it is not Experiment.
 `pxt schema update` applies tables. It does not start HTTP.
-`pxt service update` starts HTTP (local or `pxt://`). `pxt service run` is local only.
+`pxt service update` starts HTTP (local or `pxt://`) and prints where with `pxt service list`.
 Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 
 ```bash

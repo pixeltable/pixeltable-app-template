@@ -27,7 +27,6 @@ uv run pxt service update app.py agent
 ```
 
 `uv run pxt config --section anthropic` reports what the daemon actually resolved.
-`uv run pxt service run app.py agent --port 8000` is exempt -- it serves from your own shell, not the daemon.
 
 HTTP `/ask` inserts an agent row, returns `answer`, and writes user and assistant turns.
 
@@ -84,13 +83,13 @@ uv run pxt service update app.py pxt://org:mydb
 ```
 
 `pxt db update` packs the hosted image and workers; it is not Experiment.
-`pxt service run` is local only. Experiment on Cloud is dashboard insert plus `pxt schema diff`.
+Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud docs](https://docs.pixeltable.com/howto/deployment/cloud).
 
-## Foreground and container
+## Container
 
-`uv run pxt service run app.py agent --port 8000` stays in this terminal.
-`docker compose up --build` pins port 8000. Export `ANTHROPIC_API_KEY` in the shell that runs it, or `/ask` returns an error while the other routes work.
+`docker compose up --build` serves on port 8000. Export `ANTHROPIC_API_KEY` in the shell that runs
+it, or `/ask` returns an error while the other routes work.
 
 | Object | Role |
 |--------|------|

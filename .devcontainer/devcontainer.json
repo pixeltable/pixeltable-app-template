@@ -8,10 +8,8 @@
 
   "postCreateCommand": "bash .devcontainer/post-create.sh",
 
-  "forwardPorts": [8000],
-  "portsAttributes": {
-    "8000": { "label": "pxt service run", "onAutoForward": "notify" }
-  },
+  // No forwardPorts: `pxt service update` binds an OS-assigned port, and VS Code
+  // auto-forwards whatever the service ends up listening on.
 
   "mounts": [
     "source=pixeltable-data,target=/home/vscode/.pixeltable,type=volume"

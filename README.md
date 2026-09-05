@@ -66,7 +66,7 @@ uv run pxt service update app.py pxt://org:mydb
 
 Chat agent `/ask` also needs `pxt secret set pxt://org ANTHROPIC_API_KEY=sk-...` before schema update.
 `pxt db update` packs the hosted image and workers; it is not Experiment.
-`pxt service run` is local only. Experiment on Cloud is dashboard insert plus `pxt schema diff`.
+Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud](https://docs.pixeltable.com/howto/deployment/cloud).
 
 ## Without HTTP

@@ -22,14 +22,11 @@ echo "    service inherits its environment:"
 echo
 echo "      export ANTHROPIC_API_KEY=sk-...      # only /ask needs this"
 echo
-echo "    Then, on the forwarded port 8000:"
+echo "    Then:"
 echo
 echo "      cd chat-agent"
 echo "      uv run pxt schema update app.py agent"
-echo "      uv run pxt service run app.py agent --port 8000"
-echo
-echo "    'pxt service run' serves in the foreground on a port you choose, which is what"
-echo "    port 8000 is forwarded for. 'pxt service update' backgrounds the service on an"
-echo "    OS-assigned port instead -- run 'uv run pxt service list' to find it."
+echo "      uv run pxt service update app.py agent"
+echo "      uv run pxt service list        # the port it picked; VS Code forwards it for you"
 echo
 echo "    video-search is set up too: cd video-search, TARGET is 'videointel'."
