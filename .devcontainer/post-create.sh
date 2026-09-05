@@ -17,8 +17,7 @@ done
 echo
 echo "==> Dev container ready"
 echo
-echo "    Export your key first -- the first pxt command starts the daemon and the"
-echo "    service inherits its environment:"
+echo "    Export your key first (see chat-agent/README.md for why):"
 echo
 echo "      export ANTHROPIC_API_KEY=sk-...      # only /ask needs this"
 echo

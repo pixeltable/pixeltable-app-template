@@ -3,7 +3,6 @@
 Ingest a video, extract frames at 1 FPS, CLIP-index them, search by text.
 Ingest images for thumbnails and size metadata. One application file (`app.py`).
 Declare (`pxt schema update app.py videointel`), Experiment (insert, search, `pxt dashboard`), Serve (`pxt service update`).
-Advertised order is schema, then service, then insert.
 
 ```bash
 cd video-search
@@ -42,7 +41,6 @@ uv run pxt schema update app.py pxt://org:mydb
 uv run pxt service update app.py pxt://org:mydb
 ```
 
-`pxt db update` packs the hosted image and workers; it is not Experiment.
 Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud docs](https://docs.pixeltable.com/howto/deployment/cloud).
 

@@ -1,9 +1,7 @@
 """pxt schema update app.py agent && pxt service update app.py agent
 
-Export ANTHROPIC_API_KEY before the first pxt command. The first one starts the daemon, the service
-inherits the daemon's environment, and /ask reads the key at request time -- so exporting it later
-does not reach the running service. Recovery: pxt daemon restart, pxt service stop agent, then
-pxt service update app.py agent.
+Export ANTHROPIC_API_KEY before the first pxt command; see README.md for why.
+Recovery: pxt daemon restart, pxt service stop agent, then pxt service update app.py agent.
 """
 
 # ruff: noqa: F821
