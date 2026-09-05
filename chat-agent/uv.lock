@@ -485,7 +485,7 @@ dependencies = [
 requires-dist = [
     { name = "anthropic", specifier = ">=0.25,<1" },
     { name = "en-core-web-sm", url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl" },
-    { name = "pixeltable", extras = ["serve"], specifier = ">=0.7.4" },
+    { name = "pixeltable", extras = ["serve"], specifier = ">=0.7.5" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1" },
     { name = "sentence-transformers", specifier = ">=5.6.0" },
     { name = "spacy", specifier = ">=3.7" },
@@ -2429,7 +2429,7 @@ wheels = [
 
 [[package]]
 name = "pixeltable"
-version = "0.7.4"
+version = "0.7.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -2471,7 +2471,7 @@ dependencies = [
     { name = "tzlocal" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b2/07/e64714316e5877e47fdbdb9096eb1f273f7b1fdf32fd93897ce066f84c73/pixeltable-0.7.4-py3-none-any.whl", hash = "sha256:479fb570f78f271270b78ee2fe503b78f501d4b877af54efad94d7a4e1dde66d", size = 1290763, upload-time = "2026-09-02T15:40:01.806Z" },
+    { url = "https://files.pythonhosted.org/packages/21/ed/9ea2d68ad5e8c83030e2a96f2bbcd0d4c1445babec75b848925c07fbf79d/pixeltable-0.7.5-py3-none-any.whl", hash = "sha256:c551025dcd671300897f79f40aee176ee2040e94a06db5761d001c5b12560de3", size = 1287730, upload-time = "2026-09-03T20:35:19.958Z" },
 ]
 
 [package.optional-dependencies]
