@@ -4,7 +4,6 @@ Knowledge, memory, and the Anthropic answer are tables and computed columns.
 One application file (`app.py`). `POST /api/knowledge` does not need an API key.
 `/ask` and `ask()` need `ANTHROPIC_API_KEY`.
 Declare (`pxt schema update app.py agent`), Experiment (insert, `/ask`, `pxt dashboard`), Serve (`pxt service update`).
-Advertised order is schema, then service, then insert.
 
 ```bash
 export ANTHROPIC_API_KEY=sk-...   # before the first pxt command -- see below
@@ -82,7 +81,6 @@ uv run pxt schema update app.py pxt://org:mydb
 uv run pxt service update app.py pxt://org:mydb
 ```
 
-`pxt db update` packs the hosted image and workers; it is not Experiment.
 Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud docs](https://docs.pixeltable.com/howto/deployment/cloud).
 

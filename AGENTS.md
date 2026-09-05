@@ -20,6 +20,11 @@ Then `t = pxt.get_table('pxt://org:mydb/docs')`.
 `pxt schema update` applies tables. It does not start HTTP.
 `pxt service update` starts HTTP (local or `pxt://`) and prints where with `pxt service list`.
 Experiment on Cloud is dashboard insert plus `pxt schema diff`.
+`pxt db update` packs the hosted image and workers; it is not Experiment.
+
+Drift check: `uv run pxt schema diff app.py agent` (or `videointel`). Exit 0 in sync, 2 pending
+(`--json` is the plan), 1 an error naming the file, declaration, or key. Then `pxt schema update`.
+Destructive ops need `--allow-destructive`.
 
 ```bash
 export ANTHROPIC_API_KEY=sk-...        # before the first pxt command

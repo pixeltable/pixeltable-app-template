@@ -3,10 +3,8 @@
 Two apps. Each is one application file (`app.py`).
 Declare, Experiment, Serve: `pxt schema update`, then `pxt service update`, then insert, `/ask`, or `pxt dashboard`.
 
-**Export your API keys before the first `pxt` command.** That first command starts the Pixeltable daemon, and
-the service it later spawns inherits the daemon's environment -- so a key exported afterwards is invisible to
-`/ask`, and re-running `pxt service update` will not pick it up. Recovery is
-`pxt daemon restart`, then `pxt service stop agent`, then `pxt service update app.py agent`.
+**Export your API keys before the first `pxt` command** -- the service inherits the daemon's environment, so a
+key exported afterwards never reaches `/ask`. Why, and how to recover: [chat-agent/README.md](chat-agent/README.md).
 
 ## Chat agent
 
@@ -65,7 +63,6 @@ uv run pxt service update app.py pxt://org:mydb
 ```
 
 Chat agent `/ask` also needs `pxt secret set pxt://org ANTHROPIC_API_KEY=sk-...` before schema update.
-`pxt db update` packs the hosted image and workers; it is not Experiment.
 Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud](https://docs.pixeltable.com/howto/deployment/cloud).
 
@@ -76,9 +73,8 @@ Apply, then insert from Python or open `pxt dashboard`. [Self-hosting](https://d
 ## For agents
 
 Emit `TableModel` classes and a `FastAPIRouter` in `app.py`. Indexes go on `__indexes__`.
-Run `uv run pxt schema diff app.py agent` (or `videointel`). Exit 0 means in sync. Exit 2 means pending (`--json` is the plan).
-Exit 1 is an error that names the file, declaration, or key. Then `pxt schema update`.
-Do not emit a sequence of table-create or column-add calls. Destructive ops need `--allow-destructive`.
+Do not emit a sequence of table-create or column-add calls.
+Drift check and exit codes: [AGENTS.md](AGENTS.md).
 
 Layout and tests: [AGENTS.md](AGENTS.md).
 Skill: `npx skills add pixeltable/pixeltable-skill`.
