@@ -5,25 +5,28 @@ Instructions for AI coding agents working in the Pixeltable Starter Kit.
 ## Apps
 
 Apps are one Python file (`app.py`): `TableModel` classes and a `FastAPIRouter`.
-The loop is Declare, Experiment, Serve: apply with `pxt schema update`, serve with `pxt service update` or `pxt service run`, then insert / `/ask` / `pxt dashboard`.
-If `.venv` is not on PATH after `uv sync`, prefix `pxt` with `uv run`.
+The loop is Declare, Experiment, Serve: apply with `pxt schema update`, serve with `pxt service update`, then insert / `/ask` / `pxt dashboard`.
+Every example here uses `uv run pxt`, which works whether or not `.venv` is on PATH.
+Export API keys before the first `pxt` command: it starts the daemon, and the service inherits the daemon's environment.
 Indexes belong on the model (`__indexes__`). Routes live on `FastAPIRouter`. No TOML route tables.
 Already have FastAPI? `app.include_router(...)` on the router in `app.py`.
 
 Same file on Cloud: `pxt db update pxt://org:mydb`, then
 `pxt secret set pxt://org KEY=...`, then `pxt schema update app.py pxt://org:mydb`,
-then `pxt service update app.py pxt://org:mydb`.
+then `pxt service update app.py pxt://org:mydb`. The secret goes first for the same reason
+the local export does: the process that answers `/ask` reads it at request time.
 Then `t = pxt.get_table('pxt://org:mydb/docs')`.
 `pxt db update` packs the hosted image and workers; it is not Experiment.
 `pxt schema update` applies tables. It does not start HTTP.
-`pxt service update` starts HTTP (local or `pxt://`). `pxt service run` is local only.
+`pxt service update` starts HTTP (local or `pxt://`) and prints where with `pxt service list`.
 Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 
 ```bash
+export ANTHROPIC_API_KEY=sk-...        # before the first pxt command
 uvx pixeltable-new myapp
 cd myapp && uv sync
-pxt schema update app.py agent
-pxt service update app.py agent
+uv run pxt schema update app.py agent
+uv run pxt service update app.py agent
 ```
 
 `agent` and `videointel` are catalog directories, not folders on disk.
@@ -45,7 +48,7 @@ New verticals: edit `app.py` or add a folder next to these two with the same app
 1. Add a `TableModel` in that app's `app.py`.
 2. Put indexes on the class (`__indexes__`).
 3. Register routes on the existing `FastAPIRouter`.
-4. Run `pxt schema update app.py agent` (or `videointel`).
+4. Run `uv run pxt schema update app.py agent` (or `videointel`).
 
 Annotation is a stored column. Assignment is a computed column.
 Primary key is `pxt.Column(..., primary_key=True)`, not a bare typed field.
@@ -73,5 +76,6 @@ uv run python -m pytest tests/test_schema.py -v --run-slow
 1. `chat-agent/app.py`
 2. `chat-agent/README.md`
 3. `video-search/app.py`
-4. [pixeltable/pixeltable AGENTS.md](https://github.com/pixeltable/pixeltable/blob/main/AGENTS.md)
-5. [pixeltable-skill](https://github.com/pixeltable/pixeltable-skill)
+4. `video-search/README.md`
+5. [pixeltable/pixeltable AGENTS.md](https://github.com/pixeltable/pixeltable/blob/main/AGENTS.md)
+6. [pixeltable-skill](https://github.com/pixeltable/pixeltable-skill)

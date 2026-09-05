@@ -50,9 +50,9 @@ def _run_import(cwd: str, code: str, home: Path, timeout: int = 600) -> subproce
 
 
 class TestSchemaImports:
-    def test_all_schemas_import_cleanly(self) -> None:
+    def test_all_schemas_import_cleanly(self, tmp_path_factory: pytest.TempPathFactory) -> None:
         for index, (cwd, code) in enumerate(_SCHEMA_TARGETS):
-            home = Path(f"/tmp/pxt-starter-kit-smoke-{index}")
+            home = tmp_path_factory.mktemp(f"pxt-smoke-{index}")
             result = _run_import(cwd, code, home)
             label = Path(cwd).relative_to(ROOT)
             assert result.returncode == 0, f"{label} import failed:\n{result.stderr}"

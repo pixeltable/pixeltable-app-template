@@ -8,7 +8,7 @@ cd pixeltable-starter-kit
 uv sync
 ```
 
-Apps require `pixeltable[serve]>=0.7.4` and Python 3.11+. HuggingFace
+Apps require `pixeltable[serve]>=0.7.5` and Python 3.11+. HuggingFace
 sentence-transformer embeddings require sentence-transformers 5.6.0+.
 
 ## Testing
@@ -22,8 +22,12 @@ uv run python -m pytest tests/ -v
 
 Slow checks in `.github/workflows/test.yml`:
 
-- **schema-smoke** (every push/PR): `pytest tests/test_schema.py --run-slow`
-- **app-smoke** (weekly + manual dispatch): chat-agent HTTP. Video search skips if no clip is present.
+- **schema-smoke** (every push/PR, and also on the weekly cron and manual dispatch, since it is
+  ungated): `pytest tests/test_schema.py --run-slow`, then `pxt schema update` + `pxt schema diff`
+  for each app against a temporary catalog. Needs no API key.
+- **app-smoke** (weekly cron + manual dispatch only): serves each app and drives real HTTP.
+  `/ask` runs only when the `ANTHROPIC_API_KEY` repository secret is set; it is also the canary
+  for the model id pinned in `chat-agent/app.py`. Video search generates a 2s clip with ffmpeg.
 
 ## Apps
 

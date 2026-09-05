@@ -1,21 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# postCreateCommand runs with the workspace folder as cwd, so every path here is relative to it:
+# hardcoding /workspaces/<repo> breaks whenever the clone directory has a different name.
+ROOT="$(pwd)"
+
 echo "==> Installing uv"
 curl -LsSf https://astral.sh/uv/install.sh | sh
 export PATH="$HOME/.local/bin:$PATH"
 
-echo "==> Setting up chat-agent"
-cd /workspaces/pixeltable-starter-kit/chat-agent
-uv sync
+for app in chat-agent video-search; do
+  echo "==> Setting up $app"
+  (cd "$ROOT/$app" && uv sync)
+done
 
-echo "==> Copying .env.example to .env (if needed)"
-cd /workspaces/pixeltable-starter-kit
-if [ ! -f .env ]; then
-  cp .env.example .env
-fi
-
+echo
 echo "==> Dev container ready"
-echo "    cd chat-agent && uv run pxt schema update app.py agent"
-echo "    uv run pxt service update app.py agent"
-echo "    uv run pxt service list"
+echo
+echo "    Export your key first -- the first pxt command starts the daemon and the"
+echo "    service inherits its environment:"
+echo
+echo "      export ANTHROPIC_API_KEY=sk-...      # only /ask needs this"
+echo
+echo "    Then:"
+echo
+echo "      cd chat-agent"
+echo "      uv run pxt schema update app.py agent"
+echo "      uv run pxt service update app.py agent"
+echo "      uv run pxt service list        # the port it picked; VS Code forwards it for you"
+echo
+echo "    video-search is set up too: cd video-search, TARGET is 'videointel'."

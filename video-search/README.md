@@ -37,19 +37,18 @@ curl -s -X POST http://127.0.0.1:<port>/api/search/visual \
 ## Same file, hosted
 
 ```bash
-pxt db update pxt://org:mydb
-pxt schema update app.py pxt://org:mydb
-pxt service update app.py pxt://org:mydb
+uv run pxt db update pxt://org:mydb
+uv run pxt schema update app.py pxt://org:mydb
+uv run pxt service update app.py pxt://org:mydb
 ```
 
 `pxt db update` packs the hosted image and workers; it is not Experiment.
-`pxt service run` is local only. Experiment on Cloud is dashboard insert plus `pxt schema diff`.
+Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud docs](https://docs.pixeltable.com/howto/deployment/cloud).
 
-## Foreground and container
+## Container
 
-`uv run pxt service run app.py videointel --port 8000` stays in this terminal.
-`docker compose up --build` pins port 8000.
+`docker compose up --build` serves on port 8000.
 
 | Object | Role |
 |--------|------|

@@ -1,6 +1,9 @@
 """pxt schema update app.py agent && pxt service update app.py agent
 
-/ask and ask() need ANTHROPIC_API_KEY.
+Export ANTHROPIC_API_KEY before the first pxt command. The first one starts the daemon, the service
+inherits the daemon's environment, and /ask reads the key at request time -- so exporting it later
+does not reach the running service. Recovery: pxt daemon restart, pxt service stop agent, then
+pxt service update app.py agent.
 """
 
 # ruff: noqa: F821
@@ -201,6 +204,9 @@ class AskResponse(pydantic.BaseModel):
     answer: str
 
 
+# Hand-written rather than declared: /ask orchestrates an insert plus two follow-up writes.
+# FastAPIRouter subclasses fastapi.APIRouter so this is served normally, but it is not part of
+# service_spec(), so `pxt service diff` and `pxt service list` will not mention it.
 @api.post("/ask")
 def ask_http(body: AskRequest) -> AskResponse:
     try:

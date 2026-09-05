@@ -22,4 +22,7 @@ USER appuser
 ENV PIXELTABLE_HOME=/data/pixeltable
 
 EXPOSE 8000
+# `service run` rather than `service update`: a container entrypoint has to stay in the
+# foreground. `service update` backgrounds the service and returns, which would exit the
+# container. Outside a container, use `pxt service update`.
 CMD ["sh", "-c", "uv run pxt schema update app.py videointel -f && uv run pxt service run app.py videointel --host 0.0.0.0 --port 8000"]

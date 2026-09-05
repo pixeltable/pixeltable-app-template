@@ -7,12 +7,26 @@ Declare (`pxt schema update app.py agent`), Experiment (insert, `/ask`, `pxt das
 Advertised order is schema, then service, then insert.
 
 ```bash
+export ANTHROPIC_API_KEY=sk-...   # before the first pxt command -- see below
 cd chat-agent
 uv sync
 uv run pxt schema update app.py agent
 uv run pxt service update app.py agent
 uv run pxt service list
 ```
+
+The export has to come first. `pxt schema update` starts the Pixeltable daemon, `pxt service update` spawns the
+service from that daemon, and the service inherits the daemon's environment -- so a key exported afterwards
+never reaches `/ask`. Re-running `pxt service update` does not fix it either: the plan is already in agreement,
+so nothing respawns. If you get this wrong:
+
+```bash
+uv run pxt daemon restart
+uv run pxt service stop agent
+uv run pxt service update app.py agent
+```
+
+`uv run pxt config --section anthropic` reports what the daemon actually resolved.
 
 HTTP `/ask` inserts an agent row, returns `answer`, and writes user and assistant turns.
 
@@ -24,11 +38,9 @@ curl -s -X POST http://127.0.0.1:<port>/api/knowledge \
 curl -s "http://127.0.0.1:<port>/api/knowledge/search?query_text=application%20file&limit=5"
 ```
 
-`/ask` (set `ANTHROPIC_API_KEY` first). `pxt service list` prints the port.
+`/ask` needs the key you exported above. `uv run pxt service list` prints the port.
 
 ```bash
-export ANTHROPIC_API_KEY=sk-...
-
 curl -s -X POST http://127.0.0.1:<port>/api/ask \
   -H "Content-Type: application/json" \
   -d '{
@@ -64,20 +76,20 @@ knowledge.insert(
 ## Same file, hosted
 
 ```bash
-pxt db update pxt://org:mydb
-pxt secret set pxt://org ANTHROPIC_API_KEY=sk-...
-pxt schema update app.py pxt://org:mydb
-pxt service update app.py pxt://org:mydb
+uv run pxt db update pxt://org:mydb
+uv run pxt secret set pxt://org ANTHROPIC_API_KEY=sk-...
+uv run pxt schema update app.py pxt://org:mydb
+uv run pxt service update app.py pxt://org:mydb
 ```
 
 `pxt db update` packs the hosted image and workers; it is not Experiment.
-`pxt service run` is local only. Experiment on Cloud is dashboard insert plus `pxt schema diff`.
+Experiment on Cloud is dashboard insert plus `pxt schema diff`.
 [Cloud docs](https://docs.pixeltable.com/howto/deployment/cloud).
 
-## Foreground and container
+## Container
 
-`uv run pxt service run app.py agent --port 8000` stays in this terminal.
-`docker compose up --build` pins port 8000.
+`docker compose up --build` serves on port 8000. Export `ANTHROPIC_API_KEY` in the shell that runs
+it, or `/ask` returns an error while the other routes work.
 
 | Object | Role |
 |--------|------|
