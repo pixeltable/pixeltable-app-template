@@ -7,9 +7,6 @@ venv/
 .env
 .env.local
 
-# Node
-node_modules/
-dist/
 
 # IDE
 .idea/

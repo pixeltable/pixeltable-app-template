@@ -50,10 +50,6 @@ def pytest_addoption(parser: pytest.Parser) -> None:
     )
 
 
-def pytest_configure(config: pytest.Config) -> None:
-    config.addinivalue_line("markers", "slow: schema import smoke tests requiring Pixeltable")
-
-
 def pytest_runtest_setup(item: pytest.Item) -> None:
     if item.get_closest_marker("slow") and not item.config.getoption("--run-slow"):
         pytest.skip("Slow test: pass --run-slow to enable.")

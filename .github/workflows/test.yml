@@ -57,18 +57,48 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: "**/pyproject.toml"
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/uv.lock
       - name: Install app dependencies
         run: |
           cd chat-agent && uv sync
           cd ../video-search && uv sync
       - name: Run schema import smoke tests
         run: uv run python -m pytest tests/test_schema.py -v --run-slow --tb=short
+      - name: Apply each schema to a real catalog
+        run: |
+          set -euo pipefail
+          # `import app` proves the file parses and the models construct. It does not prove the
+          # reconciler accepts them: a bad base=, a duplicate index name or an unsupported column
+          # property imports cleanly and fails at update. This catches that, and needs no API key.
+          for app in chat-agent video-search; do
+            case "$app" in
+              chat-agent)   target=agent ;;
+              video-search) target=videointel ;;
+            esac
+            echo "=== $app -> $target ==="
+            home="$RUNNER_TEMP/pxt-schema-$app"
+            rm -rf "$home"
+            (
+              cd "$app"
+              export PIXELTABLE_HOME="$home"
+              uv run pxt schema update app.py "$target" -f
+              # A second pass must be a no-op: exit 0 means the applied schema converged.
+              uv run pxt schema diff app.py "$target"
+              uv run pxt daemon stop || true
+            )
+          done
 
   app-smoke:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      # Without this the /ask branch below is unreachable and the job reports OK without ever
+      # calling Anthropic. With it, the weekly run doubles as the canary for the model id pinned
+      # in chat-agent/app.py: a retired model becomes a red build instead of a user's surprise.
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -77,7 +107,9 @@ jobs:
       - uses: astral-sh/setup-uv@v5
         with:
           enable-cache: true
-          cache-dependency-glob: "**/pyproject.toml"
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/uv.lock
       - name: Install app dependencies
         run: |
           cd chat-agent && uv sync
@@ -85,7 +117,8 @@ jobs:
       - name: Verify chat-agent HTTP
         run: |
           set -euo pipefail
-          PORT=18100
+          CHAT_PORT=18100
+          VIDEO_PORT=18101
           RESULTS=()
           PID=""
 
@@ -125,16 +158,16 @@ jobs:
             cd "$GITHUB_WORKSPACE/chat-agent"
             export PIXELTABLE_HOME="$AGENT_HOME"
             uv run pxt schema update app.py agent -f
-            uv run pxt service run app.py agent --host 127.0.0.1 --port "$PORT"
+            uv run pxt service run app.py agent --host 127.0.0.1 --port "$CHAT_PORT"
           ) >"/tmp/pxt-app-verify-chat-agent.log" 2>&1 &
           PID=$!
-          if wait_for_url "http://127.0.0.1:${PORT}/openapi.json" 180; then
-            if curl -sf -X POST "http://127.0.0.1:${PORT}/api/knowledge" \
+          if wait_for_url "http://127.0.0.1:${CHAT_PORT}/openapi.json" 180; then
+            if curl -sf -X POST "http://127.0.0.1:${CHAT_PORT}/api/knowledge" \
               -H "Content-Type: application/json" \
               -d '{"body": "Pixeltable is a unified backend: one application file, tables, and insert runs compute.", "title": "intro", "source": "docs"}' \
               >/dev/null; then
               if [[ -n "${ANTHROPIC_API_KEY:-}" ]]; then
-                if curl -sf -X POST "http://127.0.0.1:${PORT}/api/ask" \
+                if curl -sf -X POST "http://127.0.0.1:${CHAT_PORT}/api/ask" \
                   -H "Content-Type: application/json" \
                   -d '{"prompt": "What is Pixeltable?", "conversation_id": "ci", "system_prompt": "Be concise.", "max_tokens": 64, "temperature": 0.0}' \
                   >/dev/null; then
@@ -162,9 +195,17 @@ jobs:
           stop_postgres
 
           echo "=== video-search ==="
+          # ffmpeg ships on ubuntu-latest. Two seconds at fps=1.0 gives the frame iterator and the
+          # CLIP index real but trivial input, with no fixture bytes checked into the repo -- which
+          # matters because `uvx pixeltable-new` ships this tree to every user.
           CLIP="${VIDEO_CLIP:-}"
+          if [[ -z "$CLIP" ]] && command -v ffmpeg >/dev/null 2>&1; then
+            CLIP="$RUNNER_TEMP/clip.mp4"
+            ffmpeg -loglevel error -y -f lavfi \
+              -i testsrc=size=320x240:rate=10:duration=2 -pix_fmt yuv420p "$CLIP"
+          fi
           if [[ -z "$CLIP" || ! -f "$CLIP" ]]; then
-            echo "SKIP video-search (no clip)"
+            echo "SKIP video-search (no clip and no ffmpeg)"
             RESULTS+=("SKIP video-search")
           else
             VIDEO_HOME="/tmp/pxt-app-verify-video-search"
@@ -173,10 +214,13 @@ jobs:
               cd "$GITHUB_WORKSPACE/video-search"
               export PIXELTABLE_HOME="$VIDEO_HOME"
               uv run pxt schema update app.py videointel -f
-              uv run pxt service run app.py videointel --host 127.0.0.1 --port "$PORT"
+              uv run pxt service run app.py videointel --host 127.0.0.1 --port "$VIDEO_PORT"
             ) >"/tmp/pxt-app-verify-video-search.log" 2>&1 &
             PID=$!
-            if wait_for_url "http://127.0.0.1:${PORT}/openapi.json" 180; then
+            if wait_for_url "http://127.0.0.1:${VIDEO_PORT}/openapi.json" 180 \
+              && curl -sf -X POST "http://127.0.0.1:${VIDEO_PORT}/api/ingest" \
+                   -F "video=@${CLIP}" -F "title=ci" >/dev/null \
+              && curl -sf "http://127.0.0.1:${VIDEO_PORT}/api/images" >/dev/null; then
               echo "OK  video-search"
               RESULTS+=("OK  video-search")
             else
