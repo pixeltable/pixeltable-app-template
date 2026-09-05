@@ -37,9 +37,9 @@ curl -s -X POST http://127.0.0.1:<port>/api/search/visual \
 ## Same file, hosted
 
 ```bash
-pxt db update pxt://org:mydb
-pxt schema update app.py pxt://org:mydb
-pxt service update app.py pxt://org:mydb
+uv run pxt db update pxt://org:mydb
+uv run pxt schema update app.py pxt://org:mydb
+uv run pxt service update app.py pxt://org:mydb
 ```
 
 `pxt db update` packs the hosted image and workers; it is not Experiment.
